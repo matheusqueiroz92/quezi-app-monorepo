@@ -166,6 +166,9 @@ GET /api/v1/users?page=1&limit=10&userType=PROFESSIONAL&search=silva
 | `npm run dev`             | Inicia o servidor em modo desenvolvimento com hot-reload |
 | `npm run build`           | Compila o TypeScript para JavaScript                     |
 | `npm start`               | Inicia o servidor em produção                            |
+| `npm test`                | Executa todos os testes                                  |
+| `npm run test:watch`      | Executa testes em modo watch                             |
+| `npm run test:coverage`   | Gera relatório de cobertura de testes                    |
 | `npm run prisma:generate` | Gera o Prisma Client                                     |
 | `npm run prisma:migrate`  | Cria e aplica migrações                                  |
 | `npm run prisma:studio`   | Abre o Prisma Studio (GUI para o banco)                  |
@@ -198,6 +201,9 @@ Para acessar o pgAdmin e gerenciar o banco de dados visualmente:
 - ✅ Documentação Swagger automática
 - ✅ Paginação de listagens
 - ✅ TypeScript com tipagem forte
+- ✅ **Testes Unitários** - 56 testes com Jest
+- ✅ **TDD** - Metodologia Test-Driven Development
+- ✅ **Cobertura de Código** - 97%+ nas camadas principais
 
 ## 📚 Próximos Passos
 
