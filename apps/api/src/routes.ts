@@ -1,5 +1,6 @@
 import { type FastifyInstance } from "fastify";
 import { userRoutes } from "./modules/users";
+import { authRoutes } from "./modules/auth/auth.routes";
 
 /**
  * Registra todas as rotas da aplicação
@@ -32,6 +33,11 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
           };
         },
       });
+
+      // ========================================
+      // AUTENTICAÇÃO (Better Auth)
+      // ========================================
+      await apiRoutes.register(authRoutes);
 
       // ========================================
       // MÓDULO USERS

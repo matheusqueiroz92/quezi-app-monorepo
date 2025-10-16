@@ -17,6 +17,16 @@ const envSchema = z.object({
     .string()
     .default("true")
     .transform((val) => val === "true"),
+
+  // Better Auth - Social Providers (opcionais)
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
+
+  // Better Auth - URLs
+  BETTER_AUTH_SECRET: z.string().min(32).optional(),
+  BETTER_AUTH_URL: z.string().url().optional(),
 });
 
 /**

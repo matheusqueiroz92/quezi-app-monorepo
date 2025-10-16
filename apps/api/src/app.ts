@@ -46,7 +46,9 @@ export async function buildApp(): Promise<FastifyInstance> {
         info: {
           title: "Quezi API",
           description:
-            "API REST para plataforma de agendamento de serviços profissionais",
+            "API REST para plataforma de agendamento de serviços profissionais. " +
+            "Autenticação via Better Auth com suporte a email/senha e OAuth (Google, GitHub). " +
+            "Use o endpoint /auth/sign-in/email para obter um token de acesso.",
           version: "1.0.0",
         },
         servers: [
@@ -55,7 +57,22 @@ export async function buildApp(): Promise<FastifyInstance> {
             description: "Servidor de desenvolvimento",
           },
         ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
+              description:
+                "Token de autenticação obtido via /auth/sign-in/email",
+            },
+          },
+        },
         tags: [
+          {
+            name: "auth",
+            description: "Autenticação e autorização (Better Auth)",
+          },
           { name: "users", description: "Gerenciamento de usuários" },
           { name: "services", description: "Gerenciamento de serviços" },
           {

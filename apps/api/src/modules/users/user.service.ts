@@ -8,6 +8,7 @@ import {
 } from "../../utils/app-error";
 import { type CreateUserInput, type UpdateUserInput } from "./user.schema";
 import { type PaginatedResponse } from "../../types";
+import { hashPassword } from "../../utils/password";
 
 /**
  * Camada de Serviço - Lógica de Negócio
@@ -30,12 +31,12 @@ export class UserService {
       throw new ConflictError("Email já cadastrado");
     }
 
-    // TODO: Hash da senha com BCrypt (implementar quando configurar autenticação)
-    // const passwordHash = await bcrypt.hash(data.password, 10);
+    // Hash da senha com BCrypt
+    const passwordHash = await hashPassword(data.password);
 
     const user = await this.userRepository.create({
       email: data.email,
-      passwordHash: data.password, // TEMPORÁRIO: trocar por hash
+      passwordHash,
       name: data.name,
       phone: data.phone,
       userType: data.userType,
