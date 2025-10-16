@@ -1,0 +1,30 @@
+{
+  "name": "quezi-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo da aplicação Quezi - Plataforma de agendamento de serviços",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "docker:up": "cd apps/api && npm run docker:up",
+    "docker:down": "cd apps/api && npm run docker:down",
+    "prisma:studio": "cd apps/api && npm run prisma:studio",
+    "prisma:migrate": "cd apps/api && npm run prisma:migrate"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "turbo": "^2.5.8"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "packageManager": "npm@10.0.0"
+}

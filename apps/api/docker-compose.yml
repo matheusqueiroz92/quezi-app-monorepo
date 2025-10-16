@@ -1,0 +1,43 @@
+services:
+  # -------------------------------------------------------------------
+  # 1. PostgreSQL Database Service
+  # -------------------------------------------------------------------
+  postgres_db:
+    image: postgres:16-alpine # Versão estável e leve do PostgreSQL
+    container_name: quezi-app_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-userquezi-app} # Usuário padrão (lido do .env)
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-passwordquezi-app} # Senha padrão (lida do .env)
+      POSTGRES_DB: ${DB_NAME:-quezi-app_db} # Nome do banco de dados
+    ports:
+      - "${DB_PORT:-5432}:5432" # Mapeia a porta 5432 do container para a porta local
+    volumes:
+      # Persiste os dados no disco local para que não se percam ao reiniciar o container
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------
+  # 2. pgAdmin (Interface gráfica para o Banco de Dados)
+  # -------------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: quezi-app_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@quezi-app.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin_secure_password}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80" # Mapeia a porta 80 do container para a porta local 5050
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres_db # Garante que o banco suba antes do pgAdmin
+
+volumes:
+  postgres_data:
+  pgadmin_data:

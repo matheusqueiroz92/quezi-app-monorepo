@@ -1,0 +1,19 @@
+{
+  "name": "@quezi/eslint-config",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Configurações ESLint compartilhadas para o monorepo Quezi",
+  "main": "index.js",
+  "files": [
+    "base.js",
+    "node.js",
+    "react.js"
+  ],
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0"
+  }
+}
+

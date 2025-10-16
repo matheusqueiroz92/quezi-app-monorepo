@@ -1,0 +1,13 @@
+{
+  "name": "@quezi/typescript-config",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Configurações TypeScript compartilhadas para o monorepo Quezi",
+  "main": "index.js",
+  "files": [
+    "base.json",
+    "node.json",
+    "react.json"
+  ]
+}
+

@@ -1,0 +1,7 @@
+node_modules
+.env
+.env.local
+dist
+uploads
+.cursor/rules/general.mdc
+/src/generated/prisma

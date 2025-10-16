@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// ENUMS
+// ========================================
+
+enum UserType {
+  CLIENT
+  PROFESSIONAL
+}
+
+enum ServicePriceType {
+  FIXED
+  HOURLY
+}
+
+enum ServiceMode {
+  AT_LOCATION   // Atendimento no local próprio do profissional
+  AT_DOMICILE   // Atendimento a domicílio do cliente
+  BOTH
+}
+
+enum AppointmentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+}
+
+// ========================================
+// ENTIDADES / MODELS
+// ========================================
+
+model User {
+  id              String   @id @default(uuid()) @db.Uuid
+  email           String   @unique
+  passwordHash    String?
+  name            String
+  phone           String?
+  userType        UserType
+  isEmailVerified Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  professionalProfile ProfessionalProfile? // 1:1, opcional (apenas para UserType: PROFESSIONAL)
+  clientAppointments  Appointment[]        @relation("ClientAppointments")
+  profAppointments    Appointment[]        @relation("ProfessionalAppointments")
+  reviews             Review[]
+
+  @@map("users")
+}
+
+model ProfessionalProfile {
+  userId        String      @id @db.Uuid
+  bio           String?
+  city          String
+  address       String?
+  serviceMode   ServiceMode // NOVO CAMPO: AT_LOCATION, AT_DOMICILE, BOTH
+  averageRating Float       @default(0.0)
+  totalRatings  Int         @default(0)
+  photoUrl      String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relações
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  services Service[]
+
+  @@map("professional_profiles")
+}
+
+model Category {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @unique
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  services  Service[]
+
+  @@map("categories")
+}
+
+model Service {
+  id              String           @id @default(uuid()) @db.Uuid
+  professionalId  String           @db.Uuid
+  categoryId      String           @db.Uuid
+  name            String
+  description     String?
+  price           Decimal          @db.Money
+  priceType       ServicePriceType
+  durationMinutes Int // NOVO CAMPO: Duração do Serviço em Minutos
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relações
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+  category     Category            @relation(fields: [categoryId], references: [id])
+  appointments Appointment[]
+
+  @@map("services")
+}
+
+model Appointment {
+  id            String            @id @default(uuid()) @db.Uuid
+  clientId      String            @db.Uuid
+  professionalId String           @db.Uuid
+  serviceId     String            @db.Uuid
+  scheduledDate DateTime
+  status        AppointmentStatus @default(PENDING)
+  locationType  ServiceMode // NOVO CAMPO: LOCAL_PROPRIO ou DOMICILIO (Tipo de ServiceMode)
+  clientAddress String? // Endereço de atendimento se for a domicílio
+  clientNotes   String?
+  isReviewed    Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relações
+  client       User    @relation("ClientAppointments", fields: [clientId], references: [id])
+  professional User    @relation("ProfessionalAppointments", fields: [professionalId], references: [id])
+  service      Service @relation(fields: [serviceId], references: [id])
+  review       Review? // 1:1 (um agendamento pode ter uma review)
+
+  @@index([professionalId, scheduledDate]) // Índice para checagem rápida de agendamentos
+  @@map("appointments")
+}
+
+model Review {
+  id             String   @id @default(uuid()) @db.Uuid
+  appointmentId  String   @unique @db.Uuid // 1:1, única por agendamento
+  reviewerId     String   @db.Uuid
+  professionalId String   @db.Uuid
+  rating         Int // Será validado na aplicação: rating > 0 AND rating <= 5
+  comment        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relações
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  reviewer    User        @relation(fields: [reviewerId], references: [id])
+
+  @@map("reviews")
+}
