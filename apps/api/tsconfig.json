@@ -2,7 +2,11 @@
   "extends": "@quezi/typescript-config/node.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "exactOptionalPropertyTypes": false,
+    "verbatimModuleSyntax": false,
+    "module": "node16",
+    "moduleResolution": "node16"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

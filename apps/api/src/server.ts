@@ -1,19 +1,45 @@
-import { fastify } from "fastify";
+import { buildApp } from "./app";
+import { env } from "./config/env";
 
-const server = fastify({ logger: true });
-const port = Number(process.env.PORT) || 3333;
-const host = process.env.HOST || "0.0.0.0";
+/**
+ * Inicializa o servidor
+ */
+async function start() {
+  try {
+    const app = await buildApp();
 
-server
-  .listen({ port, host })
-  .then(() => {
-    console.log(`Server is running on ${port}`);
-  })
-  .catch((err) => {
-    console.error(err);
+    await app.listen({
+      port: env.PORT,
+      host: env.HOST,
+    });
+
+    console.log(`
+╔═══════════════════════════════════════════════════════╗
+║                                                       ║
+║   🚀 Servidor Quezi API iniciado com sucesso!        ║
+║                                                       ║
+║   🌍 URL: http://${env.HOST}:${env.PORT}                      ║
+║   📚 Docs: http://${env.HOST}:${env.PORT}/docs                ║
+║   🏥 Health: http://${env.HOST}:${env.PORT}/health            ║
+║   🔧 Ambiente: ${env.NODE_ENV}                     ║
+║                                                       ║
+╚═══════════════════════════════════════════════════════╝
+    `);
+  } catch (error) {
+    console.error("❌ Erro ao iniciar o servidor:", error);
     process.exit(1);
-  });
+  }
+}
 
-server.get("/test", (request, reply) => {
-  reply.send("Hello world");
+// Graceful shutdown
+process.on("SIGINT", async () => {
+  console.log("\n⏳ Encerrando servidor...");
+  process.exit(0);
 });
+
+process.on("SIGTERM", async () => {
+  console.log("\n⏳ Encerrando servidor...");
+  process.exit(0);
+});
+
+start();

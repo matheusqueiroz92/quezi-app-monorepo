@@ -24,19 +24,34 @@ O projeto segue uma **Arquitetura em Camadas** (Layered Architecture) com princ�
 ```
 api/
 ├── src/
-│   ├── modules/          # Módulos de domínio
-│   │   ├── users/        # Gestão de usuários
-│   │   ├── appointments/ # Gestão de agendamentos
-│   │   └── offered-services/ # Gestão de serviços oferecidos
-│   ├── lib/              # Bibliotecas compartilhadas
-│   │   └── prisma.ts     # Cliente Prisma (singleton)
-│   ├── routes.ts         # Agregador de rotas
-│   ├── app.ts            # Configuração do Fastify
-│   └── server.ts         # Ponto de entrada
+│   ├── modules/              # Módulos de domínio (Clean Architecture)
+│   │   ├── users/            # ✅ Módulo Users (COMPLETO)
+│   │   │   ├── user.controller.ts   # Camada de Apresentação
+│   │   │   ├── user.service.ts      # Camada de Lógica de Negócio
+│   │   │   ├── user.repository.ts   # Camada de Acesso a Dados
+│   │   │   ├── user.schema.ts       # Validações Zod
+│   │   │   ├── user.routes.ts       # Registro de rotas
+│   │   │   └── index.ts             # Barrel export
+│   │   ├── appointments/     # 🔜 Gestão de agendamentos
+│   │   └── offered-services/ # 🔜 Gestão de serviços oferecidos
+│   ├── config/               # Configurações
+│   │   └── env.ts            # Validação de variáveis de ambiente
+│   ├── types/                # Tipos TypeScript compartilhados
+│   │   └── index.ts          # Interfaces e tipos globais
+│   ├── middlewares/          # Middlewares globais
+│   │   └── error-handler.ts  # Handler de erros centralizado
+│   ├── utils/                # Utilitários
+│   │   └── app-error.ts      # Classes de erro customizadas
+│   ├── lib/                  # Bibliotecas compartilhadas
+│   │   └── prisma.ts         # Cliente Prisma (singleton)
+│   ├── routes.ts             # ✅ Agregador de rotas
+│   ├── app.ts                # ✅ Configuração do Fastify + Plugins
+│   └── server.ts             # ✅ Ponto de entrada
 ├── prisma/
-│   ├── schema.prisma     # Schema do banco de dados
-│   └── migrations/       # Migrações do banco
-└── docker-compose.yml    # Configuração Docker
+│   ├── schema.prisma         # Schema do banco de dados
+│   ├── migrations/           # Migrações do banco
+│   └── seed.ts               # Seed com dados iniciais
+└── docker-compose.yml        # Configuração Docker
 ```
 
 ## 🗃️ Modelo de Dados
@@ -104,7 +119,45 @@ npm run prisma:migrate
 npm run dev
 ```
 
-A API estará disponível em: `http://localhost:3333`
+A API estará disponível em:
+
+- **API Base**: `http://localhost:3333/api/v1`
+- **Health Check**: `http://localhost:3333/health`
+- **Documentação Swagger**: `http://localhost:3333/docs`
+
+## 📡 Endpoints Disponíveis
+
+### Health Check
+
+- `GET /health` - Verifica status da API
+- `GET /api/v1/test` - Endpoint de teste
+
+### Users (CRUD Completo)
+
+- `POST /api/v1/users` - Cria novo usuário
+- `GET /api/v1/users` - Lista usuários (com paginação e filtros)
+- `GET /api/v1/users/:id` - Busca usuário por ID
+- `PUT /api/v1/users/:id` - Atualiza usuário
+- `DELETE /api/v1/users/:id` - Deleta usuário
+
+**Exemplo de criação de usuário:**
+
+```json
+POST /api/v1/users
+{
+  "email": "joao@example.com",
+  "password": "SenhaForte123",
+  "name": "João Silva",
+  "phone": "+5511999999999",
+  "userType": "CLIENT"
+}
+```
+
+**Exemplo de listagem com filtros:**
+
+```
+GET /api/v1/users?page=1&limit=10&userType=PROFESSIONAL&search=silva
+```
 
 ## 📜 Scripts Disponíveis
 
@@ -134,13 +187,26 @@ Para acessar o pgAdmin e gerenciar o banco de dados visualmente:
    - Username: `userquize`
    - Password: `passwordquize`
 
+## ✅ O Que Foi Implementado
+
+- ✅ Estrutura de camadas (Clean Architecture + DDD)
+- ✅ Configuração de variáveis de ambiente com Zod
+- ✅ Tratamento global de erros
+- ✅ Plugins Fastify (CORS, Swagger)
+- ✅ **Módulo Users completo** (Controller, Service, Repository)
+- ✅ Validações com Zod
+- ✅ Documentação Swagger automática
+- ✅ Paginação de listagens
+- ✅ TypeScript com tipagem forte
+
 ## 📚 Próximos Passos
 
-- [ ] Implementar módulos (Users, Appointments, Services)
-- [ ] Configurar autenticação JWT
+- [ ] Implementar autenticação JWT com Better Auth
+- [ ] Adicionar hash de senha com BCrypt
+- [ ] Implementar módulo Appointments
+- [ ] Implementar módulo Services
+- [ ] Implementar módulo Reviews
 - [ ] Implementar OAuth 2.0 (Google)
-- [ ] Adicionar validações com Zod
-- [ ] Configurar Swagger para documentação
 - [ ] Implementar testes (unitários, integração, e2e)
 - [ ] Configurar envio de e-mails
 - [ ] Implementar upload de arquivos
