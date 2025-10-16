@@ -79,21 +79,25 @@ src/
 ## 🚀 Scripts de Teste
 
 ### Executar Todos os Testes
+
 ```bash
 npm test
 ```
 
 ### Modo Watch (Desenvolvimento)
+
 ```bash
 npm run test:watch
 ```
 
 ### Gerar Relatório de Cobertura
+
 ```bash
 npm run test:coverage
 ```
 
 ### Apenas Testes Unitários
+
 ```bash
 npm run test:unit
 ```
@@ -167,7 +171,9 @@ describe("UserRepository", () => {
 ```typescript
 describe("createUserSchema", () => {
   it("deve validar dados corretos", () => {
-    const validData = { /* ... */ };
+    const validData = {
+      /* ... */
+    };
     const result = createUserSchema.parse(validData);
     expect(result).toEqual(validData);
   });
@@ -186,6 +192,7 @@ describe("createUserSchema", () => {
 Ao criar um novo módulo, garantir que tenha:
 
 - [ ] **Service Tests**
+
   - [ ] Testes de criação (create)
   - [ ] Testes de listagem (list)
   - [ ] Testes de busca (findById)
@@ -195,11 +202,13 @@ Ao criar um novo módulo, garantir que tenha:
   - [ ] Testes de erros (NotFoundError, ConflictError, etc)
 
 - [ ] **Repository Tests**
+
   - [ ] Testes de todas as queries
   - [ ] Testes com mocks do Prisma
   - [ ] Testes de retorno null quando não encontrar
 
 - [ ] **Schema Tests**
+
   - [ ] Testes de validação bem-sucedida
   - [ ] Testes de rejeição (dados inválidos)
   - [ ] Testes de campos opcionais
@@ -354,4 +363,3 @@ async findByCity(city: string) {
 ---
 
 **🎉 Testes são documentação viva do código!**
-
