@@ -22,6 +22,7 @@ quezi-app/
 ## 🛠️ Stack Tecnológica
 
 ### Backend (API)
+
 - **Node.js** + **Fastify** - Framework web de alta performance
 - **TypeScript** - Superset JavaScript com tipagem estática
 - **PostgreSQL** - Banco de dados relacional
@@ -30,12 +31,14 @@ quezi-app/
 - **Zod** - Validação de schemas
 - **Swagger** - Documentação da API
 
-### Frontend (Web) - *A ser implementado*
+### Frontend (Web) - _A ser implementado_
+
 - Next.js / React + Vite
 - TypeScript
 - TailwindCSS
 
-### Mobile - *A ser implementado*
+### Mobile - _A ser implementado_
+
 - React Native / Expo
 - TypeScript
 
@@ -72,6 +75,7 @@ npm run docker:up
 ```
 
 Isso irá iniciar:
+
 - PostgreSQL na porta `5432`
 - pgAdmin na porta `5050` (http://localhost:5050)
 
@@ -102,18 +106,18 @@ A API estará disponível em: `http://localhost:3333`
 
 ### Scripts Globais (Raiz)
 
-| Script | Descrição |
-|--------|-----------|
-| `npm run dev` | Inicia todos os apps em modo desenvolvimento |
-| `npm run build` | Build de todos os apps |
-| `npm run start` | Inicia todos os apps em produção |
-| `npm run lint` | Executa lint em todos os apps |
-| `npm run test` | Executa testes em todos os apps |
-| `npm run clean` | Limpa arquivos de build |
-| `npm run docker:up` | Inicia containers Docker |
-| `npm run docker:down` | Para containers Docker |
-| `npm run prisma:studio` | Abre Prisma Studio |
-| `npm run prisma:migrate` | Executa migrações |
+| Script                   | Descrição                                    |
+| ------------------------ | -------------------------------------------- |
+| `npm run dev`            | Inicia todos os apps em modo desenvolvimento |
+| `npm run build`          | Build de todos os apps                       |
+| `npm run start`          | Inicia todos os apps em produção             |
+| `npm run lint`           | Executa lint em todos os apps                |
+| `npm run test`           | Executa testes em todos os apps              |
+| `npm run clean`          | Limpa arquivos de build                      |
+| `npm run docker:up`      | Inicia containers Docker                     |
+| `npm run docker:down`    | Para containers Docker                       |
+| `npm run prisma:studio`  | Abre Prisma Studio                           |
+| `npm run prisma:migrate` | Executa migrações                            |
 
 ### Scripts da API
 
@@ -131,7 +135,7 @@ API REST desenvolvida com arquitetura limpa e DDD.
 
 **Porta:** 3333
 
-### 🌐 Web (Frontend) - *Em breve*
+### 🌐 Web (Frontend) - _Em breve_
 
 Aplicação web para clientes e profissionais.
 
@@ -139,7 +143,7 @@ Aplicação web para clientes e profissionais.
 
 **Porta:** 3000
 
-### 📱 Mobile - *Em breve*
+### 📱 Mobile - _Em breve_
 
 Aplicativo mobile para iOS e Android.
 
@@ -152,6 +156,7 @@ Aplicativo mobile para iOS e Android.
 Configurações TypeScript compartilhadas para todo o monorepo.
 
 **Configurações disponíveis:**
+
 - `base.json` - Configuração base
 - `node.json` - Para projetos Node.js
 - `react.json` - Para projetos React
@@ -161,6 +166,7 @@ Configurações TypeScript compartilhadas para todo o monorepo.
 Configurações ESLint compartilhadas para todo o monorepo.
 
 **Configurações disponíveis:**
+
 - `base.js` - Configuração base
 - `node.js` - Para projetos Node.js
 - `react.js` - Para projetos React
@@ -179,12 +185,14 @@ Configurações ESLint compartilhadas para todo o monorepo.
 ### Tipos de Usuário
 
 #### 👤 Cliente
+
 - Buscar e filtrar profissionais por categoria
 - Visualizar perfis e serviços
 - Solicitar agendamentos
 - Avaliar serviços prestados
 
 #### 💼 Profissional
+
 - Criar e gerenciar perfil profissional
 - Cadastrar serviços oferecidos
 - Gerenciar solicitações de agendamento
@@ -199,7 +207,7 @@ Configurações ESLint compartilhadas para todo o monorepo.
 ## 🔗 Links Úteis
 
 - **API**: http://localhost:3333
-- **Web**: http://localhost:3000 *(em breve)*
+- **Web**: http://localhost:3000 _(em breve)_
 - **pgAdmin**: http://localhost:5050
 - **Prisma Studio**: Execute `npm run prisma:studio`
 
@@ -237,9 +245,8 @@ ISC
 
 ## 👥 Equipe
 
-*A definir*
+_A definir_
 
 ---
 
 **Desenvolvido com ❤️ usando Turborepo**
-

@@ -1,5 +1,9 @@
 module.exports = {
-  extends: ["./base.js", "plugin:react/recommended", "plugin:react-hooks/recommended"],
+  extends: [
+    "./base.js",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+  ],
   plugins: ["react", "react-hooks"],
   settings: {
     react: {
@@ -15,4 +19,3 @@ module.exports = {
     "react/prop-types": "off",
   },
 };
-
