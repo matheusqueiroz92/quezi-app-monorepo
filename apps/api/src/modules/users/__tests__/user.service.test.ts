@@ -4,8 +4,9 @@ import { UserRepository } from "../user.repository";
 import { ConflictError, NotFoundError } from "../../../utils/app-error";
 import { UserType } from "@prisma/client";
 
-// Mock do repository
+// Mock do repository e password utils
 jest.mock("../user.repository");
+jest.mock("../../../utils/password");
 
 describe("UserService", () => {
   let userService: UserService;
@@ -42,10 +43,19 @@ describe("UserService", () => {
       professionalProfile: null,
     };
 
-    it("deve criar um novo usuário com sucesso", async () => {
+    it("deve criar um novo usuário com senha hash", async () => {
       // Arrange
+      const hashedPassword = "$2b$10$hashedpassword";
+      
+      // Mock do hashPassword
+      const { hashPassword } = jest.requireMock("../../../utils/password");
+      hashPassword.mockResolvedValue(hashedPassword);
+      
       mockUserRepository.emailExists = jest.fn().mockResolvedValue(false);
-      mockUserRepository.create = jest.fn().mockResolvedValue(createdUser);
+      mockUserRepository.create = jest.fn().mockResolvedValue({
+        ...createdUser,
+        passwordHash: hashedPassword,
+      });
 
       // Act
       const result = await userService.createUser(validUserData);
@@ -56,7 +66,7 @@ describe("UserService", () => {
       );
       expect(mockUserRepository.create).toHaveBeenCalledWith({
         email: validUserData.email,
-        passwordHash: validUserData.password,
+        passwordHash: hashedPassword,
         name: validUserData.name,
         phone: validUserData.phone,
         userType: validUserData.userType,

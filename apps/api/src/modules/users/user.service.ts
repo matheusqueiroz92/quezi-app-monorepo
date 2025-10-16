@@ -32,11 +32,11 @@ export class UserService {
     }
 
     // Hash da senha com BCrypt
-    const passwordHash = await hashPassword(data.password);
+    const hashedPassword = await hashPassword(data.password);
 
     const user = await this.userRepository.create({
       email: data.email,
-      passwordHash,
+      passwordHash: hashedPassword,
       name: data.name,
       phone: data.phone,
       userType: data.userType,
