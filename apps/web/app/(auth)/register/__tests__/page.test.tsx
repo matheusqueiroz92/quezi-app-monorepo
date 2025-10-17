@@ -341,7 +341,7 @@ describe("RegisterPage", () => {
 
     it("deve exibir mensagem de erro da API", async () => {
       const user = userEvent.setup();
-      
+
       mockUseAuth.mockReturnValue({
         login: jest.fn(),
         register: mockRegister,

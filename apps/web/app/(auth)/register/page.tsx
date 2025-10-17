@@ -220,7 +220,9 @@ export default function RegisterPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-graphite hover:text-marsala"
-                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    aria-label={
+                      showPassword ? "Ocultar senha" : "Mostrar senha"
+                    }
                   >
                     {showPassword ? "👁️" : "👁️‍🗨️"}
                   </button>

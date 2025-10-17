@@ -22,7 +22,7 @@ Time:        ~11s
 ✅ Logout e limpeza de token  
 ✅ Busca de perfil autenticado  
 ✅ Redirecionamento quando não autenticado  
-✅ Estado inicial correto  
+✅ Estado inicial correto
 
 ### **Página de Login (18 testes)**
 
@@ -34,7 +34,7 @@ Time:        ~11s
 ✅ Alternar visibilidade de senha  
 ✅ OAuth social (Google, GitHub)  
 ✅ Acessibilidade  
-✅ Navegação entre páginas  
+✅ Navegação entre páginas
 
 ### **Página de Registro (30 testes)**
 
@@ -45,18 +45,20 @@ Time:        ~11s
 ✅ Requisitos de senha forte  
 ✅ Navegação entre etapas  
 ✅ Estados de loading e erro  
-✅ Interações do usuário  
+✅ Interações do usuário
 
 ## 📊 **Análise dos Testes Falhando**
 
 ### **Razões dos Testes Falhando (22)**
 
 1. **Validação de Formulários React Hook Form** (8 testes)
+
    - O `react-hook-form` valida **todos os campos** ao submeter
    - Os testes preenchem apenas 1 campo e esperam ver apenas 1 erro
    - **Correção**: Preencher todos os campos corretamente exceto o testado
 
 2. **Loading States e Erro da API** (4 testes)
+
    - Componentes precisam ser rerenderizados com novo estado do mock
    - **Correção**: Usar `rerender()` do React Testing Library
 
@@ -71,14 +73,14 @@ Time:        ~11s
 ✅ Adicionado `role="progressbar"` aos indicadores de progresso  
 ✅ Adicionado `aria-label` aos botões de senha  
 ✅ Validação `onBlur` no formulário de registro  
-✅ Acessibilidade melhorada em todos os componentes  
+✅ Acessibilidade melhorada em todos os componentes
 
 ### **Testes**
 
 ✅ Ajustados testes de validação para preencher todos os campos  
 ✅ Corrigida seleção de botões usando `aria-label`  
 ✅ Adicionado `rerender()` para testes de loading/erro  
-✅ Melhorada legibilidade e documentação dos testes  
+✅ Melhorada legibilidade e documentação dos testes
 
 ## 🚀 **Próximos Passos para 100% de Cobertura**
 
@@ -92,7 +94,7 @@ it("deve mostrar erro para nome muito curto", async () => {
   await user.type(emailInput, "teste@example.com"); // Válido
   await user.type(passwordInput, "SenhaForte123"); // Válido
   await user.click(submitButton);
-  
+
   // Agora apenas o erro do nome aparece
   expect(screen.getByText(/nome deve ter no mínimo/i)).toBeInTheDocument();
 });
@@ -140,10 +142,8 @@ npm test -- hooks/__tests__/use-auth.test.tsx
 
 1. **React Hook Form**: Validação de todos os campos ao submeter
    - **Solução**: Preencher todos os campos nos testes
-   
 2. **Loading States**: Componentes precisam rerenderizar
    - **Solução**: Usar `rerender()` do RTL
-   
 3. **Emojis como identificadores**: Não funcionam bem com testes
    - **Solução**: Sempre usar `aria-label`
 
@@ -153,7 +153,7 @@ npm test -- hooks/__tests__/use-auth.test.tsx
 ✅ **Queries Semânticas**: `getByRole`, `getByLabelText`  
 ✅ **Async Testing**: `waitFor`, `userEvent.setup()`  
 ✅ **Mocks Isolados**: Cada teste limpa seus mocks  
-✅ **Testes Legíveis**: Nomes descritivos como documentação  
+✅ **Testes Legíveis**: Nomes descritivos como documentação
 
 ## 📦 **Dependências de Testes**
 
@@ -183,4 +183,3 @@ npm test -- hooks/__tests__/use-auth.test.tsx
 
 **Status**: 🟡 Em Progresso  
 **Última Atualização**: 2025-10-17
-
