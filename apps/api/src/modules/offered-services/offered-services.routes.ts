@@ -81,7 +81,9 @@ export async function offeredServicesRoutes(
         },
       },
     },
-    offeredServicesController.createService.bind(offeredServicesController) as any
+    offeredServicesController.createService.bind(
+      offeredServicesController
+    ) as any
   );
 
   // GET /services
@@ -198,7 +200,9 @@ export async function offeredServicesRoutes(
         },
       },
     },
-    offeredServicesController.updateService.bind(offeredServicesController) as any
+    offeredServicesController.updateService.bind(
+      offeredServicesController
+    ) as any
   );
 
   // DELETE /services/:id
@@ -239,7 +243,9 @@ export async function offeredServicesRoutes(
         },
       },
     },
-    offeredServicesController.deleteService.bind(offeredServicesController) as any
+    offeredServicesController.deleteService.bind(
+      offeredServicesController
+    ) as any
   );
 }
 

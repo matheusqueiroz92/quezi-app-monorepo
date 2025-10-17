@@ -25,6 +25,12 @@ export class OfferedServicesController {
     // @ts-ignore - user será adicionado pelo middleware de autenticação
     const professionalId = request.user?.id;
 
+    if (typeof professionalId !== "string") {
+      return reply
+        .status(400)
+        .send({ message: "ID do profissional não encontrado." });
+    }
+
     const service = await offeredServicesService.createService(
       professionalId,
       request.body
@@ -41,7 +47,9 @@ export class OfferedServicesController {
     request: FastifyRequest<{ Params: ServiceParams }>,
     reply: FastifyReply
   ) {
-    const service = await offeredServicesService.getServiceById(request.params.id);
+    const service = await offeredServicesService.getServiceById(
+      request.params.id
+    );
     return reply.send(service);
   }
 
@@ -64,11 +72,20 @@ export class OfferedServicesController {
    * Atualiza um serviço
    */
   async updateService(
-    request: FastifyRequest<{ Params: ServiceParams; Body: UpdateServiceInput }>,
+    request: FastifyRequest<{
+      Params: ServiceParams;
+      Body: UpdateServiceInput;
+    }>,
     reply: FastifyReply
   ) {
     // @ts-ignore - user será adicionado pelo middleware de autenticação
     const professionalId = request.user?.id;
+
+    if (typeof professionalId !== "string") {
+      return reply
+        .status(400)
+        .send({ message: "ID do profissional não encontrado." });
+    }
 
     const service = await offeredServicesService.updateService(
       request.params.id,
@@ -88,9 +105,23 @@ export class OfferedServicesController {
     reply: FastifyReply
   ) {
     // @ts-ignore - user será adicionado pelo middleware de autenticação
+    // @ts-ignore - user será adicionado pelo middleware de autenticação
     const professionalId = request.user?.id;
 
-    await offeredServicesService.deleteService(request.params.id, professionalId);
+    if (typeof professionalId !== "string") {
+      return reply
+        .status(400)
+        .send({ message: "ID do profissional não encontrado." });
+    }
+
+    const serviceId = request.params.id;
+    if (typeof serviceId !== "string") {
+      return reply
+        .status(400)
+        .send({ message: "ID do serviço não encontrado." });
+    }
+
+    await offeredServicesService.deleteService(serviceId, professionalId);
 
     return reply.status(204).send();
   }
@@ -133,7 +164,9 @@ export class CategoriesController {
     request: FastifyRequest<{ Params: CategoryParams }>,
     reply: FastifyReply
   ) {
-    const category = await offeredServicesService.getCategoryById(request.params.id);
+    const category = await offeredServicesService.getCategoryById(
+      request.params.id
+    );
     return reply.send(category);
   }
 
@@ -160,7 +193,9 @@ export class CategoriesController {
     reply: FastifyReply
   ) {
     const includeServices = request.query.includeServices === "true";
-    const categories = await offeredServicesService.getAllCategories(includeServices);
+    const categories = await offeredServicesService.getAllCategories(
+      includeServices
+    );
     return reply.send(categories);
   }
 
@@ -198,4 +233,3 @@ export class CategoriesController {
 // Instâncias dos controllers
 export const offeredServicesController = new OfferedServicesController();
 export const categoriesController = new CategoriesController();
-

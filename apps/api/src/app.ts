@@ -37,7 +37,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(cors, {
     origin: (origin, callback) => {
       // Permitir requisições do frontend
-      const allowedOrigins = ["http://localhost:3000", "http://127.0.0.1:3001"];
+      const allowedOrigins = ["http://localhost:3000", "http://127.0.0.1:3000"];
 
       // Em desenvolvimento, permitir qualquer origem local
       if (env.NODE_ENV === "development") {

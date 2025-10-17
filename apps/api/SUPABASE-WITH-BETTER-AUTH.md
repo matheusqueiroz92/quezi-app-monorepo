@@ -7,23 +7,27 @@
 ## 🎯 Por que manter Better Auth?
 
 ### **1. Melhor Flexibilidade**
+
 - ✅ Controle total sobre a lógica de autenticação
 - ✅ Customização completa (campos personalizados como `userType`, `phone`)
 - ✅ Integração com seu código TypeScript existente
 - ✅ Suporte a múltiplos providers (Google, GitHub, etc.)
 
 ### **2. RBAC e Organizações**
+
 - ✅ Sistema de organizações já implementado
 - ✅ Controle granular de permissões
 - ✅ Multi-tenancy (salões, clínicas, etc.)
 - ❌ Supabase Auth não tem RBAC nativo tão flexível
 
 ### **3. Evitar Vendor Lock-in**
+
 - ✅ Migração futura facilitada
 - ✅ Não depender de features específicas do Supabase
 - ✅ Portabilidade entre clouds
 
 ### **4. Já está Implementado!**
+
 - ✅ 78 testes passando
 - ✅ Login/Registro funcionando
 - ✅ Sessões configuradas
@@ -78,11 +82,13 @@
 ### **Passo 2: Obter Database URL**
 
 No dashboard do Supabase:
+
 1. Settings → Database
 2. Connection string → URI
 3. Copiar a URL (já vem com SSL)
 
 Exemplo:
+
 ```
 postgresql://postgres.abcdefghijklmnop:SuaSenha123@aws-0-sa-east-1.pooler.supabase.com:5432/postgres
 ```
@@ -148,17 +154,18 @@ POST http://localhost:3333/api/v1/auth/sign-up/email
 
 ### **Better Auth + Supabase = Melhor dos Dois Mundos**
 
-| Feature | Better Auth | Supabase Auth |
-|---------|-------------|---------------|
-| **Customização** | ✅ Total | ⚠️ Limitada |
-| **RBAC Avançado** | ✅ Sim | ❌ Básico |
-| **Multi-tenancy** | ✅ Organizações | ❌ Não nativo |
-| **TypeScript-first** | ✅ Sim | ⚠️ Parcial |
-| **Campos Custom** | ✅ Fácil | ⚠️ Complexo |
-| **2FA** | ✅ Plugin | ✅ Nativo |
-| **OAuth** | ✅ Sim | ✅ Sim |
+| Feature              | Better Auth     | Supabase Auth |
+| -------------------- | --------------- | ------------- |
+| **Customização**     | ✅ Total        | ⚠️ Limitada   |
+| **RBAC Avançado**    | ✅ Sim          | ❌ Básico     |
+| **Multi-tenancy**    | ✅ Organizações | ❌ Não nativo |
+| **TypeScript-first** | ✅ Sim          | ⚠️ Parcial    |
+| **Campos Custom**    | ✅ Fácil        | ⚠️ Complexo   |
+| **2FA**              | ✅ Plugin       | ✅ Nativo     |
+| **OAuth**            | ✅ Sim          | ✅ Sim        |
 
 **Resultado:**
+
 - 🎯 Use **Better Auth** para toda a lógica de autenticação
 - 🗄️ Use **Supabase** apenas como banco PostgreSQL gerenciado
 - 🚀 Você tem o melhor dos dois mundos!
@@ -171,7 +178,7 @@ POST http://localhost:3333/api/v1/auth/sign-up/email
 
 ❌ **Supabase Auth** - Você usa Better Auth  
 ❌ **Auth Helpers** - Desnecessário  
-❌ **RLS (Row Level Security)** - Better Auth já controla permissões  
+❌ **RLS (Row Level Security)** - Better Auth já controla permissões
 
 ### **Recursos do Supabase que você VAI USAR:**
 
@@ -180,7 +187,7 @@ POST http://localhost:3333/api/v1/auth/sign-up/email
 ✅ **Table Editor** - Visualizar dados  
 ✅ **SQL Editor** - Queries manuais  
 ✅ **Monitoring** - Performance  
-✅ **Storage** (opcional) - Upload de fotos de perfil, imagens de serviços  
+✅ **Storage** (opcional) - Upload de fotos de perfil, imagens de serviços
 
 ---
 
@@ -256,12 +263,12 @@ npm install @supabase/supabase-js
 
 ```typescript
 // apps/api/src/lib/supabase.ts
-import { createClient } from '@supabase/supabase-js';
-import { env } from '../config/env';
+import { createClient } from "@supabase/supabase-js";
+import { env } from "../config/env";
 
 export const supabase = createClient(
-  env.SUPABASE_URL || '',
-  env.SUPABASE_ANON_KEY || ''
+  env.SUPABASE_URL || "",
+  env.SUPABASE_ANON_KEY || ""
 );
 ```
 
@@ -271,9 +278,9 @@ export const supabase = createClient(
 // Exemplo: upload de foto de perfil
 async function uploadProfilePhoto(userId: string, file: File) {
   const { data, error } = await supabase.storage
-    .from('profile-photos')
+    .from("profile-photos")
     .upload(`${userId}/avatar.jpg`, file);
-  
+
   if (error) throw error;
   return data.path;
 }
@@ -286,11 +293,13 @@ async function uploadProfilePhoto(userId: string, file: File) {
 ## 🆚 Comparação: Supabase Auth vs Better Auth
 
 ### **Quando usar Supabase Auth:**
+
 - ✅ App simples, sem customizações
 - ✅ Não precisa de RBAC avançado
 - ✅ Quer tudo pronto e rápido
 
 ### **Quando usar Better Auth (SEU CASO):**
+
 - ✅ Customizações complexas (userType, phone, etc.)
 - ✅ RBAC com organizações
 - ✅ Multi-tenancy (salões, clínicas)
@@ -304,18 +313,21 @@ async function uploadProfilePhoto(userId: string, file: File) {
 ## 📝 Checklist de Migração
 
 ### **Preparação:**
+
 - [ ] Backup do banco local (`pg_dump`)
 - [ ] Criar conta no Supabase
 - [ ] Criar projeto no Supabase
 - [ ] Copiar DATABASE_URL
 
 ### **Migração:**
+
 - [ ] Atualizar .env com nova DATABASE_URL
 - [ ] Executar `npx prisma migrate deploy`
 - [ ] Verificar tabelas no Supabase Table Editor
 - [ ] Testar API local conectando ao Supabase
 
 ### **Validação:**
+
 - [ ] Criar usuário via Better Auth
 - [ ] Fazer login via Better Auth
 - [ ] Verificar sessão criada no Supabase
@@ -323,6 +335,7 @@ async function uploadProfilePhoto(userId: string, file: File) {
 - [ ] Verificar dados no Table Editor
 
 ### **Produção (Futuro):**
+
 - [ ] Deploy da API (Vercel/Railway)
 - [ ] Atualizar BETTER_AUTH_URL para domínio de produção
 - [ ] Configurar CORS para produção
@@ -335,16 +348,19 @@ async function uploadProfilePhoto(userId: string, file: File) {
 ### **Conexões ao Banco:**
 
 **Desenvolvimento (Direct Connection):**
+
 ```
 postgresql://postgres.xxx:senha@db.xxx.supabase.co:5432/postgres
 ```
 
 **Produção (Connection Pooling - Recomendado):**
+
 ```
 postgresql://postgres.xxx:senha@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
 ```
 
 **Por quê pooling?**
+
 - ✅ Melhor performance
 - ✅ Suporta mais conexões simultâneas
 - ✅ Evita "too many connections"
@@ -362,21 +378,27 @@ postgresql://postgres.xxx:senha@aws-0-sa-east-1.pooler.supabase.com:6543/postgre
 ## 💡 FAQ
 
 ### **1. Preciso pagar pelo Supabase?**
+
 Não! O plano gratuito é suficiente para começar (500 MB).
 
 ### **2. Vou perder funcionalidades do Better Auth?**
+
 Não! Better Auth continua funcionando 100%.
 
 ### **3. O Supabase vai conflitar com Better Auth?**
+
 Não! Supabase será apenas o PostgreSQL. Better Auth gerencia a autenticação.
 
 ### **4. Posso migrar de volta para PostgreSQL local?**
+
 Sim! Basta mudar a DATABASE_URL. É PostgreSQL puro.
 
 ### **5. Preciso mudar código?**
+
 Não! Apenas a DATABASE_URL muda. O resto continua igual.
 
 ### **6. E se eu crescer além do plano gratuito?**
+
 Upgrade para Pro ($25/mês) com um clique. Sem downtime.
 
 ---
@@ -384,6 +406,7 @@ Upgrade para Pro ($25/mês) com um clique. Sem downtime.
 ## 🎯 Recomendação Final
 
 ### **USAR:**
+
 ```
 ✅ Supabase PostgreSQL (banco de dados)
 ✅ Better Auth (autenticação)
@@ -392,6 +415,7 @@ Upgrade para Pro ($25/mês) com um clique. Sem downtime.
 ```
 
 ### **NÃO USAR (por enquanto):**
+
 ```
 ❌ Supabase Auth (substituído por Better Auth)
 ❌ Supabase Realtime (pode adicionar depois)
@@ -418,6 +442,7 @@ npx prisma migrate deploy
 ```
 
 **Pronto! Agora você tem:**
+
 - ✅ Banco na nuvem (Supabase)
 - ✅ Backup automático
 - ✅ Better Auth funcionando
@@ -431,7 +456,7 @@ npx prisma migrate deploy
 
 ```typescript
 // Teria que refazer tudo
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(url, key);
 
@@ -446,7 +471,7 @@ const supabase = createClient(url, key);
 
 ```typescript
 // Continua exatamente como está!
-import { auth } from './lib/auth';
+import { auth } from "./lib/auth";
 
 // Apenas muda a DATABASE_URL
 // Tudo continua funcionando!
@@ -472,16 +497,19 @@ Ao usar **Better Auth + Supabase PostgreSQL**, você tem:
 ## 📈 Roadmap Recomendado
 
 ### **Agora (Desenvolvimento):**
+
 ```
 PostgreSQL Local + Better Auth
 ```
 
 ### **Beta/MVP (Primeiros usuários):**
+
 ```
 Supabase PostgreSQL (Free) + Better Auth
 ```
 
 ### **Crescimento (1.000+ usuários):**
+
 ```
 Supabase Pro ($25/mês) + Better Auth
 + Adicionar Supabase Storage (fotos)
@@ -489,6 +517,7 @@ Supabase Pro ($25/mês) + Better Auth
 ```
 
 ### **Escala (10.000+ usuários):**
+
 ```
 Supabase Pro/Enterprise + Better Auth
 + CDN para assets
@@ -501,11 +530,13 @@ Supabase Pro/Enterprise + Better Auth
 ## 🔐 Exemplo Completo de Integração
 
 ### **1. Database (Supabase)**
+
 ```env
 DATABASE_URL="postgresql://postgres.xxx:senha@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
 ```
 
 ### **2. Auth (Better Auth)**
+
 ```typescript
 // apps/api/src/lib/auth.ts
 export const auth = betterAuth({
@@ -517,12 +548,14 @@ export const auth = betterAuth({
 ```
 
 ### **3. API (Fastify)**
+
 ```typescript
 // apps/api/src/app.ts
 // Nada muda! Prisma conecta automaticamente
 ```
 
 ### **4. Frontend (Next.js)**
+
 ```typescript
 // apps/web/hooks/use-auth.tsx
 // Nada muda! Continua chamando sua API
@@ -537,6 +570,7 @@ export const auth = betterAuth({
 ### **Erro: "Could not connect to database"**
 
 **Solução:**
+
 1. Verificar se a senha está correta
 2. Verificar se o projeto Supabase está ativo (não pausado)
 3. Testar conexão direta:
@@ -549,6 +583,7 @@ psql "postgresql://postgres.xxx:senha@aws-0-sa-east-1.pooler.supabase.com:6543/p
 
 **Solução:**
 Supabase requer SSL. A URL do pooler já vem configurada. Se usar direct connection, adicione:
+
 ```
 ?sslmode=require
 ```
@@ -557,6 +592,7 @@ Supabase requer SSL. A URL do pooler já vem configurada. Se usar direct connect
 
 **Solução:**
 Use connection pooling (porta 6543 em vez de 5432):
+
 ```
 pooler.supabase.com:6543
 ```
@@ -584,4 +620,3 @@ pooler.supabase.com:6543
 > **Melhor combinação para o Quezi App!** 🚀
 
 **Você fez a escolha certa ao usar Better Auth. Agora só precisa hospedar o banco no Supabase!** 🎯
-
