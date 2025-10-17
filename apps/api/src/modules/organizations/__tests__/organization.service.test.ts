@@ -36,18 +36,23 @@ describe("OrganizationService", () => {
       const createdOrg = {
         id: "org-123",
         ...createData,
+        logoUrl: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.slugExists = jest.fn().mockResolvedValue(false);
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.create = jest.fn().mockResolvedValue(createdOrg);
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.addMember = jest.fn().mockResolvedValue({
         id: "member-123",
         organizationId: "org-123",
         userId: "user-123",
         role: "OWNER",
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       // Act
@@ -68,6 +73,7 @@ describe("OrganizationService", () => {
 
     it("deve lançar ConflictError se slug já existe", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.slugExists = jest.fn().mockResolvedValue(true);
 
       // Act & Assert
@@ -82,18 +88,22 @@ describe("OrganizationService", () => {
     const inviteData = {
       organizationId: "org-123",
       email: "novo@membro.com",
-      role: "member" as const,
+      role: "MEMBER" as const,
       invitedBy: "user-owner",
     };
 
     it("deve convidar membro com sucesso se for owner ou admin", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.getMemberRole = jest.fn().mockResolvedValue("OWNER");
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.createInvite = jest.fn().mockResolvedValue({
         id: "invite-123",
         ...inviteData,
-        status: "pending",
+        status: "PENDING",
+        expiresAt: new Date(),
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       // Act
@@ -110,6 +120,7 @@ describe("OrganizationService", () => {
 
     it("deve lançar ForbiddenError se não for owner ou admin", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.getMemberRole = jest.fn().mockResolvedValue("MEMBER");
 
       // Act & Assert
@@ -121,6 +132,7 @@ describe("OrganizationService", () => {
 
     it("deve lançar NotFoundError se usuário não pertence à org", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.getMemberRole = jest.fn().mockResolvedValue(null);
 
       // Act & Assert
@@ -134,16 +146,21 @@ describe("OrganizationService", () => {
     const updateData = {
       organizationId: "org-123",
       memberId: "member-456",
-      newRole: "admin" as const,
+      newRole: "ADMIN" as const,
       updatedBy: "user-owner",
     };
 
     it("deve atualizar role se for owner", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.getMemberRole = jest.fn().mockResolvedValue("OWNER");
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.updateMemberRole = jest.fn().mockResolvedValue({
         id: "member-456",
+        organizationId: "org-123",
+        userId: "user-123",
         role: "ADMIN",
+        createdAt: new Date(),
         updatedAt: new Date(),
       });
 
@@ -161,6 +178,7 @@ describe("OrganizationService", () => {
 
     it("deve lançar ForbiddenError se não for owner", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.getMemberRole = jest.fn().mockResolvedValue("ADMIN");
 
       // Act & Assert
@@ -173,6 +191,7 @@ describe("OrganizationService", () => {
   describe("checkPermission", () => {
     it("deve retornar true se usuário tem permissão", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.getMemberRole = jest.fn().mockResolvedValue("ADMIN");
 
       // Act
@@ -188,6 +207,7 @@ describe("OrganizationService", () => {
 
     it("deve retornar false se usuário não tem permissão", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.getMemberRole = jest.fn().mockResolvedValue("MEMBER");
 
       // Act
@@ -203,6 +223,7 @@ describe("OrganizationService", () => {
 
     it("deve retornar false se usuário não pertence à org", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockOrgRepository.getMemberRole = jest.fn().mockResolvedValue(null);
 
       // Act

@@ -1,13 +1,10 @@
+import { type Organization, type OrganizationRole } from "@prisma/client";
 import { OrganizationRepository } from "./organization.repository";
 import {
   ConflictError,
   NotFoundError,
   ForbiddenError,
 } from "../../utils/app-error";
-
-// Tipos temporários até regenerar Prisma Client
-type Organization = any;
-type OrganizationRole = "OWNER" | "ADMIN" | "MEMBER";
 
 /**
  * Service de Organizações

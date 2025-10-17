@@ -1,12 +1,11 @@
-// @ts-nocheck - Tipos do Prisma serão gerados após regenerar Client
-import type { Prisma } from "@prisma/client";
+import {
+  type Organization,
+  type OrganizationMember,
+  type OrganizationInvite,
+  type Prisma,
+  type OrganizationRole,
+} from "@prisma/client";
 import { prisma } from "../../lib/prisma";
-
-// Tipos temporários até regenerar Prisma Client
-type Organization = any;
-type OrganizationMember = any;
-type OrganizationInvite = any;
-type OrganizationRole = "OWNER" | "ADMIN" | "MEMBER";
 
 /**
  * Camada de Repositório - Organizations
@@ -16,8 +15,7 @@ export class OrganizationRepository {
   /**
    * Cria uma nova organização
    */
-  async create(data: any): Promise<Organization> {
-    // @ts-ignore - Tabela será criada após migration
+  async create(data: Prisma.OrganizationCreateInput): Promise<Organization> {
     return await prisma.organization.create({
       data,
       include: {
@@ -35,7 +33,6 @@ export class OrganizationRepository {
    * Busca organização por ID
    */
   async findById(id: string): Promise<Organization | null> {
-    // @ts-ignore - Tabela será criada após migration
     return await prisma.organization.findUnique({
       where: { id },
       include: {
@@ -53,7 +50,6 @@ export class OrganizationRepository {
    * Verifica se slug já existe
    */
   async slugExists(slug: string, excludeId?: string): Promise<boolean> {
-    // @ts-ignore - Tabela será criada após migration
     const org = await prisma.organization.findUnique({
       where: { slug },
       select: { id: true },
@@ -73,7 +69,6 @@ export class OrganizationRepository {
     userId: string;
     role: OrganizationRole;
   }): Promise<OrganizationMember> {
-    // @ts-ignore - Tabela será criada após migration
     return await prisma.organizationMember.create({
       data,
       include: {
@@ -90,7 +85,6 @@ export class OrganizationRepository {
     organizationId: string,
     userId: string
   ): Promise<OrganizationRole | null> {
-    // @ts-ignore - Tabela será criada após migration
     const member = await prisma.organizationMember.findUnique({
       where: {
         organizationId_userId: {
@@ -116,7 +110,6 @@ export class OrganizationRepository {
     invitedBy: string;
     expiresAt: Date;
   }): Promise<OrganizationInvite> {
-    // @ts-ignore - Tabela será criada após migration
     return await prisma.organizationInvite.create({
       data,
       include: {
@@ -133,7 +126,6 @@ export class OrganizationRepository {
     memberId: string,
     role: OrganizationRole
   ): Promise<OrganizationMember> {
-    // @ts-ignore - Tabela será criada após migration
     return await prisma.organizationMember.update({
       where: { id: memberId },
       data: { role },
@@ -148,7 +140,6 @@ export class OrganizationRepository {
    * Lista organizações de um usuário
    */
   async findUserOrganizations(userId: string): Promise<Organization[]> {
-    // @ts-ignore - Tabela será criada após migration
     const memberships = await prisma.organizationMember.findMany({
       where: { userId },
       include: {
@@ -175,7 +166,6 @@ export class OrganizationRepository {
     organizationId: string,
     userId: string
   ): Promise<OrganizationMember> {
-    // @ts-ignore - Tabela será criada após migration
     return await prisma.organizationMember.delete({
       where: {
         organizationId_userId: {

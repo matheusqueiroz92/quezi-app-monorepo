@@ -28,11 +28,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     // Converte requisição Fastify para formato do Better Auth
     const response = await auth.handler({
       method: request.method,
-      path: request.url,
-      headers: request.headers as Record<string, string>,
-      body: request.body,
-      query: request.query as Record<string, string>,
-    });
+      headers: request.headers as any,
+      body: request.body as any,
+      query: request.query as any,
+    } as any);
 
     // Configura status e headers
     reply.status(response.status);
