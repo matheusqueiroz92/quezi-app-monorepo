@@ -90,19 +90,8 @@ export const auth = betterAuth({
   advanced: {
     // Usar BCrypt para hash de senhas
     useSecureCookies: env.NODE_ENV === "production",
-    cookieName: "quezi_session",
     crossSubDomainCookies: {
       enabled: false,
-    },
-  },
-
-  // Hooks para adicionar campos customizados
-  hooks: {
-    user: {
-      // Hook executado após criar um usuário
-      created: async ({ user }: any) => {
-        console.log("✅ Usuário criado via Better Auth:", user.email);
-      },
     },
   },
 
