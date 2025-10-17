@@ -35,7 +35,9 @@ describe("AuthService", () => {
     it("deve registrar novo usuário com senha hash", async () => {
       // Arrange
       const hashedPassword = "$2b$10$hashedpassword";
+      // @ts-ignore - Mock do Jest
       mockUserRepository.emailExists = jest.fn().mockResolvedValue(false);
+      // @ts-ignore - Mock do Jest
       mockUserRepository.create = jest.fn().mockResolvedValue({
         id: "123",
         email: registerData.email,
@@ -48,6 +50,7 @@ describe("AuthService", () => {
         updatedAt: new Date(),
         professionalProfile: null,
       });
+      // @ts-ignore - Mock do Jest
       (hashPassword as jest.Mock).mockResolvedValue(hashedPassword);
 
       // Act
@@ -71,6 +74,7 @@ describe("AuthService", () => {
 
     it("deve lançar ConflictError se email já existe", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockUserRepository.emailExists = jest.fn().mockResolvedValue(true);
 
       // Act & Assert
@@ -103,9 +107,12 @@ describe("AuthService", () => {
 
     it("deve fazer login com credenciais corretas", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockUserRepository.findByEmail = jest.fn().mockResolvedValue(userFromDb);
+      // @ts-ignore - Mock do Jest
       const mockVerifyPassword = jest.requireMock("../../../utils/password")
         .verifyPassword as jest.Mock;
+      // @ts-ignore - Mock do Jest
       mockVerifyPassword.mockResolvedValue(true);
 
       // Act
@@ -125,6 +132,7 @@ describe("AuthService", () => {
 
     it("deve lançar UnauthorizedError se usuário não existe", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockUserRepository.findByEmail = jest.fn().mockResolvedValue(null);
 
       // Act & Assert
@@ -138,9 +146,12 @@ describe("AuthService", () => {
 
     it("deve lançar UnauthorizedError se senha incorreta", async () => {
       // Arrange
+      // @ts-ignore - Mock do Jest
       mockUserRepository.findByEmail = jest.fn().mockResolvedValue(userFromDb);
+      // @ts-ignore - Mock do Jest
       const mockVerifyPassword = jest.requireMock("../../../utils/password")
         .verifyPassword as jest.Mock;
+      // @ts-ignore - Mock do Jest
       mockVerifyPassword.mockResolvedValue(false);
 
       // Act & Assert

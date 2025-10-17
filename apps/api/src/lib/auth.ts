@@ -64,39 +64,18 @@ export const auth = betterAuth({
   plugins: [
     // Plugin de organizações e RBAC
     organization({
-      async sendInvitationEmail(data) {
+      async sendInvitationEmail(data: any) {
         // TODO: Implementar envio de email de convite
         console.log("📧 Convite de organização:", {
           email: data.email,
-          organizationName: data.organization.name,
-          inviterName: data.inviter.name,
+          organizationName: data.organization?.name || "Organização",
+          inviterEmail: data.inviter?.email || "Convidador",
         });
-      },
-
-      // Roles disponíveis nas organizações
-      roles: {
-        admin: {
-          name: "Admin",
-          description: "Administrador com acesso total",
-        },
-        member: {
-          name: "Member",
-          description: "Membro com acesso limitado",
-        },
-        owner: {
-          name: "Owner",
-          description: "Dono da organização",
-        },
       },
     }),
 
     // Plugin de 2FA
-    twoFactor({
-      // Configuração de TOTP (Google Authenticator, etc)
-      totp: {
-        enabled: true,
-      },
-    }),
+    twoFactor(),
   ],
 
   // Configurações avançadas
@@ -119,7 +98,7 @@ export const auth = betterAuth({
   // Callbacks
   callbacks: {
     // Callback após criar usuário
-    async onSignUp(user) {
+    async onSignUp(user: any) {
       console.log("✅ Novo usuário registrado:", {
         id: user.id,
         email: user.email,
@@ -130,7 +109,7 @@ export const auth = betterAuth({
     },
 
     // Callback após login
-    async onSignIn(user) {
+    async onSignIn(user: any) {
       console.log("🔐 Usuário fez login:", {
         id: user.id,
         email: user.email,
@@ -143,5 +122,3 @@ export const auth = betterAuth({
  * Tipos do Better Auth para uso no código
  */
 export type Auth = typeof auth;
-export type Session = Awaited<ReturnType<typeof auth.api.getSession>>;
-export type User = Session["user"];

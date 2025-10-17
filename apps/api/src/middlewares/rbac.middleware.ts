@@ -1,7 +1,9 @@
 import { type FastifyRequest, type FastifyReply } from "fastify";
-import { type OrganizationRole } from "@prisma/client";
 import { OrganizationService } from "../modules/organizations/organization.service";
 import { ForbiddenError, UnauthorizedError } from "../utils/app-error";
+
+// Tipo de roles de organização
+type OrganizationRole = "OWNER" | "ADMIN" | "MEMBER";
 
 /**
  * Middleware RBAC (Role-Based Access Control)

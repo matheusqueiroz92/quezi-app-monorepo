@@ -42,6 +42,10 @@ export async function requireAuth(
 
   const token = parts[1];
 
+  if (!token) {
+    throw new UnauthorizedError("Token não fornecido");
+  }
+
   // Valida sessão/token
   const session = await validateSession(token);
 

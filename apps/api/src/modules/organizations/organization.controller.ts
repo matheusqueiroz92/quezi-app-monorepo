@@ -1,4 +1,8 @@
-import { type FastifyInstance, type FastifyRequest, type FastifyReply } from "fastify";
+import {
+  type FastifyInstance,
+  type FastifyRequest,
+  type FastifyReply,
+} from "fastify";
 import { OrganizationService } from "./organization.service";
 import {
   createOrganizationSchema,
@@ -65,7 +69,8 @@ export class OrganizationController {
         preHandler: requireAdmin,
         schema: {
           tags: ["organizations"],
-          description: "Convida membro para organização (requer OWNER ou ADMIN)",
+          description:
+            "Convida membro para organização (requer OWNER ou ADMIN)",
           security: [{ bearerAuth: [] }],
           body: {
             type: "object",
@@ -210,10 +215,10 @@ export class OrganizationController {
       return;
     }
 
-    const organizations =
-      await this.organizationService.getUserOrganizations(request.user.id);
+    const organizations = await this.organizationService.getUserOrganizations(
+      request.user.id
+    );
 
     reply.status(200).send(organizations);
   }
 }
-
