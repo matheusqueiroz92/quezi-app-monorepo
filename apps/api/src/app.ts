@@ -35,8 +35,30 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // CORS
   await app.register(cors, {
-    origin: env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      // Permitir requisições do frontend
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+      ];
+      
+      // Em desenvolvimento, permitir qualquer origem local
+      if (env.NODE_ENV === "development") {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      } else {
+        // Em produção, usar apenas origens permitidas
+        callback(null, allowedOrigins.includes(origin || ""));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   });
 
   // Swagger - Documentação da API

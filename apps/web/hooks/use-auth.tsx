@@ -40,7 +40,8 @@ export function useAuth() {
         setIsLoading(true);
         setError(null);
 
-        const response = await api.post<AuthResponse>("/auth/sign-in/email", {
+        // Better Auth usa um formato específico
+        const response = await api.post("/auth/sign-in/email", {
           email,
           password,
         });

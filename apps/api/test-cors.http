@@ -1,0 +1,24 @@
+### Teste CORS - Health Check
+GET http://localhost:3333/health
+
+### Teste CORS - Auth Me (sem auth)
+GET http://localhost:3333/api/v1/auth/me
+
+### Teste CORS - Login
+POST http://localhost:3333/api/v1/auth/sign-in/email
+Content-Type: application/json
+
+{
+  "email": "teste@teste.com",
+  "password": "12345678"
+}
+
+### Teste CORS - Register
+POST http://localhost:3333/api/v1/auth/sign-up/email
+Content-Type: application/json
+
+{
+  "email": "teste@teste.com",
+  "password": "12345678",
+  "name": "Usuário Teste"
+}
