@@ -46,10 +46,11 @@ export function useAuth() {
           password,
         });
 
-        const { user: userData, session } = response.data;
+        // Better Auth retorna { token, user }, não { user, session: { token } }
+        const { user: userData, token } = response.data;
 
         // Armazenar token
-        localStorage.setItem("quezi_token", session.token);
+        localStorage.setItem("quezi_token", token);
 
         // Atualizar estado
         setUser(userData);
@@ -78,15 +79,13 @@ export function useAuth() {
         setIsLoading(true);
         setError(null);
 
-        const response = await api.post<AuthResponse>(
-          "/auth/sign-up/email",
-          data
-        );
+        const response = await api.post<any>("/auth/sign-up/email", data);
 
-        const { user: userData, session } = response.data;
+        // Better Auth retorna { token, user }, não { user, session: { token } }
+        const { user: userData, token } = response.data;
 
         // Armazenar token
-        localStorage.setItem("quezi_token", session.token);
+        localStorage.setItem("quezi_token", token);
 
         // Atualizar estado
         setUser(userData);

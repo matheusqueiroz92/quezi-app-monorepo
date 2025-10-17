@@ -55,15 +55,17 @@ enum InviteStatus {
 // ========================================
 
 model User {
-  id              String   @id @default(uuid()) @db.Uuid
-  email           String   @unique
-  passwordHash    String?
-  name            String
-  phone           String?
-  userType        UserType
-  isEmailVerified Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String?
+  name             String
+  phone            String?
+  userType         UserType @default(CLIENT)
+  isEmailVerified  Boolean  @default(false)
+  emailVerified    Boolean  @default(false)
+  twoFactorEnabled Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relações
   professionalProfile    ProfessionalProfile?   // 1:1, opcional (apenas para UserType: PROFESSIONAL)
@@ -73,12 +75,68 @@ model User {
   ownedOrganizations     Organization[]         @relation("OrganizationOwner")
   organizationMemberships OrganizationMember[]
   sentInvites            OrganizationInvite[]   @relation("InviteSender")
+  
+  // Better Auth
+  accounts               Account[]
+  sessions               Session[]
 
   @@map("users")
 }
 
+// ========================================
+// BETTER AUTH MODELS
+// ========================================
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  token     String   @unique
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  accountId    String    @map("account_id")
+  providerId   String    @map("provider_id")
+  accessToken  String?   @map("access_token")
+  refreshToken String?   @map("refresh_token")
+  idToken      String?   @map("id_token")
+  expiresAt    DateTime? @map("expires_at")
+  password     String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([identifier, value])
+  @@map("verifications")
+}
+
 model ProfessionalProfile {
-  userId        String      @id @db.Uuid
+  userId        String      @id
   bio           String?
   city          String
   address       String?
@@ -97,7 +155,7 @@ model ProfessionalProfile {
 }
 
 model Category {
-  id        String    @id @default(uuid()) @db.Uuid
+  id        String    @id @default(cuid())
   name      String    @unique
   slug      String    @unique
   createdAt DateTime  @default(now())
@@ -108,9 +166,9 @@ model Category {
 }
 
 model Service {
-  id              String           @id @default(uuid()) @db.Uuid
-  professionalId  String           @db.Uuid
-  categoryId      String           @db.Uuid
+  id              String           @id @default(cuid())
+  professionalId  String
+  categoryId      String
   name            String
   description     String?
   price           Decimal          @db.Money
@@ -128,10 +186,10 @@ model Service {
 }
 
 model Appointment {
-  id            String            @id @default(uuid()) @db.Uuid
-  clientId      String            @db.Uuid
-  professionalId String           @db.Uuid
-  serviceId     String            @db.Uuid
+  id            String            @id @default(cuid())
+  clientId      String
+  professionalId String
+  serviceId     String
   scheduledDate DateTime
   status        AppointmentStatus @default(PENDING)
   locationType  ServiceMode // NOVO CAMPO: LOCAL_PROPRIO ou DOMICILIO (Tipo de ServiceMode)
@@ -152,10 +210,10 @@ model Appointment {
 }
 
 model Review {
-  id             String   @id @default(uuid()) @db.Uuid
-  appointmentId  String   @unique @db.Uuid // 1:1, única por agendamento
-  reviewerId     String   @db.Uuid
-  professionalId String   @db.Uuid
+  id             String   @id @default(cuid())
+  appointmentId  String   @unique // 1:1, única por agendamento
+  reviewerId     String
+  professionalId String
   rating         Int // Será validado na aplicação: rating > 0 AND rating <= 5
   comment        String?
   createdAt      DateTime @default(now())
@@ -173,11 +231,11 @@ model Review {
 // ========================================
 
 model Organization {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(cuid())
   name        String
   slug        String   @unique
   description String?
-  ownerId     String   @db.Uuid
+  ownerId     String
   logoUrl     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -191,9 +249,9 @@ model Organization {
 }
 
 model OrganizationMember {
-  id             String           @id @default(uuid()) @db.Uuid
-  organizationId String           @db.Uuid
-  userId         String           @db.Uuid
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
   role           OrganizationRole
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -208,11 +266,11 @@ model OrganizationMember {
 }
 
 model OrganizationInvite {
-  id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @db.Uuid
+  id             String       @id @default(cuid())
+  organizationId String
   email          String
   role           OrganizationRole
-  invitedBy      String       @db.Uuid
+  invitedBy      String
   status         InviteStatus @default(PENDING)
   expiresAt      DateTime // Convite expira em 7 dias
   createdAt      DateTime     @default(now())

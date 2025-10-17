@@ -48,7 +48,9 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       // ========================================
       // MÓDULO ORGANIZATIONS (RBAC)
       // ========================================
-      await apiRoutes.register(organizationRoutes, { prefix: "/organizations" });
+      await apiRoutes.register(organizationRoutes, {
+        prefix: "/organizations",
+      });
 
       // ========================================
       // MÓDULO SERVICES

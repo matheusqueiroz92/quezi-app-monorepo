@@ -41,10 +41,18 @@ export const auth = betterAuth({
   },
 
   // URLs da aplicação
-  baseURL:
-    env.NODE_ENV === "production"
-      ? "https://your-production-url.com"
-      : `http://${env.HOST}:${env.PORT}`,
+  baseURL: env.BETTER_AUTH_URL || "http://localhost:3333",
+
+  // Prefixo das rotas (importante: deve corresponder ao prefixo no routes.ts)
+  basePath: "/api/v1/auth",
+
+  // Origens confiáveis (frontend)
+  trustedOrigins: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+  ],
 
   // Configuração de social login
   socialProviders: {
@@ -85,6 +93,16 @@ export const auth = betterAuth({
     cookieName: "quezi_session",
     crossSubDomainCookies: {
       enabled: false,
+    },
+  },
+
+  // Hooks para adicionar campos customizados
+  hooks: {
+    user: {
+      // Hook executado após criar um usuário
+      created: async ({ user }: any) => {
+        console.log("✅ Usuário criado via Better Auth:", user.email);
+      },
     },
   },
 

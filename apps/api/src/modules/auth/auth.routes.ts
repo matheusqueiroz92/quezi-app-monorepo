@@ -25,27 +25,76 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   // Registra todos os handlers do Better Auth
   // Better Auth expõe automaticamente os endpoints acima
   app.all("/auth/*", async (request, reply) => {
-    // Converte requisição Fastify para formato do Better Auth
-    const response = await auth.handler({
-      method: request.method,
-      headers: request.headers as any,
-      body: request.body as any,
-      query: request.query as any,
-    } as any);
+    try {
+      // Constrói a URL completa (Better Auth precisa da URL completa, não apenas do path)
+      const protocol = request.protocol;
+      const host = request.hostname;
+      const port = request.port || 3333;
+      const fullUrl = `${protocol}://${host}:${port}${request.url}`;
 
-    // Configura status e headers
-    reply.status(response.status);
+      console.log("🔐 Better Auth Request:", {
+        method: request.method,
+        originalUrl: request.url,
+        fullUrl,
+        body: request.body,
+      });
 
-    if (response.headers) {
-      Object.entries(response.headers).forEach(([key, value]) => {
+      // Converte headers do Fastify para Headers do Web API
+      const webHeaders = new Headers();
+      for (const [key, value] of Object.entries(request.headers)) {
         if (value) {
-          reply.header(key, value);
+          webHeaders.set(
+            key,
+            Array.isArray(value) ? value.join(", ") : String(value)
+          );
         }
+      }
+
+      // Converte requisição Fastify para formato do Better Auth
+      const response = await auth.handler(
+        new Request(fullUrl, {
+          method: request.method,
+          headers: webHeaders,
+          body:
+            request.method !== "GET" && request.method !== "HEAD"
+              ? JSON.stringify(request.body)
+              : undefined,
+        })
+      );
+
+      // Lê o body da resposta (Response do Web API)
+      const responseBody = await response.text();
+
+      console.log("✅ Better Auth Response:", {
+        status: response.status,
+        hasBody: !!responseBody,
+      });
+
+      // Configura status e headers
+      reply.status(response.status);
+
+      // Copia headers da resposta
+      response.headers.forEach((value, key) => {
+        reply.header(key, value);
+      });
+
+      // Se o body for JSON, parse e retorna
+      if (responseBody) {
+        try {
+          return JSON.parse(responseBody);
+        } catch {
+          return responseBody;
+        }
+      }
+
+      return reply.send();
+    } catch (error) {
+      console.error("❌ Erro no Better Auth handler:", error);
+      return reply.status(500).send({
+        error: "Internal Server Error",
+        message: "Erro interno do servidor de autenticação",
       });
     }
-
-    // Retorna resposta
-    return response.body;
   });
 
   // Endpoint customizado para obter perfil do usuário autenticado
