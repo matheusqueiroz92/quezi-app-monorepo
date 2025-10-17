@@ -3,15 +3,6 @@ import {
   servicesController,
   categoriesController,
 } from "./services.controller";
-import {
-  createServiceSchema,
-  updateServiceSchema,
-  getServicesQuerySchema,
-  serviceParamsSchema,
-  createCategorySchema,
-  updateCategorySchema,
-  categoryParamsSchema,
-} from "./services.schema";
 import { authMiddleware } from "../../middlewares/auth.middleware";
 
 /**
@@ -62,7 +53,18 @@ export async function servicesRoutes(
         tags: ["services"],
         summary: "Cria um novo serviço",
         description: "Cria um novo serviço para o profissional autenticado",
-        body: createServiceSchema,
+        body: {
+          type: "object",
+          required: ["name", "price", "priceType", "durationMinutes", "categoryId"],
+          properties: {
+            name: { type: "string", minLength: 1, maxLength: 100 },
+            description: { type: "string", maxLength: 500 },
+            price: { type: "number", minimum: 0.01, maximum: 999999.99 },
+            priceType: { type: "string", enum: ["FIXED", "HOURLY"] },
+            durationMinutes: { type: "number", minimum: 15, maximum: 480 },
+            categoryId: { type: "string", minLength: 1 },
+          },
+        },
         response: {
           201: {
             type: "object",
@@ -82,7 +84,6 @@ export async function servicesRoutes(
         tags: ["services"],
         summary: "Lista serviços",
         description: "Lista serviços com filtros e paginação",
-        querystring: getServicesQuerySchema,
         response: {
           200: {
             type: "object",
@@ -115,7 +116,13 @@ export async function servicesRoutes(
         tags: ["services"],
         summary: "Busca serviço por ID",
         description: "Retorna um serviço específico com suas relações",
-        params: serviceParamsSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -143,8 +150,24 @@ export async function servicesRoutes(
         tags: ["services"],
         summary: "Atualiza um serviço",
         description: "Atualiza um serviço do profissional autenticado",
-        params: serviceParamsSchema,
-        body: updateServiceSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string", minLength: 1, maxLength: 100 },
+            description: { type: "string", maxLength: 500 },
+            price: { type: "number", minimum: 0.01, maximum: 999999.99 },
+            priceType: { type: "string", enum: ["FIXED", "HOURLY"] },
+            durationMinutes: { type: "number", minimum: 15, maximum: 480 },
+            categoryId: { type: "string", minLength: 1 },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -179,7 +202,13 @@ export async function servicesRoutes(
         tags: ["services"],
         summary: "Remove um serviço",
         description: "Remove um serviço do profissional autenticado",
-        params: serviceParamsSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
         response: {
           204: {
             type: "null",
@@ -225,7 +254,14 @@ export async function categoriesRoutes(
         tags: ["categories"],
         summary: "Cria uma nova categoria",
         description: "Cria uma nova categoria de serviços",
-        body: createCategorySchema,
+        body: {
+          type: "object",
+          required: ["name", "slug"],
+          properties: {
+            name: { type: "string", minLength: 1, maxLength: 50 },
+            slug: { type: "string", minLength: 1, maxLength: 50, pattern: "^[a-z0-9-]+$" },
+          },
+        },
         response: {
           201: {
             type: "object",
@@ -314,7 +350,13 @@ export async function categoriesRoutes(
         tags: ["categories"],
         summary: "Busca categoria por ID",
         description: "Retorna uma categoria específica",
-        params: categoryParamsSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -342,8 +384,20 @@ export async function categoriesRoutes(
         tags: ["categories"],
         summary: "Atualiza uma categoria",
         description: "Atualiza uma categoria existente",
-        params: categoryParamsSchema,
-        body: updateCategorySchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string", minLength: 1, maxLength: 50 },
+            slug: { type: "string", minLength: 1, maxLength: 50, pattern: "^[a-z0-9-]+$" },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -378,7 +432,13 @@ export async function categoriesRoutes(
         tags: ["categories"],
         summary: "Remove uma categoria",
         description: "Remove uma categoria (se não tiver serviços associados)",
-        params: categoryParamsSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
         response: {
           204: {
             type: "null",
