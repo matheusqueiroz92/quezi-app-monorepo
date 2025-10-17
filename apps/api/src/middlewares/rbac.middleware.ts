@@ -7,7 +7,7 @@ type OrganizationRole = "OWNER" | "ADMIN" | "MEMBER";
 
 /**
  * Middleware RBAC (Role-Based Access Control)
- * 
+ *
  * Verifica se usuário autenticado tem permissão na organização
  */
 
@@ -15,7 +15,10 @@ type OrganizationRole = "OWNER" | "ADMIN" | "MEMBER";
  * Cria middleware que requer determinadas roles
  */
 export function requireOrganizationRole(allowedRoles: OrganizationRole[]) {
-  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+  return async (
+    request: FastifyRequest,
+    reply: FastifyReply
+  ): Promise<void> => {
     // Verifica se usuário está autenticado
     if (!request.user) {
       throw new UnauthorizedError("Usuário não autenticado");
@@ -64,4 +67,3 @@ export const requireMember = requireOrganizationRole([
   "ADMIN",
   "MEMBER",
 ]);
-
