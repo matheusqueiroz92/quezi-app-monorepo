@@ -8,7 +8,9 @@ import { authMiddleware } from "../../middlewares/auth.middleware";
 /**
  * Rotas de serviços oferecidos
  */
-export async function offeredServicesRoutes(app: FastifyInstance): Promise<void> {
+export async function offeredServicesRoutes(
+  app: FastifyInstance
+): Promise<void> {
   // ========================================
   // ROTAS DE SERVIÇOS
   // ========================================
@@ -39,7 +41,9 @@ export async function offeredServicesRoutes(app: FastifyInstance): Promise<void>
         },
       },
     },
-    offeredServicesController.getMostPopularServices.bind(offeredServicesController)
+    offeredServicesController.getMostPopularServices.bind(
+      offeredServicesController
+    )
   );
 
   // POST /services
@@ -77,7 +81,7 @@ export async function offeredServicesRoutes(app: FastifyInstance): Promise<void>
         },
       },
     },
-    offeredServicesController.createService.bind(servicesController)
+    offeredServicesController.createService.bind(offeredServicesController) as any
   );
 
   // GET /services
@@ -109,7 +113,7 @@ export async function offeredServicesRoutes(app: FastifyInstance): Promise<void>
         },
       },
     },
-    offeredServicesController.getServices.bind(servicesController)
+    offeredServicesController.getServices.bind(offeredServicesController)
   );
 
   // GET /services/:id
@@ -142,7 +146,7 @@ export async function offeredServicesRoutes(app: FastifyInstance): Promise<void>
         },
       },
     },
-    offeredServicesController.getServiceById.bind(servicesController)
+    offeredServicesController.getServiceById.bind(offeredServicesController)
   );
 
   // PUT /services/:id
@@ -194,7 +198,7 @@ export async function offeredServicesRoutes(app: FastifyInstance): Promise<void>
         },
       },
     },
-    offeredServicesController.updateService.bind(servicesController)
+    offeredServicesController.updateService.bind(offeredServicesController) as any
   );
 
   // DELETE /services/:id
@@ -235,7 +239,7 @@ export async function offeredServicesRoutes(app: FastifyInstance): Promise<void>
         },
       },
     },
-    offeredServicesController.deleteService.bind(servicesController)
+    offeredServicesController.deleteService.bind(offeredServicesController) as any
   );
 }
 
@@ -284,7 +288,7 @@ export async function categoriesRoutes(app: FastifyInstance): Promise<void> {
         },
       },
     },
-    categoriesController.createCategory.bind(categoriesController)
+    categoriesController.createCategory.bind(categoriesController) as any
   );
 
   // GET /categories
@@ -432,7 +436,7 @@ export async function categoriesRoutes(app: FastifyInstance): Promise<void> {
         },
       },
     },
-    categoriesController.updateCategory.bind(categoriesController)
+    categoriesController.updateCategory.bind(categoriesController) as any
   );
 
   // DELETE /categories/:id
@@ -473,6 +477,6 @@ export async function categoriesRoutes(app: FastifyInstance): Promise<void> {
         },
       },
     },
-    categoriesController.deleteCategory.bind(categoriesController)
+    categoriesController.deleteCategory.bind(categoriesController) as any
   );
 }

@@ -6,7 +6,7 @@ import { ServicePriceType } from "@prisma/client";
  */
 export const createServiceSchema = z.object({
   name: z
-    .string({ required_error: "Nome do serviço é obrigatório" })
+    .string()
     .min(1, "Nome do serviço é obrigatório")
     .max(100, "Nome do serviço deve ter no máximo 100 caracteres"),
 
@@ -20,9 +20,7 @@ export const createServiceSchema = z.object({
     .positive("Preço deve ser um valor positivo")
     .max(999999.99, "Preço muito alto"),
 
-  priceType: z.nativeEnum(ServicePriceType, {
-    errorMap: () => ({ message: "Tipo de preço deve ser FIXED ou HOURLY" }),
-  }),
+  priceType: z.nativeEnum(ServicePriceType),
 
   durationMinutes: z
     .number()
