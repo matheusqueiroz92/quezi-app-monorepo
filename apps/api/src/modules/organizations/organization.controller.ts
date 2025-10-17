@@ -174,9 +174,7 @@ export class OrganizationController {
     const data = inviteMemberSchema.parse(request.body);
 
     const invite = await this.organizationService.inviteMember({
-      organizationId: data.organizationId,
-      email: data.email,
-      role: data.role.toUpperCase() as any, // Converte para OWNER/ADMIN/MEMBER
+      ...data,
       invitedBy: request.user.id,
     });
 
@@ -198,9 +196,7 @@ export class OrganizationController {
     const data = updateMemberRoleSchema.parse(request.body);
 
     const updatedMember = await this.organizationService.updateMemberRole({
-      organizationId: data.organizationId,
-      memberId: data.memberId,
-      newRole: data.role.toUpperCase() as any, // Converte para OWNER/ADMIN/MEMBER
+      ...data,
       updatedBy: request.user.id,
     });
 
