@@ -14,16 +14,15 @@ async function start() {
     });
 
     console.log(`
-╔═══════════════════════════════════════════════════════╗
-║                                                       ║
-║   🚀 Servidor Quezi API iniciado com sucesso!        ║
-║                                                       ║
-║   🌍 URL: http://${env.HOST}:${env.PORT}                      ║
-║   📚 Docs: http://${env.HOST}:${env.PORT}/docs                ║
-║   🏥 Health: http://${env.HOST}:${env.PORT}/health            ║
-║   🔧 Ambiente: ${env.NODE_ENV}                     ║
-║                                                       ║
-╚═══════════════════════════════════════════════════════╝
+   ========================================================
+   🚀 Servidor Quezi API iniciado com sucesso!
+   ========================================================
+                                                     
+   🌍 URL: http://${env.HOST}:${env.PORT}         
+   📚 Docs: http://${env.HOST}:${env.PORT}/docs           
+   🏥 Health: http://${env.HOST}:${env.PORT}/health 
+   🔧 Ambiente: ${env.NODE_ENV}                        
+   ========================================================
     `);
   } catch (error) {
     console.error("❌ Erro ao iniciar o servidor:", error);

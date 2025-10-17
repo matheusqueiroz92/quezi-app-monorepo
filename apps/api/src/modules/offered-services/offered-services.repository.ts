@@ -5,12 +5,12 @@ import type {
   UpdateServiceInput,
   GetServicesQuery,
   PaginatedResponse,
-} from "./services.schema";
+} from "./offered-services.schema";
 
 /**
- * Repository para operações de banco de dados relacionadas a serviços
+ * Repository para operações de banco de dados relacionadas a serviços oferecidos
  */
-export class ServicesRepository {
+export class OfferedServicesRepository {
   /**
    * Cria um novo serviço
    */
@@ -351,5 +351,5 @@ export class CategoriesRepository {
 }
 
 // Instâncias dos repositories
-export const servicesRepository = new ServicesRepository();
+export const offeredServicesRepository = new OfferedServicesRepository();
 export const categoriesRepository = new CategoriesRepository();

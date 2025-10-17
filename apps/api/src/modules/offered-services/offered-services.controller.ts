@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { servicesService } from "./services.service";
+import { offeredServicesService } from "./offered-services.service";
 import type {
   CreateServiceInput,
   UpdateServiceInput,
@@ -8,12 +8,12 @@ import type {
   CreateCategoryInput,
   UpdateCategoryInput,
   CategoryParams,
-} from "./services.schema";
+} from "./offered-services.schema";
 
 /**
- * Controller para gerenciar serviços
+ * Controller para gerenciar serviços oferecidos
  */
-export class ServicesController {
+export class OfferedServicesController {
   /**
    * POST /services
    * Cria um novo serviço
@@ -25,7 +25,7 @@ export class ServicesController {
     // @ts-ignore - user será adicionado pelo middleware de autenticação
     const professionalId = request.user?.id;
 
-    const service = await servicesService.createService(
+    const service = await offeredServicesService.createService(
       professionalId,
       request.body
     );
@@ -41,7 +41,7 @@ export class ServicesController {
     request: FastifyRequest<{ Params: ServiceParams }>,
     reply: FastifyReply
   ) {
-    const service = await servicesService.getServiceById(request.params.id);
+    const service = await offeredServicesService.getServiceById(request.params.id);
     return reply.send(service);
   }
 
@@ -53,7 +53,7 @@ export class ServicesController {
     request: FastifyRequest<{ Querystring: GetServicesQuery }>,
     reply: FastifyReply
   ) {
-    const services = await servicesService.getServices(
+    const services = await offeredServicesService.getServices(
       request.query as GetServicesQuery
     );
     return reply.send(services);
@@ -70,7 +70,7 @@ export class ServicesController {
     // @ts-ignore - user será adicionado pelo middleware de autenticação
     const professionalId = request.user?.id;
 
-    const service = await servicesService.updateService(
+    const service = await offeredServicesService.updateService(
       request.params.id,
       professionalId,
       request.body
@@ -90,7 +90,7 @@ export class ServicesController {
     // @ts-ignore - user será adicionado pelo middleware de autenticação
     const professionalId = request.user?.id;
 
-    await servicesService.deleteService(request.params.id, professionalId);
+    await offeredServicesService.deleteService(request.params.id, professionalId);
 
     return reply.status(204).send();
   }
@@ -104,7 +104,7 @@ export class ServicesController {
     reply: FastifyReply
   ) {
     const limit = request.query.limit ? parseInt(request.query.limit) : 10;
-    const services = await servicesService.getMostPopularServices(limit);
+    const services = await offeredServicesService.getMostPopularServices(limit);
     return reply.send(services);
   }
 }
@@ -121,7 +121,7 @@ export class CategoriesController {
     request: FastifyRequest<{ Body: CreateCategoryInput }>,
     reply: FastifyReply
   ) {
-    const category = await servicesService.createCategory(request.body);
+    const category = await offeredServicesService.createCategory(request.body);
     return reply.status(201).send(category);
   }
 
@@ -133,7 +133,7 @@ export class CategoriesController {
     request: FastifyRequest<{ Params: CategoryParams }>,
     reply: FastifyReply
   ) {
-    const category = await servicesService.getCategoryById(request.params.id);
+    const category = await offeredServicesService.getCategoryById(request.params.id);
     return reply.send(category);
   }
 
@@ -145,7 +145,7 @@ export class CategoriesController {
     request: FastifyRequest<{ Params: { slug: string } }>,
     reply: FastifyReply
   ) {
-    const category = await servicesService.getCategoryBySlug(
+    const category = await offeredServicesService.getCategoryBySlug(
       request.params.slug
     );
     return reply.send(category);
@@ -160,7 +160,7 @@ export class CategoriesController {
     reply: FastifyReply
   ) {
     const includeServices = request.query.includeServices === "true";
-    const categories = await servicesService.getAllCategories(includeServices);
+    const categories = await offeredServicesService.getAllCategories(includeServices);
     return reply.send(categories);
   }
 
@@ -175,7 +175,7 @@ export class CategoriesController {
     }>,
     reply: FastifyReply
   ) {
-    const category = await servicesService.updateCategory(
+    const category = await offeredServicesService.updateCategory(
       request.params.id,
       request.body
     );
@@ -190,12 +190,12 @@ export class CategoriesController {
     request: FastifyRequest<{ Params: CategoryParams }>,
     reply: FastifyReply
   ) {
-    await servicesService.deleteCategory(request.params.id);
+    await offeredServicesService.deleteCategory(request.params.id);
     return reply.status(204).send();
   }
 }
 
 // Instâncias dos controllers
-export const servicesController = new ServicesController();
+export const offeredServicesController = new OfferedServicesController();
 export const categoriesController = new CategoriesController();
 

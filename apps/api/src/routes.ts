@@ -2,7 +2,10 @@ import { type FastifyInstance } from "fastify";
 import { userRoutes } from "./modules/users";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { organizationRoutes } from "./modules/organizations";
-import { servicesRoutes, categoriesRoutes } from "./modules/services";
+import {
+  offeredServicesRoutes,
+  categoriesRoutes,
+} from "./modules/offered-services";
 
 /**
  * Registra todas as rotas da aplicação
@@ -54,9 +57,11 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       });
 
       // ========================================
-      // MÓDULO SERVICES E CATEGORIAS
+      // MÓDULO OFFERED SERVICES E CATEGORIAS
       // ========================================
-      await apiRoutes.register(servicesRoutes, { prefix: "/services" });
+      await apiRoutes.register(offeredServicesRoutes, {
+        prefix: "/offered-services",
+      });
       await apiRoutes.register(categoriesRoutes, { prefix: "/categories" });
 
       // ========================================

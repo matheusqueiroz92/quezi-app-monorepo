@@ -1,16 +1,14 @@
 import type { FastifyInstance } from "fastify";
 import {
-  servicesController,
+  offeredServicesController,
   categoriesController,
-} from "./services.controller";
+} from "./offered-services.controller";
 import { authMiddleware } from "../../middlewares/auth.middleware";
 
 /**
- * Rotas de serviços
+ * Rotas de serviços oferecidos
  */
-export async function servicesRoutes(
-  app: FastifyInstance
-): Promise<void> {
+export async function offeredServicesRoutes(app: FastifyInstance): Promise<void> {
   // ========================================
   // ROTAS DE SERVIÇOS
   // ========================================
@@ -41,7 +39,7 @@ export async function servicesRoutes(
         },
       },
     },
-    servicesController.getMostPopularServices.bind(servicesController)
+    offeredServicesController.getMostPopularServices.bind(offeredServicesController)
   );
 
   // POST /services
@@ -55,7 +53,13 @@ export async function servicesRoutes(
         description: "Cria um novo serviço para o profissional autenticado",
         body: {
           type: "object",
-          required: ["name", "price", "priceType", "durationMinutes", "categoryId"],
+          required: [
+            "name",
+            "price",
+            "priceType",
+            "durationMinutes",
+            "categoryId",
+          ],
           properties: {
             name: { type: "string", minLength: 1, maxLength: 100 },
             description: { type: "string", maxLength: 500 },
@@ -73,7 +77,7 @@ export async function servicesRoutes(
         },
       },
     },
-    servicesController.createService.bind(servicesController)
+    offeredServicesController.createService.bind(servicesController)
   );
 
   // GET /services
@@ -105,7 +109,7 @@ export async function servicesRoutes(
         },
       },
     },
-    servicesController.getServices.bind(servicesController)
+    offeredServicesController.getServices.bind(servicesController)
   );
 
   // GET /services/:id
@@ -138,7 +142,7 @@ export async function servicesRoutes(
         },
       },
     },
-    servicesController.getServiceById.bind(servicesController)
+    offeredServicesController.getServiceById.bind(servicesController)
   );
 
   // PUT /services/:id
@@ -190,7 +194,7 @@ export async function servicesRoutes(
         },
       },
     },
-    servicesController.updateService.bind(servicesController)
+    offeredServicesController.updateService.bind(servicesController)
   );
 
   // DELETE /services/:id
@@ -231,16 +235,14 @@ export async function servicesRoutes(
         },
       },
     },
-    servicesController.deleteService.bind(servicesController)
+    offeredServicesController.deleteService.bind(servicesController)
   );
 }
 
 /**
  * Rotas de categorias
  */
-export async function categoriesRoutes(
-  app: FastifyInstance
-): Promise<void> {
+export async function categoriesRoutes(app: FastifyInstance): Promise<void> {
   // ========================================
   // ROTAS DE CATEGORIAS
   // ========================================
@@ -259,7 +261,12 @@ export async function categoriesRoutes(
           required: ["name", "slug"],
           properties: {
             name: { type: "string", minLength: 1, maxLength: 50 },
-            slug: { type: "string", minLength: 1, maxLength: 50, pattern: "^[a-z0-9-]+$" },
+            slug: {
+              type: "string",
+              minLength: 1,
+              maxLength: 50,
+              pattern: "^[a-z0-9-]+$",
+            },
           },
         },
         response: {
@@ -395,7 +402,12 @@ export async function categoriesRoutes(
           type: "object",
           properties: {
             name: { type: "string", minLength: 1, maxLength: 50 },
-            slug: { type: "string", minLength: 1, maxLength: 50, pattern: "^[a-z0-9-]+$" },
+            slug: {
+              type: "string",
+              minLength: 1,
+              maxLength: 50,
+              pattern: "^[a-z0-9-]+$",
+            },
           },
         },
         response: {
@@ -464,4 +476,3 @@ export async function categoriesRoutes(
     categoriesController.deleteCategory.bind(categoriesController)
   );
 }
-

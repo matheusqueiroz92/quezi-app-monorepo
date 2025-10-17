@@ -1,8 +1,8 @@
 import { Service, Category } from "@prisma/client";
 import {
-  ServicesRepository,
+  OfferedServicesRepository,
   CategoriesRepository,
-} from "./services.repository";
+} from "./offered-services.repository";
 import type {
   CreateServiceInput,
   UpdateServiceInput,
@@ -10,15 +10,15 @@ import type {
   PaginatedResponse,
   CreateCategoryInput,
   UpdateCategoryInput,
-} from "./services.schema";
+} from "./offered-services.schema";
 import { AppError } from "../../utils/app-error";
 
 /**
- * Service layer para lógica de negócio de serviços
+ * Service layer para lógica de negócio de serviços oferecidos
  */
-export class ServicesService {
+export class OfferedServicesService {
   constructor(
-    private servicesRepository: ServicesRepository,
+    private offeredServicesRepository: OfferedServicesRepository,
     private categoriesRepository: CategoriesRepository
   ) {}
 
@@ -38,7 +38,7 @@ export class ServicesService {
     }
 
     // Criar o serviço
-    return this.servicesRepository.create({
+    return this.offeredServicesRepository.create({
       ...data,
       professionalId,
     });
@@ -48,7 +48,7 @@ export class ServicesService {
    * Busca um serviço por ID com relações
    */
   async getServiceById(id: string) {
-    const service = await this.servicesRepository.findByIdWithRelations(id);
+    const service = await this.offeredServicesRepository.findByIdWithRelations(id);
 
     if (!service) {
       throw new AppError("Serviço não encontrado", 404);
@@ -63,7 +63,7 @@ export class ServicesService {
   async getServices(
     query: GetServicesQuery
   ): Promise<PaginatedResponse<Service>> {
-    return this.servicesRepository.findMany(query);
+    return this.offeredServicesRepository.findMany(query);
   }
 
   /**
@@ -75,7 +75,7 @@ export class ServicesService {
     data: UpdateServiceInput
   ): Promise<Service> {
     // Verificar se o serviço existe
-    const service = await this.servicesRepository.findById(id);
+    const service = await this.offeredServicesRepository.findById(id);
     if (!service) {
       throw new AppError("Serviço não encontrado", 404);
     }
@@ -99,7 +99,7 @@ export class ServicesService {
     }
 
     // Atualizar o serviço
-    return this.servicesRepository.update(id, data);
+    return this.offeredServicesRepository.update(id, data);
   }
 
   /**
@@ -107,7 +107,7 @@ export class ServicesService {
    */
   async deleteService(id: string, professionalId: string): Promise<void> {
     // Verificar se o serviço existe
-    const service = await this.servicesRepository.findById(id);
+    const service = await this.offeredServicesRepository.findById(id);
     if (!service) {
       throw new AppError("Serviço não encontrado", 404);
     }
@@ -121,14 +121,14 @@ export class ServicesService {
     }
 
     // Deletar o serviço
-    await this.servicesRepository.delete(id);
+    await this.offeredServicesRepository.delete(id);
   }
 
   /**
    * Retorna serviços mais populares
    */
   async getMostPopularServices(limit: number = 10) {
-    return this.servicesRepository.findMostPopular(limit);
+    return this.offeredServicesRepository.findMostPopular(limit);
   }
 
   // ==============================================
@@ -234,7 +234,7 @@ export class ServicesService {
 }
 
 // Instância do service
-export const servicesService = new ServicesService(
-  new ServicesRepository(),
+export const offeredServicesService = new OfferedServicesService(
+  new OfferedServicesRepository(),
   new CategoriesRepository()
 );

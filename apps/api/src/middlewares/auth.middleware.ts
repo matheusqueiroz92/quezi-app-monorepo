@@ -86,13 +86,13 @@ export async function authMiddleware(
   // TODO: Integrar com Better Auth para validar o token
   // Por enquanto, vamos fazer uma validação básica
   // Em produção, isso deve validar o token com o Better Auth
-  
+
   // Mock: assumir que o token é válido e extrair dados básicos
   // Você deve substituir isso pela validação real do Better Auth
   try {
     // Aqui você deve validar o token com Better Auth
     // const session = await auth.api.getSession({ headers: request.headers });
-    
+
     // Por enquanto, vamos apenas verificar se o token existe
     if (token) {
       // Mock de dados do usuário - SUBSTITUIR COM BETTER AUTH
