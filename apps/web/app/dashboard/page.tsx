@@ -2,7 +2,13 @@
 
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
@@ -70,7 +76,9 @@ export default function DashboardPage() {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-neutral-graphite">Email verificado</p>
+                <p className="text-sm text-neutral-graphite">
+                  Email verificado
+                </p>
                 <p className="font-medium">
                   {user.isEmailVerified ? "✅ Sim" : "⚠️ Não"}
                 </p>
@@ -116,4 +124,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

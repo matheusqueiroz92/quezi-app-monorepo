@@ -42,7 +42,9 @@ export default function RegisterPage() {
   const { register: registerUser, isLoading, error } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(1);
-  const [selectedUserType, setSelectedUserType] = useState<"CLIENT" | "PROFESSIONAL" | null>(null);
+  const [selectedUserType, setSelectedUserType] = useState<
+    "CLIENT" | "PROFESSIONAL" | null
+  >(null);
 
   const {
     register,
@@ -213,7 +215,9 @@ export default function RegisterPage() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.password.message}
+                  </p>
                 )}
                 <div className="text-xs text-neutral-graphite space-y-1 mt-2">
                   <p>A senha deve conter:</p>
@@ -258,7 +262,10 @@ export default function RegisterPage() {
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-center text-sm text-neutral-graphite">
             Já tem uma conta?{" "}
-            <Link href="/login" className="text-marsala hover:underline font-semibold">
+            <Link
+              href="/login"
+              className="text-marsala hover:underline font-semibold"
+            >
               Faça login
             </Link>
           </div>
@@ -267,4 +274,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
