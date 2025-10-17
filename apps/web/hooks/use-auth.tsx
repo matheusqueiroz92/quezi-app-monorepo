@@ -57,7 +57,8 @@ export function useAuth() {
         router.push("/dashboard");
       } catch (err: any) {
         const message =
-          err.response?.data?.message || "Erro ao fazer login. Tente novamente.";
+          err.response?.data?.message ||
+          "Erro ao fazer login. Tente novamente.";
         setError(message);
         throw err;
       } finally {
@@ -76,7 +77,10 @@ export function useAuth() {
         setIsLoading(true);
         setError(null);
 
-        const response = await api.post<AuthResponse>("/auth/sign-up/email", data);
+        const response = await api.post<AuthResponse>(
+          "/auth/sign-up/email",
+          data
+        );
 
         const { user: userData, session } = response.data;
 
@@ -90,7 +94,8 @@ export function useAuth() {
         router.push("/dashboard");
       } catch (err: any) {
         const message =
-          err.response?.data?.message || "Erro ao criar conta. Tente novamente.";
+          err.response?.data?.message ||
+          "Erro ao criar conta. Tente novamente.";
         setError(message);
         throw err;
       } finally {

@@ -193,9 +193,14 @@ describe("RegisterPage", () => {
       const user = userEvent.setup();
 
       const nameInput = screen.getByLabelText(/nome completo/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^senha$/i);
       const submitButton = screen.getByRole("button", { name: /criar conta/i });
 
-      await user.type(nameInput, "Ab");
+      // Preencher todos os campos menos o nome
+      await user.type(nameInput, "Ab"); // Nome muito curto
+      await user.type(emailInput, "teste@example.com");
+      await user.type(passwordInput, "SenhaForte123");
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -208,10 +213,15 @@ describe("RegisterPage", () => {
     it("deve mostrar erro para email inválido", async () => {
       const user = userEvent.setup();
 
+      const nameInput = screen.getByLabelText(/nome completo/i);
       const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^senha$/i);
       const submitButton = screen.getByRole("button", { name: /criar conta/i });
 
-      await user.type(emailInput, "email-invalido");
+      // Preencher todos os campos
+      await user.type(nameInput, "Maria Silva");
+      await user.type(emailInput, "email-invalido"); // Email inválido
+      await user.type(passwordInput, "SenhaForte123");
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -222,10 +232,15 @@ describe("RegisterPage", () => {
     it("deve mostrar erro para senha sem letra maiúscula", async () => {
       const user = userEvent.setup();
 
+      const nameInput = screen.getByLabelText(/nome completo/i);
+      const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/^senha$/i);
       const submitButton = screen.getByRole("button", { name: /criar conta/i });
 
-      await user.type(passwordInput, "senhafraca123");
+      // Preencher todos os campos
+      await user.type(nameInput, "Maria Silva");
+      await user.type(emailInput, "teste@example.com");
+      await user.type(passwordInput, "senhafraca123"); // Sem maiúscula
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -238,10 +253,15 @@ describe("RegisterPage", () => {
     it("deve mostrar erro para senha sem número", async () => {
       const user = userEvent.setup();
 
+      const nameInput = screen.getByLabelText(/nome completo/i);
+      const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/^senha$/i);
       const submitButton = screen.getByRole("button", { name: /criar conta/i });
 
-      await user.type(passwordInput, "SenhaFraca");
+      // Preencher todos os campos
+      await user.type(nameInput, "Maria Silva");
+      await user.type(emailInput, "teste@example.com");
+      await user.type(passwordInput, "SenhaFraca"); // Sem número
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -289,7 +309,21 @@ describe("RegisterPage", () => {
       });
     });
 
-    it("deve exibir estado de loading durante registro", () => {
+    it("deve exibir estado de loading durante registro", async () => {
+      const user = userEvent.setup();
+
+      // Primeiro renderizar normalmente
+      const { rerender } = render(<RegisterPage />);
+
+      // Navegar para etapa 2
+      const professionalOption = screen
+        .getByText(/sou profissional/i)
+        .closest("div");
+      await user.click(professionalOption!);
+      const continueButton = screen.getByRole("button", { name: /continuar/i });
+      await user.click(continueButton);
+
+      // Rerender com loading true
       mockUseAuth.mockReturnValue({
         login: jest.fn(),
         register: mockRegister,
@@ -300,20 +334,14 @@ describe("RegisterPage", () => {
         error: null,
       });
 
-      render(<RegisterPage />);
+      rerender(<RegisterPage />);
 
       expect(screen.getByText(/criando conta\.\.\./i)).toBeInTheDocument();
     });
 
     it("deve exibir mensagem de erro da API", async () => {
       const user = userEvent.setup();
-      render(<RegisterPage />);
-
-      const clientOption = screen.getByText(/sou cliente/i).closest("div");
-      await user.click(clientOption!);
-      const continueButton = screen.getByRole("button", { name: /continuar/i });
-      await user.click(continueButton);
-
+      
       mockUseAuth.mockReturnValue({
         login: jest.fn(),
         register: mockRegister,
@@ -324,7 +352,15 @@ describe("RegisterPage", () => {
         error: "Email já cadastrado",
       });
 
-      render(<RegisterPage />);
+      const { rerender } = render(<RegisterPage />);
+
+      const clientOption = screen.getByText(/sou cliente/i).closest("div");
+      await user.click(clientOption!);
+      const continueButton = screen.getByRole("button", { name: /continuar/i });
+      await user.click(continueButton);
+
+      // Rerender para mostrar o erro
+      rerender(<RegisterPage />);
 
       await waitFor(() => {
         expect(screen.getByText(/email já cadastrado/i)).toBeInTheDocument();
@@ -371,7 +407,9 @@ describe("RegisterPage", () => {
     it("deve alternar visibilidade da senha", async () => {
       const user = userEvent.setup();
 
-      const passwordInput = screen.getByLabelText(/^senha$/i) as HTMLInputElement;
+      const passwordInput = screen.getByLabelText(
+        /^senha$/i
+      ) as HTMLInputElement;
       const toggleButton = screen.getByRole("button", { name: /👁️/ });
 
       expect(passwordInput.type).toBe("password");
@@ -390,4 +428,3 @@ describe("RegisterPage", () => {
     });
   });
 });
-

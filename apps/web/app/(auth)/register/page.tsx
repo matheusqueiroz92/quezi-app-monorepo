@@ -51,8 +51,10 @@ export default function RegisterPage() {
     handleSubmit,
     formState: { errors },
     setValue,
+    trigger,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    mode: "onBlur", // Valida ao sair do campo
   });
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -82,11 +84,19 @@ export default function RegisterPage() {
           {/* Progress */}
           <div className="flex gap-2 pt-4">
             <div
+              role="progressbar"
+              aria-valuenow={step >= 1 ? 100 : 0}
+              aria-valuemin={0}
+              aria-valuemax={100}
               className={`h-1 flex-1 rounded-full transition-colors ${
                 step >= 1 ? "bg-marsala" : "bg-neutral-medium"
               }`}
             />
             <div
+              role="progressbar"
+              aria-valuenow={step >= 2 ? 100 : 0}
+              aria-valuemin={0}
+              aria-valuemax={100}
               className={`h-1 flex-1 rounded-full transition-colors ${
                 step >= 2 ? "bg-marsala" : "bg-neutral-medium"
               }`}
@@ -210,6 +220,7 @@ export default function RegisterPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-graphite hover:text-marsala"
+                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                   >
                     {showPassword ? "👁️" : "👁️‍🗨️"}
                   </button>

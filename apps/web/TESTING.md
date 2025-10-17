@@ -70,6 +70,7 @@ npm run test:coverage
 ### Página de Login
 
 #### Renderização
+
 - ✅ Renderizar título "Bem-vinda de volta!"
 - ✅ Renderizar logo "Quezi"
 - ✅ Renderizar campo de email
@@ -80,27 +81,32 @@ npm run test:coverage
 - ✅ Renderizar botões de login social (Google, GitHub)
 
 #### Validação
+
 - ✅ Mostrar erro para email inválido
 - ✅ Mostrar erro para senha muito curta
 - ✅ Não chamar login com dados inválidos
 
 #### Submissão
+
 - ✅ Fazer login com credenciais válidas
 - ✅ Exibir estado de loading
 - ✅ Exibir mensagem de erro da API
 
 #### Interações
+
 - ✅ Alternar visibilidade da senha
 - ✅ Redirecionar para Google OAuth
 - ✅ Redirecionar para GitHub OAuth
 
 #### Acessibilidade
+
 - ✅ Labels associados aos inputs
 - ✅ Desabilitar botão durante loading
 
 ### Página de Registro
 
 #### Etapa 1 - Seleção de Tipo
+
 - ✅ Renderizar opção "Sou Cliente"
 - ✅ Renderizar opção "Sou Profissional"
 - ✅ Indicador de progresso
@@ -110,6 +116,7 @@ npm run test:coverage
 - ✅ Avançar para etapa 2
 
 #### Etapa 2 - Dados Pessoais
+
 - ✅ Renderizar campo de nome completo
 - ✅ Renderizar campo de email
 - ✅ Renderizar campo de senha
@@ -117,17 +124,20 @@ npm run test:coverage
 - ✅ Renderizar botões Voltar e Criar Conta
 
 #### Validação
+
 - ✅ Mostrar erro para nome muito curto
 - ✅ Mostrar erro para email inválido
 - ✅ Mostrar erro para senha sem letra maiúscula
 - ✅ Mostrar erro para senha sem número
 
 #### Submissão
+
 - ✅ Criar conta com dados válidos
 - ✅ Exibir estado de loading
 - ✅ Exibir mensagem de erro da API
 
 #### Navegação
+
 - ✅ Voltar para etapa 1
 - ✅ Link para página de login
 
@@ -146,7 +156,7 @@ npm run test:coverage
 it("deve fazer login com credenciais válidas", async () => {
   const { result } = renderHook(() => useAuth());
   await result.current.login("teste@example.com", "Senha123");
-  
+
   expect(result.current.user).not.toBeNull();
 });
 
@@ -157,22 +167,25 @@ const login = async (email: string, password: string) => {
 };
 
 // 3. REFACTOR - Melhorar implementação
-const login = useCallback(async (email: string, password: string) => {
-  try {
-    setIsLoading(true);
-    setError(null);
-    
-    const response = await api.post("/auth/login", { email, password });
-    setUser(response.data.user);
-    
-    router.push("/dashboard");
-  } catch (err) {
-    setError(err.message);
-    throw err;
-  } finally {
-    setIsLoading(false);
-  }
-}, [router]);
+const login = useCallback(
+  async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await api.post("/auth/login", { email, password });
+      setUser(response.data.user);
+
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  },
+  [router]
+);
 ```
 
 ## Melhores Práticas
@@ -312,4 +325,3 @@ npm test -- hooks/__tests__/use-auth.test.tsx
 ---
 
 **TDD não é sobre testes. É sobre design e confiança no código.** 🎯
-
