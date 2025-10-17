@@ -1,0 +1,302 @@
+### 🏢 Testes de Organizations e RBAC - Quezi API
+### Use a extensão REST Client no VS Code
+
+@baseUrl = http://localhost:3333/api/v1
+@token = 
+@orgId = 
+
+### ========================================
+### SETUP - FAZER LOGIN PRIMEIRO
+### ========================================
+
+### 1. Login (cole o token na variável @token acima)
+# @name login
+POST {{baseUrl}}/auth/sign-in/email
+Content-Type: application/json
+
+{
+  "email": "profissional1@teste.com",
+  "password": "SenhaForte123"
+}
+
+### ========================================
+### CRIAR ORGANIZAÇÃO
+### ========================================
+
+### 2. Criar Salão de Beleza
+# @name createOrg
+POST {{baseUrl}}/organizations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Salão Beleza Total",
+  "slug": "salao-beleza-total",
+  "description": "O melhor salão de beleza da cidade"
+}
+
+### Copie o ID da organização da resposta acima e cole em @orgId
+
+###
+
+### 3. Criar Clínica de Estética
+POST {{baseUrl}}/organizations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Clínica Estética Avançada",
+  "slug": "clinica-estetica-avancada",
+  "description": "Tratamentos estéticos de ponta"
+}
+
+###
+
+### 4. Tentar criar com slug duplicado (deve retornar 409)
+POST {{baseUrl}}/organizations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Outro Salão",
+  "slug": "salao-beleza-total"
+}
+
+###
+
+### ========================================
+### CONVIDAR MEMBROS
+### ========================================
+
+### 5. Convidar Cabeleireira (como OWNER)
+POST {{baseUrl}}/organizations/invite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "email": "maria.cabeleireira@example.com",
+  "role": "MEMBER"
+}
+
+###
+
+### 6. Convidar Gerente (como OWNER)
+POST {{baseUrl}}/organizations/invite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "email": "carlos.gerente@example.com",
+  "role": "ADMIN"
+}
+
+###
+
+### 7. Convidar Manicure (como OWNER)
+POST {{baseUrl}}/organizations/invite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "email": "ana.manicure@example.com",
+  "role": "MEMBER"
+}
+
+###
+
+### ========================================
+### GERENCIAR ROLES
+### ========================================
+
+### 8. Promover MEMBER para ADMIN (apenas OWNER pode)
+PUT {{baseUrl}}/organizations/member/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "memberId": "COLE_O_ID_DO_MEMBRO_AQUI",
+  "role": "ADMIN"
+}
+
+###
+
+### 9. Rebaixar ADMIN para MEMBER (apenas OWNER pode)
+PUT {{baseUrl}}/organizations/member/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "memberId": "COLE_O_ID_DO_MEMBRO_AQUI",
+  "role": "MEMBER"
+}
+
+###
+
+### ========================================
+### LISTAR ORGANIZAÇÕES
+### ========================================
+
+### 10. Listar minhas organizações
+GET {{baseUrl}}/organizations/my
+Authorization: Bearer {{token}}
+
+###
+
+### ========================================
+### TESTES DE PERMISSÕES
+### ========================================
+
+### 11. Erro: Tentar convidar sem ser OWNER/ADMIN
+# Faça login com um MEMBER primeiro
+POST {{baseUrl}}/organizations/invite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "email": "novo@member.com",
+  "role": "MEMBER"
+}
+
+###
+
+### 12. Erro: Tentar alterar role sem ser OWNER
+# Faça login com um ADMIN primeiro
+PUT {{baseUrl}}/organizations/member/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "memberId": "member-id",
+  "role": "ADMIN"
+}
+
+###
+
+### 13. Erro: Acessar sem autenticação
+POST {{baseUrl}}/organizations
+Content-Type: application/json
+
+{
+  "name": "Teste Sem Auth",
+  "slug": "teste-sem-auth"
+}
+
+###
+
+### ========================================
+### CASOS DE USO REAIS
+### ========================================
+
+### 14. Cenário: Profissional Autônomo
+# Maria atende sozinha em casa (sem organization)
+# Ela já pode criar serviços direto no seu perfil profissional
+
+###
+
+### 15. Cenário: Criar Salão com Equipe
+# 1. Ana cria o salão (vira OWNER)
+POST {{baseUrl}}/organizations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Salão da Ana",
+  "slug": "salao-da-ana"
+}
+
+# 2. Ana convida Maria como cabeleireira
+POST {{baseUrl}}/organizations/invite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "email": "maria@example.com",
+  "role": "MEMBER"
+}
+
+# 3. Ana convida Carlos como gerente
+POST {{baseUrl}}/organizations/invite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "email": "carlos@example.com",
+  "role": "ADMIN"
+}
+
+###
+
+### 16. Cenário: Profissional em Múltiplos Locais
+# Maria trabalha em 2 lugares
+GET {{baseUrl}}/organizations/my
+Authorization: Bearer {{token}}
+
+# Resposta esperada:
+# [
+#   { "name": "Salão ABC", "role": "MEMBER" },
+#   { "name": "Studio Maria", "role": "OWNER" }
+# ]
+
+###
+
+### ========================================
+### VALIDAÇÕES
+### ========================================
+
+### 17. Erro: Nome muito curto
+POST {{baseUrl}}/organizations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "AB",
+  "slug": "ab"
+}
+
+###
+
+### 18. Erro: Slug com caracteres especiais
+POST {{baseUrl}}/organizations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Salão ABC",
+  "slug": "Salão@ABC#123"
+}
+
+###
+
+### 19. Erro: Email de convite inválido
+POST {{baseUrl}}/organizations/invite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "email": "email-sem-arroba",
+  "role": "MEMBER"
+}
+
+###
+
+### 20. Erro: Role inválida no convite
+POST {{baseUrl}}/organizations/invite
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizationId": "{{orgId}}",
+  "email": "teste@example.com",
+  "role": "SUPERADMIN"
+}
+

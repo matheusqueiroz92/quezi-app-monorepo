@@ -74,6 +74,10 @@ export async function buildApp(): Promise<FastifyInstance> {
             description: "Autenticação e autorização (Better Auth)",
           },
           { name: "users", description: "Gerenciamento de usuários" },
+          {
+            name: "organizations",
+            description: "Organizações e RBAC (salões, clínicas, empresas)",
+          },
           { name: "services", description: "Gerenciamento de serviços" },
           {
             name: "appointments",

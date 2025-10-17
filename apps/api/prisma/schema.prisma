@@ -37,6 +37,19 @@ enum AppointmentStatus {
   COMPLETED
 }
 
+enum OrganizationRole {
+  OWNER    // Dono da organização (salão/empresa)
+  ADMIN    // Administrador (gerente)
+  MEMBER   // Membro/Profissional da equipe
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
 // ========================================
 // ENTIDADES / MODELS
 // ========================================
@@ -53,10 +66,13 @@ model User {
   updatedAt       DateTime @updatedAt
 
   // Relações
-  professionalProfile ProfessionalProfile? // 1:1, opcional (apenas para UserType: PROFESSIONAL)
-  clientAppointments  Appointment[]        @relation("ClientAppointments")
-  profAppointments    Appointment[]        @relation("ProfessionalAppointments")
-  reviews             Review[]
+  professionalProfile    ProfessionalProfile?   // 1:1, opcional (apenas para UserType: PROFESSIONAL)
+  clientAppointments     Appointment[]          @relation("ClientAppointments")
+  profAppointments       Appointment[]          @relation("ProfessionalAppointments")
+  reviews                Review[]
+  ownedOrganizations     Organization[]         @relation("OrganizationOwner")
+  organizationMemberships OrganizationMember[]
+  sentInvites            OrganizationInvite[]   @relation("InviteSender")
 
   @@map("users")
 }
@@ -150,4 +166,63 @@ model Review {
   reviewer    User        @relation(fields: [reviewerId], references: [id])
 
   @@map("reviews")
+}
+
+// ========================================
+// ORGANIZAÇÕES (Salões, Clínicas, Empresas)
+// ========================================
+
+model Organization {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String   @unique
+  description String?
+  ownerId     String   @db.Uuid
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  owner   User                 @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members OrganizationMember[]
+  invites OrganizationInvite[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @db.Uuid
+  userId         String           @db.Uuid
+  role           OrganizationRole
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  // Relações
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId]) // Um usuário só pode ter uma role por organização
+  @@index([userId])
+  @@map("organization_members")
+}
+
+model OrganizationInvite {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  email          String
+  role           OrganizationRole
+  invitedBy      String       @db.Uuid
+  status         InviteStatus @default(PENDING)
+  expiresAt      DateTime // Convite expira em 7 dias
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Relações
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter      User         @relation("InviteSender", fields: [invitedBy], references: [id])
+
+  @@unique([organizationId, email]) // Não permitir convites duplicados
+  @@index([email])
+  @@map("organization_invites")
 }

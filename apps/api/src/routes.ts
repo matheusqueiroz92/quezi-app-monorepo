@@ -1,6 +1,7 @@
 import { type FastifyInstance } from "fastify";
 import { userRoutes } from "./modules/users";
 import { authRoutes } from "./modules/auth/auth.routes";
+import { organizationRoutes } from "./modules/organizations";
 
 /**
  * Registra todas as rotas da aplicação
@@ -43,6 +44,11 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       // MÓDULO USERS
       // ========================================
       await apiRoutes.register(userRoutes, { prefix: "/users" });
+
+      // ========================================
+      // MÓDULO ORGANIZATIONS (RBAC)
+      // ========================================
+      await apiRoutes.register(organizationRoutes, { prefix: "/organizations" });
 
       // ========================================
       // MÓDULO SERVICES
