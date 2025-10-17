@@ -16,7 +16,8 @@
     "prisma:migrate": "cd apps/api && npm run prisma:migrate"
   },
   "workspaces": [
-    "apps/*",
+    "apps/api",
+    "apps/web",
     "packages/*"
   ],
   "devDependencies": {
