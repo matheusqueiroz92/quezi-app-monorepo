@@ -25,6 +25,7 @@
 
 1. No dashboard, clique em "New Project"
 2. Preencha:
+
    - **Name:** `quezi-app` (ou nome de sua preferência)
    - **Database Password:** Gere uma senha forte (guarde ela!)
    - **Region:** `South America (São Paulo)` (mais próximo do Brasil)
@@ -43,6 +44,7 @@
 4. Copie a **URI** (modo URI)
 
 Exemplo:
+
 ```
 postgresql://postgres:[YOUR-PASSWORD]@db.abcdefghijklmnop.supabase.co:5432/postgres
 ```
@@ -112,6 +114,7 @@ cd apps/api
 ### 6.2. Verificar Logs
 
 Você deve ver:
+
 ```
 ✅ Banco de dados conectado!
 🚀 Servidor rodando em http://localhost:3333
@@ -123,6 +126,7 @@ Você deve ver:
 Acesse: http://localhost:3333/api/v1/test
 
 Deve retornar:
+
 ```json
 {
   "message": "Quezi API está funcionando! 🚀",
@@ -186,6 +190,7 @@ NEXT_PUBLIC_API_URL="http://localhost:3333"
 ### Erro: "Connection refused"
 
 **Solução:**
+
 - Verifique se a senha está correta na URL
 - Certifique-se que `?sslmode=require` está no final da URL
 - Verifique se o projeto Supabase está ativo (não pausado)
@@ -198,6 +203,7 @@ Adicione ao final da URL: `?sslmode=require`
 ### Erro: "Table already exists"
 
 **Solução:**
+
 ```bash
 # Resetar banco (CUIDADO: apaga todos os dados)
 npx prisma migrate reset
@@ -209,6 +215,7 @@ npx prisma migrate deploy
 ### Erro: "Too many connections"
 
 **Solução:**
+
 - O plano gratuito tem limite de conexões
 - Use connection pooling:
 
@@ -232,6 +239,7 @@ DATABASE_URL="postgresql://postgres:password@db.xxx.supabase.co:6543/postgres?pg
 ### Alertas
 
 Configure alertas quando atingir 80% do plano gratuito:
+
 - Settings → Billing → Usage alerts
 
 ---
@@ -286,7 +294,6 @@ Configure alertas quando atingir 80% do plano gratuito:
 ✅ **Monitoramento** em tempo real  
 ✅ **Escalável** conforme necessário  
 ✅ **API REST** automática  
-✅ **Dashboard visual** para dados  
+✅ **Dashboard visual** para dados
 
 **Parabéns! 🎉 Seu banco agora está na nuvem e pronto para escalar!**
-
