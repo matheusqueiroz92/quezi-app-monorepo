@@ -1,26 +1,26 @@
 import { describe, expect, test, beforeEach, jest } from "@jest/globals";
 import { ServicePriceType, Prisma } from "@prisma/client";
-import { ServicesService } from "../services.service";
+import { OfferedServicesService } from "../offered-services.service";
 import {
-  ServicesRepository,
+  OfferedServicesRepository,
   CategoriesRepository,
-} from "../services.repository";
+} from "../offered-services.repository";
 
 // Mock dos repositories
-jest.mock("../services.repository");
+jest.mock("../offered-services.repository");
 
-describe("ServicesService", () => {
-  let service: ServicesService;
-  let mockServicesRepository: jest.Mocked<ServicesRepository>;
+describe("OfferedServicesService", () => {
+  let service: OfferedServicesService;
+  let mockOfferedServicesRepository: jest.Mocked<OfferedServicesRepository>;
   let mockCategoriesRepository: jest.Mocked<CategoriesRepository>;
 
   beforeEach(() => {
-    mockServicesRepository =
-      new ServicesRepository() as jest.Mocked<ServicesRepository>;
+    mockOfferedServicesRepository =
+      new OfferedServicesRepository() as jest.Mocked<OfferedServicesRepository>;
     mockCategoriesRepository =
       new CategoriesRepository() as jest.Mocked<CategoriesRepository>;
-    service = new ServicesService(
-      mockServicesRepository,
+    service = new OfferedServicesService(
+      mockOfferedServicesRepository,
       mockCategoriesRepository
     );
     jest.clearAllMocks();
@@ -48,7 +48,7 @@ describe("ServicesService", () => {
       };
 
       mockCategoriesRepository.exists = jest.fn().mockResolvedValue(true);
-      mockServicesRepository.create = jest
+      mockOfferedServicesRepository.create = jest
         .fn()
         .mockResolvedValue(expectedService);
 
@@ -57,7 +57,7 @@ describe("ServicesService", () => {
       expect(mockCategoriesRepository.exists).toHaveBeenCalledWith(
         serviceData.categoryId
       );
-      expect(mockServicesRepository.create).toHaveBeenCalledWith({
+      expect(mockOfferedServicesRepository.create).toHaveBeenCalledWith({
         ...serviceData,
         professionalId,
       });
@@ -80,7 +80,7 @@ describe("ServicesService", () => {
         service.createService(professionalId, serviceData)
       ).rejects.toThrow("Categoria não encontrada");
 
-      expect(mockServicesRepository.create).not.toHaveBeenCalled();
+      expect(mockOfferedServicesRepository.create).not.toHaveBeenCalled();
     });
   });
 
@@ -106,20 +106,20 @@ describe("ServicesService", () => {
         },
       };
 
-      mockServicesRepository.findByIdWithRelations = jest
+      mockOfferedServicesRepository.findByIdWithRelations = jest
         .fn()
         .mockResolvedValue(expectedService);
 
       const result = await service.getServiceById(serviceId);
 
-      expect(mockServicesRepository.findByIdWithRelations).toHaveBeenCalledWith(
+      expect(mockOfferedServicesRepository.findByIdWithRelations).toHaveBeenCalledWith(
         serviceId
       );
       expect(result).toEqual(expectedService);
     });
 
     test("deve lançar erro se serviço não existir", async () => {
-      mockServicesRepository.findByIdWithRelations = jest
+      mockOfferedServicesRepository.findByIdWithRelations = jest
         .fn()
         .mockResolvedValue(null);
 
@@ -153,13 +153,13 @@ describe("ServicesService", () => {
         },
       };
 
-      mockServicesRepository.findMany = jest
+      mockOfferedServicesRepository.findMany = jest
         .fn()
         .mockResolvedValue(expectedResult);
 
       const result = await service.getServices(query);
 
-      expect(mockServicesRepository.findMany).toHaveBeenCalledWith(query);
+      expect(mockOfferedServicesRepository.findMany).toHaveBeenCalledWith(query);
       expect(result).toEqual(expectedResult);
     });
   });
@@ -185,10 +185,10 @@ describe("ServicesService", () => {
         price: new Prisma.Decimal(75.0),
       };
 
-      mockServicesRepository.findById = jest
+      mockOfferedServicesRepository.findById = jest
         .fn()
         .mockResolvedValue(existingService);
-      mockServicesRepository.update = jest
+      mockOfferedServicesRepository.update = jest
         .fn()
         .mockResolvedValue(updatedService);
 
@@ -198,8 +198,8 @@ describe("ServicesService", () => {
         updateData
       );
 
-      expect(mockServicesRepository.findById).toHaveBeenCalledWith(serviceId);
-      expect(mockServicesRepository.update).toHaveBeenCalledWith(
+      expect(mockOfferedServicesRepository.findById).toHaveBeenCalledWith(serviceId);
+      expect(mockOfferedServicesRepository.update).toHaveBeenCalledWith(
         serviceId,
         updateData
       );
@@ -207,7 +207,7 @@ describe("ServicesService", () => {
     });
 
     test("deve lançar erro se serviço não existir", async () => {
-      mockServicesRepository.findById = jest.fn().mockResolvedValue(null);
+      mockOfferedServicesRepository.findById = jest.fn().mockResolvedValue(null);
 
       await expect(
         service.updateService("non-existent-id", "professional-id", {
@@ -223,7 +223,7 @@ describe("ServicesService", () => {
         professionalId: "other-professional-id",
       };
 
-      mockServicesRepository.findById = jest
+      mockOfferedServicesRepository.findById = jest
         .fn()
         .mockResolvedValue(existingService);
 
@@ -239,7 +239,7 @@ describe("ServicesService", () => {
         professionalId: "professional-id",
       };
 
-      mockServicesRepository.findById = jest
+      mockOfferedServicesRepository.findById = jest
         .fn()
         .mockResolvedValue(existingService);
       mockCategoriesRepository.exists = jest.fn().mockResolvedValue(false);
@@ -263,21 +263,21 @@ describe("ServicesService", () => {
         professionalId,
       };
 
-      mockServicesRepository.findById = jest
+      mockOfferedServicesRepository.findById = jest
         .fn()
         .mockResolvedValue(existingService);
-      mockServicesRepository.delete = jest
+      mockOfferedServicesRepository.delete = jest
         .fn()
         .mockResolvedValue(existingService);
 
       await service.deleteService(serviceId, professionalId);
 
-      expect(mockServicesRepository.findById).toHaveBeenCalledWith(serviceId);
-      expect(mockServicesRepository.delete).toHaveBeenCalledWith(serviceId);
+      expect(mockOfferedServicesRepository.findById).toHaveBeenCalledWith(serviceId);
+      expect(mockOfferedServicesRepository.delete).toHaveBeenCalledWith(serviceId);
     });
 
     test("deve lançar erro se serviço não existir", async () => {
-      mockServicesRepository.findById = jest.fn().mockResolvedValue(null);
+      mockOfferedServicesRepository.findById = jest.fn().mockResolvedValue(null);
 
       await expect(
         service.deleteService("non-existent-id", "professional-id")
@@ -291,7 +291,7 @@ describe("ServicesService", () => {
         professionalId: "other-professional-id",
       };
 
-      mockServicesRepository.findById = jest
+      mockOfferedServicesRepository.findById = jest
         .fn()
         .mockResolvedValue(existingService);
 
@@ -308,13 +308,13 @@ describe("ServicesService", () => {
         { id: "service-2", name: "Popular 2", _count: { appointments: 5 } },
       ];
 
-      mockServicesRepository.findMostPopular = jest
+      mockOfferedServicesRepository.findMostPopular = jest
         .fn()
         .mockResolvedValue(expectedServices);
 
       const result = await service.getMostPopularServices(10);
 
-      expect(mockServicesRepository.findMostPopular).toHaveBeenCalledWith(10);
+      expect(mockOfferedServicesRepository.findMostPopular).toHaveBeenCalledWith(10);
       expect(result).toEqual(expectedServices);
     });
   });

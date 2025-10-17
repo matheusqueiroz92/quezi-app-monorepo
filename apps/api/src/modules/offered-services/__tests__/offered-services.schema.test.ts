@@ -8,7 +8,7 @@ import {
   createCategorySchema,
   updateCategorySchema,
   categoryParamsSchema,
-} from "../services.schema";
+} from "../offered-services.schema";
 
 describe("Services Schema Validation", () => {
   describe("createServiceSchema", () => {

@@ -1,9 +1,9 @@
 import { describe, expect, test, beforeEach, jest } from "@jest/globals";
 import { ServicePriceType, Prisma } from "@prisma/client";
 import {
-  ServicesRepository,
+  OfferedServicesRepository,
   CategoriesRepository,
-} from "../services.repository";
+} from "../offered-services.repository";
 import { prisma } from "../../../lib/prisma";
 
 // Mock do Prisma
@@ -29,11 +29,11 @@ jest.mock("../../../lib/prisma", () => ({
   },
 }));
 
-describe("ServicesRepository", () => {
-  let repository: ServicesRepository;
+describe("OfferedServicesRepository", () => {
+  let repository: OfferedServicesRepository;
 
   beforeEach(() => {
-    repository = new ServicesRepository();
+    repository = new OfferedServicesRepository();
     jest.clearAllMocks();
   });
 
