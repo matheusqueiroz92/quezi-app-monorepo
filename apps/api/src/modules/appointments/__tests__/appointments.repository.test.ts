@@ -163,6 +163,8 @@ describe("AppointmentsRepository", () => {
       prismaMock.service.findFirst.mockResolvedValue(mockService);
       prismaMock.user.findUnique
         .mockResolvedValueOnce(mockProfessional)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockProfessional)
         .mockResolvedValueOnce(null);
 
       const input = {
@@ -202,6 +204,8 @@ describe("AppointmentsRepository", () => {
 
       prismaMock.service.findFirst.mockResolvedValue(mockService);
       prismaMock.user.findUnique
+        .mockResolvedValueOnce(mockProfessional)
+        .mockResolvedValueOnce(mockClient)
         .mockResolvedValueOnce(mockProfessional)
         .mockResolvedValueOnce(mockClient);
       prismaMock.appointment.findFirst.mockResolvedValue(
@@ -574,8 +578,12 @@ describe("AppointmentsRepository", () => {
         durationMinutes: 60,
       };
 
+      // Criar uma data no horário UTC que corresponde a 09:00 no fuso local
+      const appointmentDate = new Date("2024-02-15");
+      appointmentDate.setHours(9, 0, 0, 0);
+
       const existingAppointment = {
-        scheduledDate: new Date("2024-02-15T09:00:00Z"),
+        scheduledDate: appointmentDate,
         service: {
           durationMinutes: 60,
         },

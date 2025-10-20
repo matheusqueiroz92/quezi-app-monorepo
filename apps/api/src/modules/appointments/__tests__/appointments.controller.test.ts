@@ -45,21 +45,22 @@ describe("AppointmentsController", () => {
   describe("createAppointment", () => {
     it("should create appointment successfully", async () => {
       const mockAppointment = {
-        id: "appt-1",
-        clientId: "client-1",
-        professionalId: "prof-1",
-        serviceId: "service-1",
+        id: "clx1234567890abcdef",
+        clientId: "clx1234567890abcdef",
+        professionalId: "clx0987654321fedcba",
+        serviceId: "clx1122334455667788",
         scheduledDate: new Date("2024-02-15T14:30:00Z"),
         status: "PENDING",
       };
 
       requestMock.body = {
-        clientId: "client-1",
-        professionalId: "prof-1",
-        serviceId: "service-1",
+        clientId: "clx1234567890abcdef",
+        professionalId: "clx0987654321fedcba",
+        serviceId: "clx1122334455667788",
         scheduledDate: "2024-02-15T14:30:00Z",
         locationType: "AT_LOCATION",
       };
+      requestMock.user = { id: "clx1234567890abcdef" };
 
       serviceMock.createAppointment.mockResolvedValue(mockAppointment);
 
@@ -75,6 +76,13 @@ describe("AppointmentsController", () => {
 
     it("should return 401 if user not authenticated", async () => {
       requestMock.user = undefined;
+      requestMock.body = {
+        clientId: "clx1234567890abcdef",
+        professionalId: "clx0987654321fedcba",
+        serviceId: "clx1122334455667788",
+        scheduledDate: "2024-02-15T14:30:00Z",
+        locationType: "AT_LOCATION",
+      };
 
       await controller.createAppointment(requestMock, replyMock);
 
@@ -87,12 +95,13 @@ describe("AppointmentsController", () => {
 
     it("should handle AppError correctly", async () => {
       requestMock.body = {
-        clientId: "client-1",
-        professionalId: "prof-1",
-        serviceId: "service-1",
+        clientId: "clx1234567890abcdef",
+        professionalId: "clx0987654321fedcba",
+        serviceId: "clx1122334455667788",
         scheduledDate: "2024-02-15T14:30:00Z",
         locationType: "AT_LOCATION",
       };
+      requestMock.user = { id: "clx1234567890abcdef" };
 
       serviceMock.createAppointment.mockRejectedValue(
         new AppError("Erro customizado", 400)
@@ -109,12 +118,13 @@ describe("AppointmentsController", () => {
 
     it("should handle generic errors", async () => {
       requestMock.body = {
-        clientId: "client-1",
-        professionalId: "prof-1",
-        serviceId: "service-1",
+        clientId: "clx1234567890abcdef",
+        professionalId: "clx0987654321fedcba",
+        serviceId: "clx1122334455667788",
         scheduledDate: "2024-02-15T14:30:00Z",
         locationType: "AT_LOCATION",
       };
+      requestMock.user = { id: "clx1234567890abcdef" };
 
       serviceMock.createAppointment.mockRejectedValue(
         new Error("Erro genérico")
@@ -133,11 +143,12 @@ describe("AppointmentsController", () => {
   describe("getAppointment", () => {
     it("should get appointment successfully", async () => {
       const mockAppointment = {
-        id: "appt-1",
-        clientId: "client-1",
+        id: "clx1234567890abcdef",
+        clientId: "clx1234567890abcdef",
       };
 
-      requestMock.params = { id: "appt-1" };
+      requestMock.params = { id: "clx1234567890abcdef" };
+      requestMock.user = { id: "clx1234567890abcdef" };
       serviceMock.getAppointment.mockResolvedValue(mockAppointment);
 
       await controller.getAppointment(requestMock, replyMock);
@@ -151,6 +162,7 @@ describe("AppointmentsController", () => {
 
     it("should return 401 if user not authenticated", async () => {
       requestMock.user = undefined;
+      requestMock.params = { id: "clx1234567890abcdef" };
 
       await controller.getAppointment(requestMock, replyMock);
 
@@ -185,17 +197,33 @@ describe("AppointmentsController", () => {
         pagination: mockResult.pagination,
       });
     });
+
+    it("should handle errors in getAppointments", async () => {
+      requestMock.query = { page: "1", limit: "10" };
+      serviceMock.getAppointments.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await controller.getAppointments(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Erro interno do servidor",
+      });
+    });
   });
 
   describe("updateAppointment", () => {
     it("should update appointment successfully", async () => {
       const mockAppointment = {
-        id: "appt-1",
+        id: "clx1234567890abcdef",
         clientNotes: "Updated notes",
       };
 
-      requestMock.params = { id: "appt-1" };
+      requestMock.params = { id: "clx1234567890abcdef" };
       requestMock.body = { clientNotes: "Updated notes" };
+      requestMock.user = { id: "clx1234567890abcdef" };
       serviceMock.updateAppointment.mockResolvedValue(mockAppointment);
 
       await controller.updateAppointment(requestMock, replyMock);
@@ -207,11 +235,23 @@ describe("AppointmentsController", () => {
         message: "Agendamento atualizado com sucesso",
       });
     });
+
+    it("should handle errors in updateAppointment", async () => {
+      requestMock.params = { id: "clx1234567890abcdef" };
+      requestMock.body = { clientNotes: "Updated" };
+      requestMock.user = { id: "clx1234567890abcdef" };
+      serviceMock.updateAppointment.mockRejectedValue(new Error("DB error"));
+
+      await controller.updateAppointment(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe("deleteAppointment", () => {
     it("should delete appointment successfully", async () => {
-      requestMock.params = { id: "appt-1" };
+      requestMock.params = { id: "clx1234567890abcdef" };
+      requestMock.user = { id: "clx1234567890abcdef" };
       serviceMock.deleteAppointment.mockResolvedValue({ success: true });
 
       await controller.deleteAppointment(requestMock, replyMock);
@@ -222,17 +262,28 @@ describe("AppointmentsController", () => {
         message: "Agendamento cancelado com sucesso",
       });
     });
+
+    it("should handle errors in deleteAppointment", async () => {
+      requestMock.params = { id: "clx1234567890abcdef" };
+      requestMock.user = { id: "clx1234567890abcdef" };
+      serviceMock.deleteAppointment.mockRejectedValue(new Error("DB error"));
+
+      await controller.deleteAppointment(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe("updateAppointmentStatus", () => {
     it("should update status successfully", async () => {
       const mockAppointment = {
-        id: "appt-1",
+        id: "clx1234567890abcdef",
         status: "ACCEPTED",
       };
 
-      requestMock.params = { id: "appt-1" };
+      requestMock.params = { id: "clx1234567890abcdef" };
       requestMock.body = { status: "ACCEPTED" };
+      requestMock.user = { id: "clx1234567890abcdef" };
       serviceMock.updateAppointmentStatus.mockResolvedValue(mockAppointment);
 
       await controller.updateAppointmentStatus(requestMock, replyMock);
@@ -244,14 +295,27 @@ describe("AppointmentsController", () => {
         message: "Status do agendamento atualizado com sucesso",
       });
     });
+
+    it("should handle errors in updateAppointmentStatus", async () => {
+      requestMock.params = { id: "clx1234567890abcdef" };
+      requestMock.body = { status: "ACCEPTED" };
+      requestMock.user = { id: "clx1234567890abcdef" };
+      serviceMock.updateAppointmentStatus.mockRejectedValue(
+        new Error("DB error")
+      );
+
+      await controller.updateAppointmentStatus(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe("checkAvailability", () => {
     it("should check availability successfully", async () => {
       const mockAvailability = {
         date: "2024-02-15",
-        professionalId: "prof-1",
-        serviceId: "service-1",
+        professionalId: "clx0987654321fedcba",
+        serviceId: "clx1122334455667788",
         availableSlots: [
           { time: "08:00", available: true },
           { time: "08:30", available: false, reason: "Horário já ocupado" },
@@ -259,10 +323,11 @@ describe("AppointmentsController", () => {
       };
 
       requestMock.query = {
-        professionalId: "prof-1",
-        serviceId: "service-1",
+        professionalId: "clx0987654321fedcba",
+        serviceId: "clx1122334455667788",
         date: "2024-02-15",
       };
+      requestMock.user = { id: "clx1234567890abcdef" };
 
       serviceMock.checkAvailability.mockResolvedValue(mockAvailability);
 
@@ -273,6 +338,20 @@ describe("AppointmentsController", () => {
         success: true,
         data: mockAvailability,
       });
+    });
+
+    it("should handle errors in checkAvailability", async () => {
+      requestMock.query = {
+        professionalId: "clx0987654321fedcba",
+        serviceId: "clx1122334455667788",
+        date: "2024-02-15",
+      };
+      requestMock.user = { id: "clx1234567890abcdef" };
+      serviceMock.checkAvailability.mockRejectedValue(new Error("DB error"));
+
+      await controller.checkAvailability(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
     });
   });
 
@@ -288,7 +367,8 @@ describe("AppointmentsController", () => {
         averageRating: 4.5,
       };
 
-      requestMock.query = { professionalId: "prof-1" };
+      requestMock.query = { professionalId: "clx0987654321fedcba" };
+      requestMock.user = { id: "clx1234567890abcdef" };
       serviceMock.getStats.mockResolvedValue(mockStats);
 
       await controller.getStats(requestMock, replyMock);
@@ -298,6 +378,16 @@ describe("AppointmentsController", () => {
         success: true,
         data: mockStats,
       });
+    });
+
+    it("should handle errors in getStats", async () => {
+      requestMock.query = { professionalId: "clx0987654321fedcba" };
+      requestMock.user = { id: "clx1234567890abcdef" };
+      serviceMock.getStats.mockRejectedValue(new Error("DB error"));
+
+      await controller.getStats(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
     });
   });
 
@@ -343,6 +433,15 @@ describe("AppointmentsController", () => {
 
       expect(replyMock.status).toHaveBeenCalledWith(401);
     });
+
+    it("should handle errors in getMyAppointments", async () => {
+      requestMock.user = { id: "user-1", userType: "CLIENT" };
+      serviceMock.getUserAppointments.mockRejectedValue(new Error("DB error"));
+
+      await controller.getMyAppointments(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe("getUpcomingAppointments", () => {
@@ -378,6 +477,17 @@ describe("AppointmentsController", () => {
 
       expect(replyMock.status).toHaveBeenCalledWith(400);
     });
+
+    it("should handle errors in getUpcomingAppointments", async () => {
+      requestMock.user = { id: "user-1", userType: "CLIENT" };
+      serviceMock.getUpcomingAppointments.mockRejectedValue(
+        new Error("DB error")
+      );
+
+      await controller.getUpcomingAppointments(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe("getAppointmentHistory", () => {
@@ -412,6 +522,17 @@ describe("AppointmentsController", () => {
       await controller.getAppointmentHistory(requestMock, replyMock);
 
       expect(replyMock.status).toHaveBeenCalledWith(400);
+    });
+
+    it("should handle errors in getAppointmentHistory", async () => {
+      requestMock.user = { id: "user-1", userType: "PROFESSIONAL" };
+      serviceMock.getAppointmentHistory.mockRejectedValue(
+        new Error("DB error")
+      );
+
+      await controller.getAppointmentHistory(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
     });
   });
 });
