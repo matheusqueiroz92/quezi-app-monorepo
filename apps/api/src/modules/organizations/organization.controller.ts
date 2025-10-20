@@ -214,15 +214,21 @@ export class OrganizationController {
     request: FastifyRequest,
     reply: FastifyReply
   ): Promise<void> {
-    if (!request.user) {
-      reply.status(401).send({ error: "Não autenticado" });
-      return;
+    try {
+      if (!request.user) {
+        reply.status(401).send({ error: "Não autenticado" });
+        return;
+      }
+
+      const organizations = await this.organizationService.getUserOrganizations(
+        request.user.id
+      );
+
+      reply.status(200).send(organizations);
+    } catch (error) {
+      reply.status(500).send({
+        error: "Erro ao buscar organizações",
+      });
     }
-
-    const organizations = await this.organizationService.getUserOrganizations(
-      request.user.id
-    );
-
-    reply.status(200).send(organizations);
   }
 }

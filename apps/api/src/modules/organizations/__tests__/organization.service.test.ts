@@ -237,4 +237,75 @@ describe("OrganizationService", () => {
       expect(hasPermission).toBe(false);
     });
   });
+
+  describe("getUserOrganizations", () => {
+    it("deve listar organizações do usuário", async () => {
+      const mockOrgs = [
+        { id: "org-1", name: "Org 1" },
+        { id: "org-2", name: "Org 2" },
+      ];
+
+      // @ts-ignore
+      mockOrgRepository.findUserOrganizations = jest
+        .fn()
+        .mockResolvedValue(mockOrgs);
+
+      const result = await organizationService.getUserOrganizations("user-1");
+
+      expect(result).toEqual(mockOrgs);
+    });
+  });
+
+  describe("removeMember", () => {
+    it("deve remover membro se for owner", async () => {
+      // @ts-ignore
+      mockOrgRepository.getMemberRole = jest
+        .fn()
+        .mockResolvedValueOnce("OWNER") // removerRole
+        .mockResolvedValueOnce("MEMBER"); // memberRole
+
+      // @ts-ignore
+      mockOrgRepository.removeMember = jest.fn().mockResolvedValue(undefined);
+
+      await organizationService.removeMember({
+        organizationId: "org-1",
+        memberUserId: "member-1",
+        removedBy: "owner-1",
+      });
+
+      expect(mockOrgRepository.removeMember).toHaveBeenCalledWith(
+        "org-1",
+        "member-1"
+      );
+    });
+
+    it("deve lançar erro se não for owner", async () => {
+      // @ts-ignore
+      mockOrgRepository.getMemberRole = jest.fn().mockResolvedValue("ADMIN");
+
+      await expect(
+        organizationService.removeMember({
+          organizationId: "org-1",
+          memberUserId: "member-1",
+          removedBy: "admin-1",
+        })
+      ).rejects.toThrow("Apenas owners podem remover membros");
+    });
+
+    it("deve lançar erro se tentar remover owner", async () => {
+      // @ts-ignore
+      mockOrgRepository.getMemberRole = jest
+        .fn()
+        .mockResolvedValueOnce("OWNER") // removerRole
+        .mockResolvedValueOnce("OWNER"); // memberRole
+
+      await expect(
+        organizationService.removeMember({
+          organizationId: "org-1",
+          memberUserId: "owner-2",
+          removedBy: "owner-1",
+        })
+      ).rejects.toThrow("Não é possível remover o owner da organização");
+    });
+  });
 });

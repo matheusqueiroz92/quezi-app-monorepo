@@ -63,6 +63,20 @@ describe("ProfilesService", () => {
         "Você só pode criar perfil para sua própria conta"
       );
     });
+
+    it("deve propagar erro do repository", async () => {
+      const input = {
+        userId: "user-1",
+        city: "São Paulo",
+        serviceMode: "BOTH" as const,
+      };
+
+      repositoryMock.create.mockRejectedValue(new Error("DB error"));
+
+      await expect(service.createProfile(input, "user-1")).rejects.toThrow(
+        "Erro ao criar perfil profissional"
+      );
+    });
   });
 
   describe("getProfile", () => {
@@ -130,6 +144,19 @@ describe("ProfilesService", () => {
       });
 
       expect(result).toEqual(mockResult);
+    });
+
+    it("deve propagar erro do repository", async () => {
+      repositoryMock.findMany.mockRejectedValue(new Error("DB error"));
+
+      await expect(
+        service.getProfiles({
+          page: 1,
+          limit: 10,
+          sortBy: "rating",
+          sortOrder: "desc",
+        })
+      ).rejects.toThrow("Erro ao buscar perfis profissionais");
     });
   });
 

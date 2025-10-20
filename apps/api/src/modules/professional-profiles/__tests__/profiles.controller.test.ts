@@ -81,6 +81,44 @@ describe("ProfilesController", () => {
 
       expect(replyMock.status).toHaveBeenCalledWith(401);
     });
+
+    it("deve tratar AppError corretamente", async () => {
+      const userId = "clx1234567890abcdef";
+      requestMock.user = { id: userId };
+      requestMock.body = {
+        userId,
+        city: "São Paulo",
+        serviceMode: "BOTH",
+      };
+
+      serviceMock.createProfile.mockRejectedValue(
+        new AppError("Perfil já existe", 409)
+      );
+
+      await controller.createProfile(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(409);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Perfil já existe",
+      });
+    });
+
+    it("deve tratar erro genérico", async () => {
+      const userId = "clx1234567890abcdef";
+      requestMock.user = { id: userId };
+      requestMock.body = {
+        userId,
+        city: "São Paulo",
+        serviceMode: "BOTH",
+      };
+
+      serviceMock.createProfile.mockRejectedValue(new Error("Generic error"));
+
+      await controller.createProfile(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe("getProfile", () => {
@@ -140,6 +178,16 @@ describe("ProfilesController", () => {
         pagination: mockResult.pagination,
       });
     });
+
+    it("deve tratar erros", async () => {
+      requestMock.query = {};
+
+      serviceMock.getProfiles.mockRejectedValue(new Error("DB error"));
+
+      await controller.getProfiles(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe("searchProfiles", () => {
@@ -161,6 +209,16 @@ describe("ProfilesController", () => {
       await controller.searchProfiles(requestMock, replyMock);
 
       expect(replyMock.status).toHaveBeenCalledWith(200);
+    });
+
+    it("deve tratar erros", async () => {
+      requestMock.query = { query: "barbeiro" };
+
+      serviceMock.searchProfiles.mockRejectedValue(new Error("DB error"));
+
+      await controller.searchProfiles(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
     });
   });
 
@@ -250,6 +308,33 @@ describe("ProfilesController", () => {
         message: "Portfólio atualizado com sucesso",
       });
     });
+
+    it("deve retornar 401 se não autenticado", async () => {
+      const userId = "clx1234567890abcdef";
+      requestMock.user = undefined;
+      requestMock.params = { userId };
+      requestMock.body = {
+        portfolioImages: ["https://example.com/img1.jpg"],
+      };
+
+      await controller.updatePortfolio(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(401);
+    });
+
+    it("deve tratar erros", async () => {
+      const userId = "clx1234567890abcdef";
+      requestMock.params = { userId };
+      requestMock.body = {
+        portfolioImages: ["https://example.com/img1.jpg"],
+      };
+
+      serviceMock.updatePortfolio.mockRejectedValue(new Error("Error"));
+
+      await controller.updatePortfolio(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe("updateWorkingHours", () => {
@@ -272,6 +357,29 @@ describe("ProfilesController", () => {
       await controller.updateWorkingHours(requestMock, replyMock);
 
       expect(replyMock.status).toHaveBeenCalledWith(200);
+    });
+
+    it("deve retornar 401 se não autenticado", async () => {
+      const userId = "clx1234567890abcdef";
+      requestMock.user = undefined;
+      requestMock.params = { userId };
+      requestMock.body = { workingHours: {} };
+
+      await controller.updateWorkingHours(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(401);
+    });
+
+    it("deve tratar erros", async () => {
+      const userId = "clx1234567890abcdef";
+      requestMock.params = { userId };
+      requestMock.body = { workingHours: {} };
+
+      serviceMock.updateWorkingHours.mockRejectedValue(new Error("Error"));
+
+      await controller.updateWorkingHours(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
     });
   });
 

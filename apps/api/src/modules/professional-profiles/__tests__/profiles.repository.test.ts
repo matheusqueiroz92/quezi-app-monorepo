@@ -63,6 +63,45 @@ describe("ProfilesRepository", () => {
       expect(result).toEqual(mockProfile);
     });
 
+    it("deve criar perfil com todos os campos opcionais", async () => {
+      const mockUser = {
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        userType: "PROFESSIONAL",
+      };
+
+      const mockProfile = {
+        userId: "550e8400-e29b-41d4-a716-446655440000",
+        bio: "Bio",
+        city: "São Paulo",
+        serviceMode: "BOTH",
+        portfolioImages: ["https://example.com/img1.jpg"],
+        specialties: ["Corte", "Barba"],
+        certifications: ["Cert 1"],
+        languages: ["Português"],
+        yearsOfExperience: 5,
+      };
+
+      prismaMock.user.findUnique.mockResolvedValue(mockUser);
+      prismaMock.professionalProfile.findUnique.mockResolvedValue(null);
+      prismaMock.professionalProfile.create.mockResolvedValue(mockProfile);
+
+      const input = {
+        userId: "550e8400-e29b-41d4-a716-446655440000",
+        city: "São Paulo",
+        serviceMode: "BOTH" as const,
+        bio: "Bio",
+        portfolioImages: ["https://example.com/img1.jpg"],
+        specialties: ["Corte", "Barba"],
+        certifications: ["Cert 1"],
+        languages: ["Português"],
+        yearsOfExperience: 5,
+      };
+
+      const result = await repository.create(input);
+
+      expect(result).toEqual(mockProfile);
+    });
+
     it("deve lançar erro se usuário não existir", async () => {
       prismaMock.user.findUnique.mockResolvedValue(null);
 
@@ -226,6 +265,66 @@ describe("ProfilesRepository", () => {
           where: expect.objectContaining({
             averageRating: { gte: 4.5 },
           }),
+        })
+      );
+    });
+
+    it("deve ordenar por experience", async () => {
+      prismaMock.professionalProfile.findMany.mockResolvedValue([]);
+      prismaMock.professionalProfile.count.mockResolvedValue(0);
+
+      const query = {
+        page: 1,
+        limit: 10,
+        sortBy: "experience" as const,
+        sortOrder: "asc" as const,
+      };
+
+      await repository.findMany(query);
+
+      expect(prismaMock.professionalProfile.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { yearsOfExperience: "asc" },
+        })
+      );
+    });
+
+    it("deve ordenar por reviews", async () => {
+      prismaMock.professionalProfile.findMany.mockResolvedValue([]);
+      prismaMock.professionalProfile.count.mockResolvedValue(0);
+
+      const query = {
+        page: 1,
+        limit: 10,
+        sortBy: "reviews" as const,
+        sortOrder: "desc" as const,
+      };
+
+      await repository.findMany(query);
+
+      expect(prismaMock.professionalProfile.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { totalRatings: "desc" },
+        })
+      );
+    });
+
+    it("deve ordenar por createdAt", async () => {
+      prismaMock.professionalProfile.findMany.mockResolvedValue([]);
+      prismaMock.professionalProfile.count.mockResolvedValue(0);
+
+      const query = {
+        page: 1,
+        limit: 10,
+        sortBy: "createdAt" as const,
+        sortOrder: "asc" as const,
+      };
+
+      await repository.findMany(query);
+
+      expect(prismaMock.professionalProfile.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { createdAt: "asc" },
         })
       );
     });
@@ -432,6 +531,23 @@ describe("ProfilesRepository", () => {
 
       expect(result.isActive).toBe(false);
     });
+
+    it("deve lançar erro se perfil não encontrado", async () => {
+      prismaMock.professionalProfile.findUnique.mockResolvedValue(null);
+
+      await expect(repository.toggleActive("non-existent", true)).rejects.toThrow(
+        "Perfil profissional não encontrado"
+      );
+    });
+
+    it("deve lançar erro genérico em caso de falha no update", async () => {
+      prismaMock.professionalProfile.findUnique.mockResolvedValue({ userId: "user-1" });
+      prismaMock.professionalProfile.update.mockRejectedValue(new Error("DB error"));
+
+      await expect(repository.toggleActive("user-1", true)).rejects.toThrow(
+        "Erro ao alterar status do perfil"
+      );
+    });
   });
 
   describe("exists", () => {
@@ -451,6 +567,14 @@ describe("ProfilesRepository", () => {
       prismaMock.professionalProfile.findUnique.mockResolvedValue(null);
 
       const result = await repository.exists("non-existent");
+
+      expect(result).toBe(false);
+    });
+
+    it("deve retornar false em caso de erro", async () => {
+      prismaMock.professionalProfile.findUnique.mockRejectedValue(new Error("DB error"));
+
+      const result = await repository.exists("user-1");
 
       expect(result).toBe(false);
     });

@@ -335,5 +335,13 @@ describe("OrganizationController", () => {
         "specific-user-id"
       );
     });
+
+    it("deve tratar erros", async () => {
+      serviceMock.getUserOrganizations.mockRejectedValue(new Error("DB error"));
+
+      await (controller as any).getMyOrganizations(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+    });
   });
 });
