@@ -8,6 +8,7 @@ import {
 } from "./modules/offered-services";
 import { appointmentsRoutes } from "./modules/appointments";
 import { reviewsRoutes } from "./modules/reviews";
+import { profilesRoutes } from "./modules/professional-profiles";
 
 /**
  * Registra todas as rotas da aplicação
@@ -75,6 +76,11 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       // MÓDULO REVIEWS (AVALIAÇÕES)
       // ========================================
       await apiRoutes.register(reviewsRoutes, { prefix: "/reviews" });
+
+      // ========================================
+      // MÓDULO PROFESSIONAL PROFILES (PERFIS)
+      // ========================================
+      await apiRoutes.register(profilesRoutes, { prefix: "/profiles" });
     },
     { prefix: "/api/v1" }
   );
