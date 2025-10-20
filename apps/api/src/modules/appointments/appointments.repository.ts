@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { AppError } from "../../lib/errors";
+import { AppError } from "../../utils/app-error";
 import {
   CreateAppointmentInput,
   UpdateAppointmentInput,

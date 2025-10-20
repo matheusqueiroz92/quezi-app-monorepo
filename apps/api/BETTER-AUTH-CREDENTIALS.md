@@ -9,16 +9,19 @@ O Better Auth **NÃO fornece** credenciais. Você deve **gerar suas próprias ch
 ## 🎯 Credenciais Necessárias
 
 ### **1. BETTER_AUTH_SECRET**
+
 - **O que é:** Chave secreta para criptografia de sessões
 - **Requisito:** Mínimo 32 caracteres
 - **Onde obter:** Você gera!
 
 ### **2. JWT_SECRET**
+
 - **O que é:** Chave secreta para assinar tokens JWT
 - **Requisito:** Mínimo 32 caracteres
 - **Onde obter:** Você gera!
 
 ### **3. BETTER_AUTH_URL**
+
 - **O que é:** URL base da sua API
 - **Desenvolvimento:** `http://localhost:3333`
 - **Produção:** `https://api.quezi.app` (seu domínio)
@@ -35,6 +38,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 **Exemplo de output:**
+
 ```
 K9$mP2#xR7@nQ4!vL8zT3&wY1*hN6^sA5%jD0+bF4=
 ```
@@ -117,7 +121,7 @@ REM ... resto do arquivo
 4. Create Credentials → OAuth 2.0 Client ID
 5. Configure:
    - Application type: Web application
-   - Authorized redirect URIs: 
+   - Authorized redirect URIs:
      - `http://localhost:3333/api/v1/auth/callback/google` (dev)
      - `https://api.quezi.app/api/v1/auth/callback/google` (prod)
 6. Copiar Client ID e Client Secret
@@ -190,23 +194,24 @@ Criei um script helper para você:
 
 ```javascript
 // apps/api/generate-secrets.js
-const crypto = require('crypto');
+const crypto = require("crypto");
 
-console.log('🔐 Gerando credenciais do Better Auth...\n');
+console.log("🔐 Gerando credenciais do Better Auth...\n");
 
-console.log('BETTER_AUTH_SECRET:');
-console.log(crypto.randomBytes(32).toString('base64'));
-console.log('');
+console.log("BETTER_AUTH_SECRET:");
+console.log(crypto.randomBytes(32).toString("base64"));
+console.log("");
 
-console.log('JWT_SECRET:');
-console.log(crypto.randomBytes(32).toString('base64'));
-console.log('');
+console.log("JWT_SECRET:");
+console.log(crypto.randomBytes(32).toString("base64"));
+console.log("");
 
-console.log('✅ Copie estas chaves para seu arquivo .env!');
-console.log('⚠️  NUNCA commite essas chaves no Git!');
+console.log("✅ Copie estas chaves para seu arquivo .env!");
+console.log("⚠️  NUNCA commite essas chaves no Git!");
 ```
 
 **Usar:**
+
 ```bash
 cd apps/api
 node generate-secrets.js
@@ -217,6 +222,7 @@ node generate-secrets.js
 ## ✅ Checklist de Configuração
 
 ### **Desenvolvimento:**
+
 - [ ] Gerar BETTER_AUTH_SECRET (node crypto)
 - [ ] Gerar JWT_SECRET (node crypto)
 - [ ] Definir BETTER_AUTH_URL="http://localhost:3333"
@@ -225,6 +231,7 @@ node generate-secrets.js
 - [ ] Testar: iniciar API e verificar logs
 
 ### **Produção:**
+
 - [ ] Gerar novas chaves (DIFERENTES do dev!)
 - [ ] Configurar BETTER_AUTH_URL com domínio real
 - [ ] Adicionar OAuth credentials (Google/GitHub)
@@ -251,6 +258,7 @@ cat .gitignore | grep .env
 ```
 
 Deve aparecer:
+
 ```
 .env
 .env.local
@@ -287,22 +295,28 @@ echo BETTER_AUTH_URL="http://localhost:3333" >> .env
 ## ❓ FAQ
 
 ### **1. Onde consigo as credenciais do Better Auth?**
+
 Você **gera**! Não há cadastro/dashboard do Better Auth.
 
 ### **2. As chaves expiram?**
+
 Não! Mas recomenda-se rotacionar periodicamente.
 
 ### **3. Posso usar qualquer string?**
+
 Tecnicamente sim, mas **deve ser aleatória e segura** (32+ caracteres).
 
 ### **4. Dev e Prod devem ter chaves diferentes?**
+
 **SIM!** Sempre use chaves diferentes em cada ambiente.
 
 ### **5. E se eu perder as chaves?**
+
 - Desenvolvimento: Gere novas
 - Produção: Todos os usuários precisarão fazer login novamente
 
 ### **6. Preciso de chaves OAuth agora?**
+
 Não! OAuth (Google/GitHub) é **opcional**. Deixe vazio por enquanto.
 
 ---
@@ -314,4 +328,3 @@ Não! OAuth (Google/GitHub) é **opcional**. Deixe vazio por enquanto.
 > **São apenas strings aleatórias de 32+ caracteres.**
 
 **Nada de complicado!** 🎯
-

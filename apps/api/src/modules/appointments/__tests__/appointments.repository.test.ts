@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { PrismaClient } from "@prisma/client";
 import { AppointmentsRepository } from "../appointments.repository";
 import { AppError } from "../../../utils/app-error";
 
 // Mock do Prisma Client
-vi.mock("@prisma/client", () => ({
-  PrismaClient: vi.fn(),
+jest.mock("@prisma/client", () => ({
+  PrismaClient: jest.fn(),
 }));
 
 describe("AppointmentsRepository", () => {
@@ -15,24 +15,24 @@ describe("AppointmentsRepository", () => {
   beforeEach(() => {
     prismaMock = {
       appointment: {
-        create: vi.fn(),
-        findUnique: vi.fn(),
-        findMany: vi.fn(),
-        findFirst: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        count: vi.fn(),
-        groupBy: vi.fn(),
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+        count: jest.fn(),
+        groupBy: jest.fn(),
       },
       service: {
-        findFirst: vi.fn(),
-        findUnique: vi.fn(),
+        findFirst: jest.fn(),
+        findUnique: jest.fn(),
       },
       user: {
-        findUnique: vi.fn(),
+        findUnique: jest.fn(),
       },
       review: {
-        aggregate: vi.fn(),
+        aggregate: jest.fn(),
       },
     };
 

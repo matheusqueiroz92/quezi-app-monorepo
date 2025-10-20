@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { AppError } from "../../lib/errors";
+import { AppError } from "../../utils/app-error";
 import { AppointmentsService } from "./appointments.service";
 import {
   CreateAppointmentInputSchema,

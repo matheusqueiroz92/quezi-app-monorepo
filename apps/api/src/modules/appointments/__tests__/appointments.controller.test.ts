@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { AppointmentsController } from "../appointments.controller";
 import { AppointmentsService } from "../appointments.service";
 import { AppError } from "../../../utils/app-error";
 
 // Mock do service
-vi.mock("../appointments.service");
+jest.mock("../appointments.service");
 
 describe("AppointmentsController", () => {
   let controller: AppointmentsController;
@@ -14,17 +14,17 @@ describe("AppointmentsController", () => {
 
   beforeEach(() => {
     serviceMock = {
-      createAppointment: vi.fn(),
-      getAppointment: vi.fn(),
-      getAppointments: vi.fn(),
-      updateAppointment: vi.fn(),
-      deleteAppointment: vi.fn(),
-      updateAppointmentStatus: vi.fn(),
-      checkAvailability: vi.fn(),
-      getStats: vi.fn(),
-      getUserAppointments: vi.fn(),
-      getUpcomingAppointments: vi.fn(),
-      getAppointmentHistory: vi.fn(),
+      createAppointment: jest.fn(),
+      getAppointment: jest.fn(),
+      getAppointments: jest.fn(),
+      updateAppointment: jest.fn(),
+      deleteAppointment: jest.fn(),
+      updateAppointmentStatus: jest.fn(),
+      checkAvailability: jest.fn(),
+      getStats: jest.fn(),
+      getUserAppointments: jest.fn(),
+      getUpcomingAppointments: jest.fn(),
+      getAppointmentHistory: jest.fn(),
     };
 
     controller = new AppointmentsController(serviceMock);
@@ -37,8 +37,8 @@ describe("AppointmentsController", () => {
     };
 
     replyMock = {
-      status: vi.fn().mockReturnThis(),
-      send: vi.fn().mockReturnThis(),
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
   });
 

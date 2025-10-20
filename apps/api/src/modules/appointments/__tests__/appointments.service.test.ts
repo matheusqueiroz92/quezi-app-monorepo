@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { AppointmentsService } from "../appointments.service";
 import { AppointmentsRepository } from "../appointments.repository";
 import { AppError } from "../../../utils/app-error";
 
 // Mock do repositório
-vi.mock("../appointments.repository");
+jest.mock("../appointments.repository");
 
 describe("AppointmentsService", () => {
   let service: AppointmentsService;
@@ -12,15 +12,15 @@ describe("AppointmentsService", () => {
 
   beforeEach(() => {
     repositoryMock = {
-      create: vi.fn(),
-      findById: vi.fn(),
-      findMany: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      updateStatus: vi.fn(),
-      checkAvailability: vi.fn(),
-      getStats: vi.fn(),
-      findByUser: vi.fn(),
+      create: jest.fn(),
+      findById: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      updateStatus: jest.fn(),
+      checkAvailability: jest.fn(),
+      getStats: jest.fn(),
+      findByUser: jest.fn(),
     };
 
     service = new AppointmentsService(repositoryMock);

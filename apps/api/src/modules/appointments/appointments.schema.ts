@@ -72,13 +72,13 @@ export const GetAppointmentsQuerySchema = z.object({
     .regex(/^\d+$/)
     .transform(Number)
     .pipe(z.number().min(1))
-    .default("1"),
+    .default(1),
   limit: z
     .string()
     .regex(/^\d+$/)
     .transform(Number)
     .pipe(z.number().min(1).max(100))
-    .default("10"),
+    .default(10),
   status: AppointmentStatusEnum.optional(),
   clientId: z.string().cuid().optional(),
   professionalId: z.string().cuid().optional(),
