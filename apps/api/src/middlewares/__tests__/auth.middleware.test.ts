@@ -89,5 +89,41 @@ describe("Auth Middleware", () => {
       ).rejects.toThrow(UnauthorizedError);
       expect(mockValidateSession).not.toHaveBeenCalled();
     });
+
+    it("deve lançar UnauthorizedError se token vazio", async () => {
+      // Arrange
+      const mockRequest = {
+        headers: {
+          authorization: "Bearer ",
+        },
+        user: null,
+      } as unknown as FastifyRequest;
+
+      const mockReply = {} as FastifyReply;
+      const mockValidateSession = jest.fn();
+
+      // Act & Assert
+      await expect(
+        requireAuth(mockRequest, mockReply, mockValidateSession)
+      ).rejects.toThrow("Token não fornecido");
+    });
+
+    it("deve lançar UnauthorizedError se sessão retornar null", async () => {
+      // Arrange
+      const mockRequest = {
+        headers: {
+          authorization: "Bearer expired-token",
+        },
+        user: null,
+      } as unknown as FastifyRequest;
+
+      const mockReply = {} as FastifyReply;
+      const mockValidateSession = jest.fn().mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        requireAuth(mockRequest, mockReply, mockValidateSession)
+      ).rejects.toThrow("Token inválido ou expirado");
+    });
   });
 });
