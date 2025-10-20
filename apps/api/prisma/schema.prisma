@@ -136,16 +136,24 @@ model Verification {
 }
 
 model ProfessionalProfile {
-  userId        String      @id
-  bio           String?
-  city          String
-  address       String?
-  serviceMode   ServiceMode // NOVO CAMPO: AT_LOCATION, AT_DOMICILE, BOTH
-  averageRating Float       @default(0.0)
-  totalRatings  Int         @default(0)
-  photoUrl      String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  userId            String      @id
+  bio               String?
+  city              String
+  address           String?
+  serviceMode       ServiceMode // AT_LOCATION, AT_DOMICILE, BOTH
+  averageRating     Float       @default(0.0)
+  totalRatings      Int         @default(0)
+  photoUrl          String?
+  portfolioImages   String[]    @default([]) // URLs de imagens do portfólio
+  workingHours      Json?       // Horários de trabalho por dia da semana
+  yearsOfExperience Int?        // Anos de experiência
+  specialties       String[]    @default([]) // Especialidades/habilidades
+  certifications    String[]    @default([]) // Certificações
+  languages         String[]    @default([]) // Idiomas falados
+  isActive          Boolean     @default(true) // Perfil ativo/inativo
+  isVerified        Boolean     @default(false) // Perfil verificado pela plataforma
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   // Relações
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
