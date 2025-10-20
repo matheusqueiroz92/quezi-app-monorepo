@@ -1,4 +1,4 @@
-import { AppError } from "../../lib/errors";
+import { AppError } from "../../utils/app-error";
 import { AppointmentsRepository } from "./appointments.repository";
 import {
   CreateAppointmentInput,
@@ -321,9 +321,10 @@ export class AppointmentsService {
       COMPLETED: [], // Concluído é estado final
     };
 
-    if (!validTransitions[appointment.status].includes(newStatus)) {
+    const currentStatus = appointment.status as AppointmentStatus;
+    if (!validTransitions[currentStatus]?.includes(newStatus)) {
       throw new AppError(
-        `Não é possível alterar status de ${appointment.status} para ${newStatus}`,
+        `Não é possível alterar status de ${currentStatus} para ${newStatus}`,
         400
       );
     }

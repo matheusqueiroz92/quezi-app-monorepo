@@ -27,6 +27,7 @@ apps/api/src/modules/appointments/
 ### **1. CRUD Completo**
 
 #### **POST /api/v1/appointments**
+
 - Criar novo agendamento
 - Validações:
   - Horário não pode estar no passado
@@ -37,11 +38,13 @@ apps/api/src/modules/appointments/
   - Valida existência de cliente, profissional e serviço
 
 #### **GET /api/v1/appointments/:id**
+
 - Buscar agendamento específico por ID
 - Retorna dados completos (cliente, profissional, serviço, categoria)
 - Validação de permissão (apenas cliente ou profissional do agendamento)
 
 #### **GET /api/v1/appointments**
+
 - Listar agendamentos com paginação
 - Filtros disponíveis:
   - `status`: PENDING, ACCEPTED, REJECTED, COMPLETED
@@ -52,6 +55,7 @@ apps/api/src/modules/appointments/
   - `page` / `limit`: Paginação
 
 #### **PUT /api/v1/appointments/:id**
+
 - Atualizar agendamento existente
 - Validações:
   - Não permite editar agendamentos concluídos ou rejeitados
@@ -59,6 +63,7 @@ apps/api/src/modules/appointments/
   - Verifica novos conflitos de horário
 
 #### **DELETE /api/v1/appointments/:id**
+
 - Cancelar agendamento
 - Validações:
   - Apenas agendamentos PENDING podem ser cancelados
@@ -69,6 +74,7 @@ apps/api/src/modules/appointments/
 ### **2. Gestão de Status**
 
 #### **PATCH /api/v1/appointments/:id/status**
+
 - Atualizar status do agendamento
 - **Apenas profissionais** podem alterar status
 - Máquina de estados:
@@ -86,6 +92,7 @@ apps/api/src/modules/appointments/
 ### **3. Verificação de Disponibilidade**
 
 #### **GET /api/v1/appointments/availability**
+
 - Verifica horários disponíveis para agendamento
 - Parâmetros:
   - `professionalId`: ID do profissional
@@ -97,6 +104,7 @@ apps/api/src/modules/appointments/
   - Razão da indisponibilidade
 
 **Exemplo de resposta:**
+
 ```json
 {
   "success": true,
@@ -119,6 +127,7 @@ apps/api/src/modules/appointments/
 ### **4. Estatísticas**
 
 #### **GET /api/v1/appointments/stats**
+
 - Estatísticas de agendamentos
 - Filtros opcionais:
   - `professionalId`: Estatísticas do profissional
@@ -131,6 +140,7 @@ apps/api/src/modules/appointments/
   - Avaliação média (se houver reviews)
 
 **Exemplo de resposta:**
+
 ```json
 {
   "success": true,
@@ -151,14 +161,17 @@ apps/api/src/modules/appointments/
 ### **5. Endpoints Utilitários**
 
 #### **GET /api/v1/appointments/my**
+
 - Lista todos os agendamentos do usuário logado
 - Identifica automaticamente se é cliente ou profissional
 
 #### **GET /api/v1/appointments/upcoming**
+
 - Lista próximos agendamentos (futuros com status PENDING ou ACCEPTED)
 - Ordenado por data mais próxima
 
 #### **GET /api/v1/appointments/history**
+
 - Lista histórico de agendamentos passados ou concluídos
 - Útil para exibir agendamentos anteriores
 
@@ -167,6 +180,7 @@ apps/api/src/modules/appointments/
 ## 🔒 Validações e Regras de Negócio
 
 ### **Validações de Criação:**
+
 - ✅ Horário não pode estar no passado
 - ✅ Máximo 3 meses de antecedência
 - ✅ Apenas horário comercial (8h-18h)
@@ -175,19 +189,23 @@ apps/api/src/modules/appointments/
 - ✅ Cliente só pode criar agendamentos para si mesmo
 
 ### **Validações de Edição:**
+
 - ✅ Não permite editar agendamentos concluídos ou rejeitados
 - ✅ Requer mínimo 24h de antecedência
 
 ### **Validações de Cancelamento:**
+
 - ✅ Apenas agendamentos PENDING podem ser cancelados
 - ✅ Requer mínimo 2h de antecedência
 
 ### **Validações de Status:**
+
 - ✅ Apenas profissional pode alterar status
 - ✅ Transições de estado controladas
 - ✅ COMPLETED apenas se agendamento já passou
 
 ### **Validações de Permissões:**
+
 - ✅ Acesso aos dados apenas para cliente ou profissional envolvido
 - ✅ Estatísticas privadas (apenas do próprio usuário)
 
@@ -196,6 +214,7 @@ apps/api/src/modules/appointments/
 ## 📊 Schemas Zod Implementados
 
 ### **CreateAppointmentInputSchema**
+
 ```typescript
 {
   clientId: string (cuid),
@@ -209,6 +228,7 @@ apps/api/src/modules/appointments/
 ```
 
 ### **UpdateAppointmentInputSchema**
+
 ```typescript
 {
   scheduledDate?: string (datetime),
@@ -219,6 +239,7 @@ apps/api/src/modules/appointments/
 ```
 
 ### **GetAppointmentsQuerySchema**
+
 ```typescript
 {
   page: string (default "1"),
@@ -237,6 +258,7 @@ apps/api/src/modules/appointments/
 ## 🧪 Testes Implementados
 
 ### **appointments.schema.test.ts**
+
 - ✅ Validação de CreateAppointmentInputSchema
 - ✅ Rejeição de location types inválidos
 - ✅ Rejeição de formatos de data inválidos
@@ -257,6 +279,7 @@ apps/api/src/modules/appointments/
 ## 📚 Documentação Swagger
 
 Todos os endpoints estão documentados com:
+
 - ✅ Descrição clara da funcionalidade
 - ✅ Parâmetros de entrada (body, query, params)
 - ✅ Exemplos de requisição
@@ -271,12 +294,14 @@ Todos os endpoints estão documentados com:
 ## 🔗 Integração com Outros Módulos
 
 ### **Dependências:**
+
 - ✅ **Users**: Valida cliente e profissional
 - ✅ **Services**: Valida serviço e obtém duração
 - ✅ **Categories**: Retorna categoria do serviço
 - ✅ **Reviews**: Calcula avaliação média (stats)
 
 ### **Relações no Prisma:**
+
 ```prisma
 model Appointment {
   client       User    @relation("ClientAppointments")
@@ -291,6 +316,7 @@ model Appointment {
 ## 🚀 Como Usar
 
 ### **1. Criar Agendamento**
+
 ```bash
 POST http://localhost:3333/api/v1/appointments
 Authorization: Bearer <token>
@@ -307,18 +333,21 @@ Content-Type: application/json
 ```
 
 ### **2. Verificar Disponibilidade**
+
 ```bash
 GET http://localhost:3333/api/v1/appointments/availability?professionalId=clx456&serviceId=clx789&date=2024-02-15
 Authorization: Bearer <token>
 ```
 
 ### **3. Listar Agendamentos**
+
 ```bash
 GET http://localhost:3333/api/v1/appointments?page=1&limit=10&status=PENDING
 Authorization: Bearer <token>
 ```
 
 ### **4. Atualizar Status (Profissional)**
+
 ```bash
 PATCH http://localhost:3333/api/v1/appointments/clx123/status
 Authorization: Bearer <token>
@@ -330,6 +359,7 @@ Content-Type: application/json
 ```
 
 ### **5. Estatísticas**
+
 ```bash
 GET http://localhost:3333/api/v1/appointments/stats?professionalId=clx456
 Authorization: Bearer <token>
@@ -340,24 +370,30 @@ Authorization: Bearer <token>
 ## 🎯 Próximos Passos Sugeridos
 
 ### **Funcionalidades Adicionais:**
+
 1. **Notificações**
+
    - Email/SMS ao criar agendamento
    - Lembrete 24h antes
    - Notificação de mudança de status
 
 2. **Agendamento Recorrente**
+
    - Criar agendamentos repetidos (semanal, mensal)
    - Template de agendamento
 
 3. **Lista de Espera**
+
    - Fila para horários ocupados
    - Notificação automática se horário liberar
 
 4. **Integração com Calendário**
+
    - Export para Google Calendar, iCal
    - Sincronização bidirecional
 
 5. **Confirmação de Agendamento**
+
    - Cliente deve confirmar presença 2h antes
    - Status adicional: CONFIRMED
 
@@ -371,12 +407,14 @@ Authorization: Bearer <token>
 ## 📈 Métricas e Performance
 
 ### **Otimizações Implementadas:**
+
 - ✅ Índices no banco de dados (`professionalId`, `scheduledDate`)
 - ✅ Paginação para evitar sobrecarga
 - ✅ Select específico (não retorna dados desnecessários)
 - ✅ Validações em camadas (schema → service → repository)
 
 ### **Considerações de Escalabilidade:**
+
 - Cache de disponibilidade (implementar Redis)
 - Background jobs para notificações (implementar Bull/BullMQ)
 - Otimização de queries complexas (usar aggregations)
@@ -385,16 +423,16 @@ Authorization: Bearer <token>
 
 ## ✅ Resumo da Implementação
 
-| Item | Status |
-|------|--------|
-| **Schemas Zod** | ✅ Completo |
-| **Repository** | ✅ Completo |
-| **Service** | ✅ Completo |
-| **Controller** | ✅ Completo |
-| **Routes** | ✅ Completo |
-| **Testes** | ✅ 20+ testes |
-| **Swagger** | ✅ Documentado |
-| **Integração** | ✅ Registrado |
+| Item            | Status         |
+| --------------- | -------------- |
+| **Schemas Zod** | ✅ Completo    |
+| **Repository**  | ✅ Completo    |
+| **Service**     | ✅ Completo    |
+| **Controller**  | ✅ Completo    |
+| **Routes**      | ✅ Completo    |
+| **Testes**      | ✅ 20+ testes  |
+| **Swagger**     | ✅ Documentado |
+| **Integração**  | ✅ Registrado  |
 
 **Total de Arquivos:** 7  
 **Total de Linhas:** ~2.800  
@@ -404,9 +442,10 @@ Authorization: Bearer <token>
 
 ## 🎉 Conclusão
 
-O módulo de **Agendamentos** está completamente implementado e pronto para uso! 
+O módulo de **Agendamentos** está completamente implementado e pronto para uso!
 
 **Principais destaques:**
+
 - ✅ Arquitetura limpa e escalável
 - ✅ Validações robustas de regras de negócio
 - ✅ Documentação Swagger completa
@@ -415,4 +454,3 @@ O módulo de **Agendamentos** está completamente implementado e pronto para uso
 - ✅ Pronto para integração com frontend
 
 **Pronto para prosseguir com o próximo módulo!** 🚀
-
