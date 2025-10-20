@@ -6,6 +6,7 @@ import {
   offeredServicesRoutes,
   categoriesRoutes,
 } from "./modules/offered-services";
+import { appointmentsRoutes } from "./modules/appointments";
 
 /**
  * Registra todas as rotas da aplicação
@@ -67,8 +68,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       // ========================================
       // MÓDULO APPOINTMENTS
       // ========================================
-      // TODO: Implementar rotas de appointments
-      // await apiRoutes.register(appointmentRoutes, { prefix: "/appointments" });
+      await apiRoutes.register(appointmentsRoutes, { prefix: "/appointments" });
     },
     { prefix: "/api/v1" }
   );
