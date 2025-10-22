@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
@@ -59,6 +60,28 @@ async function main() {
   ]);
 
   console.log(`✅ ${categories.length} categorias criadas/atualizadas\n`);
+
+  // Criar Super Admin
+  console.log("👤 Criando Super Admin...");
+  const adminPassword = "Admin@2025"; // ⚠️ TROCAR EM PRODUÇÃO!
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+  const superAdmin = await prisma.admin.upsert({
+    where: { email: "admin@quezi.com" },
+    update: {},
+    create: {
+      email: "admin@quezi.com",
+      passwordHash: hashedPassword,
+      name: "Super Admin",
+      role: "SUPER_ADMIN",
+      isActive: true,
+    },
+  });
+
+  console.log(`✅ Super Admin criado: ${superAdmin.email}`);
+  console.log(`   📧 Email: admin@quezi.com`);
+  console.log(`   🔑 Senha: Admin@2025`);
+  console.log(`   ⚠️  IMPORTANTE: Troque a senha em produção!\n`);
 
   console.log("✨ Seed concluído com sucesso!");
 }

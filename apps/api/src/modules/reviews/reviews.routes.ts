@@ -31,20 +31,17 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
             appointmentId: {
               type: "string",
               description: "ID do agendamento",
-              example: "clx1234567890abcdef",
             },
             rating: {
               type: "integer",
               minimum: 1,
               maximum: 5,
               description: "Nota de 1 a 5 estrelas",
-              example: 5,
             },
             comment: {
               type: "string",
               maxLength: 1000,
               description: "Comentário opcional",
-              example: "Excelente profissional, muito atencioso!",
             },
           },
         },
@@ -52,15 +49,12 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
           201: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: { type: "object" },
-              message: { type: "string", example: "Avaliação criada com sucesso" },
             },
           },
           400: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: false },
               message: { type: "string" },
             },
           },
@@ -93,7 +87,6 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: { type: "object" },
             },
           },
@@ -127,7 +120,6 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: { type: "array", items: { type: "object" } },
               pagination: { type: "object" },
             },
@@ -172,9 +164,7 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: { type: "object" },
-              message: { type: "string", example: "Avaliação atualizada com sucesso" },
             },
           },
         },
@@ -203,8 +193,6 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
-              message: { type: "string", example: "Avaliação deletada com sucesso" },
             },
           },
         },
@@ -237,7 +225,6 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: { type: "object" },
             },
           },
@@ -270,13 +257,10 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: {
                 type: "object",
                 properties: {
                   professionalId: { type: "string" },
-                  totalReviews: { type: "number", example: 50 },
-                  averageRating: { type: "number", example: 4.5 },
                   ratingDistribution: {
                     type: "object",
                     properties: {

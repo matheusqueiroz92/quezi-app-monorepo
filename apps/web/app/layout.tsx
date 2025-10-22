@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const playfair = Playfair_Display({
@@ -12,13 +13,7 @@ export const metadata: Metadata = {
   title: "Quezi - Plataforma de Agendamento de Serviços",
   description:
     "Conectando clientes e profissionais de beleza e estética de forma elegante e prática",
-  keywords: [
-    "agendamento",
-    "serviços",
-    "beleza",
-    "estética",
-    "profissionais",
-  ],
+  keywords: ["agendamento", "serviços", "beleza", "estética", "profissionais"],
 };
 
 export default function RootLayout({
@@ -28,8 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${inter.variable} ${playfair.variable}`}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }
-

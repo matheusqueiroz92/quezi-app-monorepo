@@ -1,6 +1,6 @@
 # 🚀 Quezi - Plataforma de Agendamento de Serviços
 
-Monorepo da aplicação Quezi, uma plataforma que conecta profissionais prestadores de serviços (principalmente beleza e estética) com clientes que desejam contratar esses serviços.
+Monorepo da aplicação Quezi App, uma plataforma que conecta profissionais prestadores de serviços (principalmente beleza e estética) com clientes que desejam contratar esses serviços.
 
 ## 📦 Estrutura do Monorepo
 

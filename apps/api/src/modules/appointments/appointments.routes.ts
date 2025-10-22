@@ -54,40 +54,33 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
             clientId: {
               type: "string",
               description: "ID do cliente",
-              example: "clx1234567890abcdef",
             },
             professionalId: {
               type: "string",
               description: "ID do profissional",
-              example: "clx0987654321fedcba",
             },
             serviceId: {
               type: "string",
               description: "ID do serviço",
-              example: "clx1122334455667788",
             },
             scheduledDate: {
               type: "string",
               format: "date-time",
               description: "Data e hora do agendamento",
-              example: "2024-02-15T14:30:00Z",
             },
             locationType: {
               type: "string",
               enum: ["AT_LOCATION", "AT_DOMICILE", "BOTH"],
               description: "Tipo de atendimento",
-              example: "AT_LOCATION",
             },
             clientAddress: {
               type: "string",
               description: "Endereço do cliente (se atendimento a domicílio)",
-              example: "Rua das Flores, 123 - Centro",
             },
             clientNotes: {
               type: "string",
               maxLength: 500,
               description: "Observações do cliente",
-              example: "Primeira consulta, chegar 10 minutos antes",
             },
           },
         },
@@ -95,17 +88,12 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           201: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: {
                 type: "object",
                 properties: {
-                  id: { type: "string", example: "clx1234567890abcdef" },
-                  clientId: { type: "string", example: "clx1234567890abcdef" },
                   professionalId: {
                     type: "string",
-                    example: "clx0987654321fedcba",
                   },
-                  serviceId: { type: "string", example: "clx1122334455667788" },
                   scheduledDate: { type: "string", format: "date-time" },
                   status: {
                     type: "string",
@@ -124,31 +112,22 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
               },
               message: {
                 type: "string",
-                example: "Agendamento criado com sucesso",
               },
             },
           },
           400: {
             type: "object",
-            properties: {
-              success: { type: "boolean", example: false },
-              message: { type: "string", example: "Dados inválidos" },
-            },
+            properties: {},
           },
           401: {
             type: "object",
-            properties: {
-              success: { type: "boolean", example: false },
-              message: { type: "string", example: "Usuário não autenticado" },
-            },
+            properties: {},
           },
           409: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: false },
               message: {
                 type: "string",
-                example: "Profissional já possui agendamento neste horário",
               },
             },
           },
@@ -174,7 +153,6 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
             id: {
               type: "string",
               description: "ID do agendamento",
-              example: "clx1234567890abcdef",
             },
           },
         },
@@ -182,17 +160,12 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: {
                 type: "object",
                 properties: {
-                  id: { type: "string", example: "clx1234567890abcdef" },
-                  clientId: { type: "string", example: "clx1234567890abcdef" },
                   professionalId: {
                     type: "string",
-                    example: "clx0987654321fedcba",
                   },
-                  serviceId: { type: "string", example: "clx1122334455667788" },
                   scheduledDate: { type: "string", format: "date-time" },
                   status: {
                     type: "string",
@@ -251,10 +224,8 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           404: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: false },
               message: {
                 type: "string",
-                example: "Agendamento não encontrado",
               },
             },
           },
@@ -313,7 +284,6 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: {
                 type: "array",
                 items: {
@@ -438,21 +408,17 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: { type: "object" },
               message: {
                 type: "string",
-                example: "Agendamento atualizado com sucesso",
               },
             },
           },
           404: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: false },
               message: {
                 type: "string",
-                example: "Agendamento não encontrado",
               },
             },
           },
@@ -482,20 +448,16 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               message: {
                 type: "string",
-                example: "Agendamento cancelado com sucesso",
               },
             },
           },
           404: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: false },
               message: {
                 type: "string",
-                example: "Agendamento não encontrado",
               },
             },
           },
@@ -541,21 +503,17 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: { type: "object" },
               message: {
                 type: "string",
-                example: "Status do agendamento atualizado com sucesso",
               },
             },
           },
           403: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: false },
               message: {
                 type: "string",
-                example: "Apenas o profissional pode alterar o status",
               },
             },
           },
@@ -600,11 +558,9 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: {
                 type: "object",
                 properties: {
-                  date: { type: "string", example: "2024-02-15" },
                   professionalId: { type: "string" },
                   serviceId: { type: "string" },
                   availableSlots: {
@@ -612,7 +568,6 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
                     items: {
                       type: "object",
                       properties: {
-                        time: { type: "string", example: "14:30" },
                         available: { type: "boolean" },
                         reason: { type: "string", nullable: true },
                       },
@@ -665,20 +620,12 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: {
                 type: "object",
                 properties: {
-                  total: { type: "number", example: 150 },
-                  pending: { type: "number", example: 25 },
-                  accepted: { type: "number", example: 100 },
-                  rejected: { type: "number", example: 15 },
-                  completed: { type: "number", example: 85 },
-                  completionRate: { type: "number", example: 85.5 },
                   averageRating: {
                     type: "number",
                     nullable: true,
-                    example: 4.8,
                   },
                 },
               },
@@ -707,7 +654,6 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: {
                 type: "array",
                 items: { type: "object" },
@@ -733,7 +679,6 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: {
                 type: "array",
                 items: { type: "object" },
@@ -761,7 +706,6 @@ export async function appointmentsRoutes(fastify: FastifyInstance) {
           200: {
             type: "object",
             properties: {
-              success: { type: "boolean", example: true },
               data: {
                 type: "array",
                 items: { type: "object" },

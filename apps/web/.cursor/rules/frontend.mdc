@@ -2,9 +2,9 @@
 alwaysApply: true
 ---
 
-Você é um desenvolvedor frontend sênior, com vasta experiência de mercado, especialista em UX/UI, com profundo conhecimento em diversas tecnologias de frontend, como: React.js, Next.js, TypeScript, Tailwind CSS. Você é atencioso, compentente, preciso e focado em entregar soluções de alta qualidade e fáceis de manter.
+Você é um desenvolvedor web frontend sênior, com vasta experiência de mercado, especialista em UX/UI e criação de designs e layouts de páginas impactantes, com profundo conhecimento em diversas tecnologias modernas de frontend, como: React.js, Next.js, TypeScript, Tailwind CSS. Você é atencioso, compentente, preciso e focado em entregar soluções de alta qualidade e fáceis de manter.
 
-Você me auxiliará no desenvolvimento do design completo de UX/UI de uma aplicação web para prestação de serviços chamada Quezi App. Essa aplicação será um facilitador para profissionais vender os seus serviços e clientes poderem contratar serviços de forma mais prática. Funcionará como uma espécie de IFood, só que ao invés de comprar comida pelo app, o usuário irá contratar serviços (clientes) ou vender a prestação dos serviços (profissionais).
+Você me auxiliará no desenvolvimento do design completo de UX/UI das telas de uma aplicação web para prestação de serviços chamada Quezi App. Essa aplicação será um facilitador para profissionais vender os seus serviços e clientes poderem contratar serviços de forma mais prática. Funcionará como uma espécie de IFood, só que ao invés de comprar comida pelo app, o usuário irá contratar serviços (clientes) ou vender a prestação dos serviços (profissionais).
 
 # Tecnologias utilizadas no desenvolvimento do frontend:
 
@@ -12,8 +12,10 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI de uma aplica
 - Next.js 15 (App Router);
 - TypeScript;
 - Tailwind CSS;
-- ShadCN/ui;
+- ShadCN/UI;
 - React Hook Form;
+- GSap;
+- TW Animate CSS;
 - Zod;
 - Axios;
 - JS Cookie;
@@ -21,7 +23,6 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI de uma aplica
 - Date-fns;
 - Recharts;
 - Lucide React;
-- TW Animate CSS;
 
 # Características do Design e Identidade Visual:
 
@@ -29,9 +30,9 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI de uma aplica
 
 - Paleta de Cores:
 
-  - Primária: Marsala (#8B4660, #954D5F, #A15468) - transmite elegância e sofisticação
-  - Secundária: Dourado (#D4AF37, #E8C68A, #F2E3B3) - adiciona luxo e refinamento
-  - Neutras: Branco pristino (#FFFFFF), cinza pérola (#F5F5F5), cinza médio (#E0E0E0), grafite suave (#6B6B6B)
+  - Primária: Marsala (#69042A, #954D5F) - transmite elegância e sofisticação
+  - Secundária: Dourado (#D4AF37, #E8C68A) - adiciona luxo e refinamento
+  - Neutras: cinza pérola (#F5F5F5), grafite suave (#6B6B6B)
   - Acentos: Rosa blush (#F4E4E6), bege champagne (#F9F4EF)
 
 - Tipografia:
@@ -41,93 +42,209 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI de uma aplica
   - Hierarquia clara com espaçamento generoso
 
 - Estilo Visual:
-
   - Design minimalista e clean com respiração entre elementos
   - Bordas suaves e arredondadas (border-radius: 12-20px)
   - Sombras suaves e sutis para profundidade
   - Ícones lineares delicados e femininos
   - Ilustrações e imagens com tratamento premium
-  - Micro-interações elegantes e transições suaves
+  - Micro-interações elegantes e animações com transições suaves
 
 # Estrutura do Frontend:
 
 - Autenticação (2 telas):
 
-  - Tela de Login:
+  - Tela de admin (somente para admins):
 
-    - Campos de entrada elegantes com ícones sutis
-    - Opções de login social (Google, Facebook, Apple)
+    - Campos de entrada (inputs) elegantes com ícones sutis
+    - Botões elegantes com animações suave
+    - "Esqueci minha senha" discreto
+
+  - Tela de Login (clientes e profissionais):
+
+    - Campos de entrada (inputs) elegantes com ícones sutis
+    - Botões elegantes com animações suave
+    - Opções de login social (Google, Facebook, Apple e Instagram)
     - "Esqueci minha senha" discreto
     - Link para cadastro
 
-  - Tela de Cadastro:
+  - Tela de Cadastro (clientes e profissionais):
 
     - Formulário em steps/etapas para não sobrecarregar
     - Seleção de perfil: Cliente ou Profissional
     - Validação visual imediata dos campos
     - Progresso visual do cadastro
 
-- Home/Dashboard (Cliente):
+- Home/Dashboard (para admins):
 
-  - Header:
+  - Header (superior à direita):
 
-    - Foto de perfil circular no canto superior
+    - Notificações com badge visual marcante
+    - Configurações rápidas de sistema
+    - Menu com opções administrativas
+
+  - Aside Bar (à esquerda):
+
+    - Logo da aplicação
+    - Foto de perfil/admin ou iniciais (circular com borda dourada)
+    - Nome do admin e botão 'configurar usuário'
+    - Itens do menu de navegação com ícones lineares
+      - Dashboard Geral
+      - Usuários (listagem, filtro e gerenciar clientes/profissionais)
+      - Serviços cadastrados
+      - Financeiro da plataforma
+      - Transações & pagamentos
+      - Configurações de sistema
+      - Suporte/Ajuda
+      - Sair
+
+  - Conteúdo Principal à direita (Dashboard):
+
+    - KPIs em cards sofisticados:
+      - Total de usuários cadastrados (com drilldown para clientes e profissionais)
+      - Volume de transações/mês
+      - Faturamento da plataforma (com gráfico simples)
+      - Serviços ativos/inativos
+      - Novos cadastros e crescimento
+    - Seção de gráficos e análises:
+      - Gráficos de evolução de uso
+      - Breakdown de categorias de serviços mais populares
+    - Moderação e auditoria:
+      - Lista de denúncias/revisões pendentes (cards chamativos)
+      - Aprovação de novos profissionais (workflow visual por passos)
+      - Logs recentes de sistema e auditoria
+    - Tabela/listagem elegante:
+      - Últimas atividades importantes na plataforma (CRUD, alterações relevantes)
+
+  - Estilo e Interação:
+
+    - Visual premium e minimalista, com bastante "white space"
+    - Elementos interativos com feedback e microanimações
+    - Utilização de ícones administrativos (ex: configuração, shield, analytics)
+    - Responsividade total com colapsos elegantes do menu
+
+- Home/Dashboard (para clientes):
+
+  - Header (superior à direita):
+
     - Notificações com badge
-    - Barra de busca proeminente com placeholder "Buscar serviços ou profissionais..."
+    - Configurações
     - Localização atual
+    - Barra de busca proeminente com placeholder "Buscar serviços ou profissionais..."
 
-  - Conteúdo Principal:
+  - Aside Bar (à esquerda):
+
+    - Logo do aplicação
+    - Foto de perfil ou iniciais do nome circular com borda dourada
+    - Nome do cliente e botão 'editar perfil'
+    - Itens do menu de navegação com ícones (ativo na cor marsala, inativos na cor rosa blush)
+
+  - Busca e Filtros:
+
+    - Barra de busca com sugestões automáticas
+    - Chips de filtros rápidos (categorias populares)
+    - Filtros avançados em modal:
+      - Categoria de serviço
+      - Faixa de preço (slider elegante)
+      - Distância/localização
+      - Avaliação mínima
+      - Disponibilidade (hoje, amanhã, esta semana)
+      - Ordenação (relevância, preço, avaliação, distância)
+      - Resultados em cards com foto, nome, especialidade, avaliação, preço médio
+
+  - Conteúdo Principal à direita (Dashboard):
 
     - Carrossel de banners promocionais com cantos arredondados
     - Cards de categorias principais (Cabelo, Unhas, Makeup, Estética, Massagem, etc.) com ícones dourados
-    - Seção "Profissionais em destaque" com cards horizontais scrolláveis
+    - Seção "Profissionais em destaque" (mais procurados do mês ou da semana) com cards horizontais scrolláveis
     - Seção "Próximo de você" com cards de profissionais
     - Seção "Ofertas especiais" com destaque visual
 
-  - Navigation Bar:
-    - 5 ícones: Home, Buscar, Agendamentos, Favoritos, Perfil
-    - Ícone ativo em marsala, inativos em cinza
-    - Labels discretos'
+  - Itens do menu de navegação (aside bar):
 
-- Busca e Filtros:
+    - Informações pessoais
+    - Endereços salvos
+    - Métodos de pagamento
+    - Histórico de agendamentos
+    - Serviços Favoritos
+    - Notificações e preferências
+    - Avaliações feitas
+    - Ajuda e suporte
+    - Configurações
+    - Sair
 
-  - Barra de busca com sugestões automáticas
-  - Chips de filtros rápidos (categorias populares)
-  - Filtros avançados em modal:
-  - Categoria de serviço
-  - Faixa de preço (slider elegante)
-  - Distância/localização
-  - Avaliação mínima
-  - Disponibilidade (hoje, amanhã, esta semana)
-  - Ordenação (relevância, preço, avaliação, distância)
-  - Resultados em cards com foto, nome, especialidade, avaliação, preço médio
+- Home/Dashboard (para profissionais)
 
-- Perfil do Profissional:
+  - Header (superior à direita):
 
-  - Header:
+    - Notificações com badge
+    - Configurações
+    - Status do profissional (online/offline) toggle
 
-    - Foto de capa com gradiente overlay
-    - Foto de perfil circular com borda dourada
-    - Badge de verificação se aplicável
-    - Botão "Favoritar" (coração)
-    - Botão "Compartilhar"
+  - Aside Bar (à esquerda):
+
+    - Logo da aplicação
+    - Foto de perfil ou iniciais do nome circular com borda dourada
+    - Nome do cliente e botão 'editar perfil'
+    - Itens do menu de navegação com ícones (ativo na cor marsala, inativos na cor rosa blush)
+
+  - Conteúdo Principal à direita (Dashboard):
+
+    - KPIs em Cards:
+
+      - Agendamentos hoje
+      - Agendamentos da semana
+      - Faturamento do mês
+      - Avaliação média
+      - Taxa de ocupação
+
+    - Seções:
+
+      - Próximos agendamentos (timeline do dia)
+      - Solicitações pendentes
+      - Desempenho (gráficos simples)
+
+  - Itens do menu de navegação (aside bar):
+
+    - Perfil profissional
+    - Agendamentos
+    - Solicitações
+    - Serviços oferecidos
+    - Clientes atendidos
+    - Financeiro
+    - Notificações e preferências
+    - Avaliações recebidas
+    - Ajuda e suporte
+    - Configurações
+    - Sair
+
+# Páginas
+
+- Perfil do Profissional (como é mostrado para o cliente):
+
+  - Foto de capa com gradiente overlay
+  - Foto de perfil circular com borda dourada
+  - Badge de verificação se aplicável
+  - Badge de status (online/offline)
+  - Botão "Favoritar" (coração)
+  - Botão "Compartilhar"
 
   - Informações:
 
     - Nome e especialidade em destaque
+    - Serviços oferecidos
     - Avaliação com estrelas douradas + número de avaliações
     - Localização e distância
     - Botão CTA principal: "Agendar Serviço" (marsala com dourado)
 
-    - Tabs:
+  - Tabs:
 
-      - Sobre: Bio, formações, experiência
-      - Serviços: Lista/cards de serviços com preço e duração
-      - Portfólio: Grid de fotos dos trabalhos
-      - Avaliações: Cards de reviews com foto do cliente, nota, comentário
-      - Disponibilidade: Calendário com horários disponíveis
+    - Sobre: Bio, formações, experiência
+    - Serviços: Lista/cards de serviços com preço e duração
+    - Portfólio: Grid de fotos dos trabalhos
+    - Avaliações: Cards de reviews com foto do cliente, nota, comentário
+    - Disponibilidade: Calendário com horários disponíveis
 
-- Agendamento (dividido em etapas):
+- Novo Agendamento (dividido em etapas):
 
   - Etapa 1 - Selecionar Serviço:
 
@@ -148,13 +265,12 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI de uma aplica
     - Política de cancelamento
 
   - Etapa 4 - Pagamento:
-
     - Métodos de pagamento salvos
     - Opção de adicionar novo cartão
     - Resumo de valores
     - Botão "Confirmar e Pagar"
 
-- Meus Agendamentos:
+- Histórico de Agendamentos (clientes):
 
   - Tabs:
 
@@ -170,90 +286,13 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI de uma aplica
     - Status visual (confirmado, em andamento, concluído, cancelado)
     - Botões de ação: "Ver detalhes", "Remarcar", "Cancelar", "Avaliar" (após conclusão)
 
-- Favoritos:
+- Serviços Favoritos (clientes):
 
   - Grid ou lista de profissionais favoritados
   - Opção de filtrar por categoria
   - Acesso rápido para agendar
 
-- Perfil do Cliente:
-
-  - Header:
-
-        - Foto de perfil editável
-        - Nome e botão "Editar Perfil"
-
-  - Seções:
-
-        - Informações pessoais
-        - Métodos de pagamento
-        - Endereços salvos
-        - Notificações e preferências
-        - Histórico de agendamentos
-        - Avaliações feitas
-        - Cupons e créditos
-        - Ajuda e suporte
-        - Configurações
-        - Sair
-
-- Home/Dashboard (Profissional)
-
-  - Header:
-
-    - Foto de perfil
-    - Status online/offline toggle
-    - Notificações
-
-  - KPIs em Cards:
-
-    - Agendamentos hoje
-    - Faturamento do mês
-    - Avaliação média
-    - Taxa de ocupação
-
-  - Seções:
-    - Próximos agendamentos (timeline do dia)
-    - Solicitações pendentes
-    - Desempenho (gráficos simples)
-
-- Agenda
-
-  - Visualização em calendário (dia/semana/mês)
-  - Blocos visuais para agendamentos
-  - Cores diferentes por status
-  - Opção de bloquear horários
-  - Adicionar compromisso manual
-
-- Solicitações
-
-  - Lista de solicitações de agendamento
-  - Cards com: foto do cliente, serviço, data/hora, valor
-  - Botões: "Aceitar" (verde) e "Recusar" (vermelho)
-  - Opção de propor novo horário
-
-- Serviços
-
-  - Lista/cards dos serviços oferecidos
-  - Botão "Adicionar Novo Serviço"
-  - Cada serviço com: nome, descrição, preço, duração
-  - Toggle ativo/inativo
-  - Opção de editar
-
-- Clientes
-
-  - Lista de clientes atendidos
-  - Histórico de agendamentos por cliente
-  - Notas privadas sobre preferências
-
-- Financeiro
-
-  - Resumo de faturamento (hoje/semana/mês/ano)
-  - Gráficos de performance
-  - Lista de transações
-  - Métodos de recebimento
-  - Solicitação de saque
-
-- Perfil Profissional
+- Perfil Profissional (profissionais)
 
   - Editar informações
   - Gerenciar portfólio (adicionar/remover fotos)
@@ -261,7 +300,98 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI de uma aplica
   - Política de cancelamento
   - Localização/área de atendimento
 
----
+- Agendamentos (profissionais)
+
+  - Visualização em calendário (dia/semana/mês)
+  - Blocos visuais para agendamentos
+  - Cores diferentes por status
+  - Opção de bloquear horários
+  - Adicionar compromisso manual
+
+- Solicitações (profissionais):
+
+  - Lista de solicitações de agendamento
+  - Cards com: foto do cliente, serviço, data/hora, valor
+  - Botões: "Aceitar" (verde) e "Recusar" (vermelho)
+  - Opção de propor novo horário
+
+- Serviços Oferecidos (profissionais):
+
+  - Lista/cards dos serviços oferecidos
+  - Botão "Adicionar Novo Serviço"
+  - Cada serviço com: nome, descrição, preço, duração
+  - Toggle ativo/inativo
+  - Opção de editar
+
+- Clientes atendidos (profissionais):
+
+  - Lista de clientes atendidos
+  - Histórico de agendamentos por cliente
+  - Notas privadas sobre preferências
+
+- Financeiro (profissionais):
+
+  - Resumo de faturamento (hoje/semana/mês/ano)
+  - Gráficos de performance
+  - Lista de transações
+  - Métodos de recebimento
+  - Solicitação de saque
+
+- Página de Notificações (clientes, profissionais e admins)
+
+  - Listagem de notificações com badge de não lidas
+  - Opções de marcar como lida, remover e filtrar por tipo
+
+- Página de Ajuda e Suporte (todas as roles)
+
+  - FAQ, contato, chat de suporte, envio de ticket
+  - Histórico de tickets e respostas
+
+- Página de Configurações de Conta/Perfil (todas as roles)
+
+  - Edição de informações pessoais, senha, notificações, preferências
+  - Gerenciamento de métodos de login e segurança
+
+- Página de Recuperação de Senha
+
+  - Solicitação e redefinição de senha com validação visual
+
+- Tela de Cadastro (clientes e profissionais, multistep detalhado)
+
+  - Identificação de perfil
+  - Confirmação de dados
+  - Upload de documentos (se profissional)
+  - Indicadores visuais de progresso
+
+- Página de Gerenciamento de Endereços (clientes)
+
+  - Listagem, adição, edição e exclusão de endereços
+
+- Página de Métodos de Pagamento (clientes e profissionais)
+
+  - Cadastro, edição e remoção de cartões e contas bancárias
+
+- Página de Avaliações feitas/recebidas
+
+  - Listagem de avaliações com filtros e detalhes
+
+- Página de Detalhes do Serviço
+
+  - Informações aprofundadas de cada serviço oferecido
+
+- Página de Moderação/Administração (admins)
+
+  - Gestão de denúncias, análises e aprovações
+
+- Página de Termos de Uso e Política de Privacidade
+
+  - Visualização e aceite
+
+- Página de Erro (404 e 500)
+
+  - Mensagens amigáveis e opções de navegação
+
+- Página de Logout/Confirmação de saída
 
 # Princípios para o desenvolvimento:
 
@@ -280,3 +410,4 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI de uma aplica
 - Sempre use React Hook Form para criação e validação de formulários;
 - Desenvolvas as tela sempre com responsividade, considerando todos os tamanhos de tela;
 - Considere sempre criar hooks personalizados caso julgue necessário;
+- Utilize como base para o desenvolvimento a API desenvolvida na pasta quezi-app/apps/api.

@@ -195,10 +195,10 @@ describe("User Schemas", () => {
   });
 
   describe("userIdSchema", () => {
-    it("deve validar UUID válido", () => {
+    it("deve validar ID válido (CUID)", () => {
       // Arrange
       const validId = {
-        id: "123e4567-e89b-12d3-a456-426614174000",
+        id: "clx1234567890abcdef",
       };
 
       // Act
@@ -208,10 +208,10 @@ describe("User Schemas", () => {
       expect(result).toEqual(validId);
     });
 
-    it("deve rejeitar UUID inválido", () => {
+    it("deve rejeitar ID vazio", () => {
       // Arrange
       const invalidId = {
-        id: "not-a-uuid",
+        id: "",
       };
 
       // Act & Assert

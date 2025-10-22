@@ -70,3 +70,13 @@
   transition: background-color 0.2s ease, color 0.2s ease,
     border-color 0.2s ease;
 }
+
+/* Animação de loading (barra de progresso) */
+@keyframes loading {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}

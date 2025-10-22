@@ -50,6 +50,14 @@ enum InviteStatus {
   EXPIRED
 }
 
+enum AdminRole {
+  SUPER_ADMIN   // Acesso total à plataforma
+  ADMIN         // Gestão de usuários e moderação
+  MODERATOR     // Apenas moderação de conteúdo
+  SUPPORT       // Apenas suporte a usuários
+  ANALYST       // Apenas visualização de métricas
+}
+
 // ========================================
 // ENTIDADES / MODELS
 // ========================================
@@ -60,12 +68,19 @@ model User {
   passwordHash     String?
   name             String
   phone            String?
-  userType         UserType @default(CLIENT)
+  userType         UserType @default(CLIENT) // Default temporário (será atualizado no callback)
   isEmailVerified  Boolean  @default(false)
   emailVerified    Boolean  @default(false)
   twoFactorEnabled Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  // Campos de perfil estendidos (opcionais, para clientes e profissionais)
+  photoUrl         String?  // Foto de perfil
+  bio              String?  // Bio/descrição (max 500 chars)
+  defaultAddress   String?  // Endereço padrão para atendimentos a domicílio
+  city             String?  // Cidade do usuário
+  notificationPrefs Json?   // Preferências de notificação (email, sms, push)
 
   // Relações
   professionalProfile    ProfessionalProfile?   // 1:1, opcional (apenas para UserType: PROFESSIONAL)
@@ -291,4 +306,49 @@ model OrganizationInvite {
   @@unique([organizationId, email]) // Não permitir convites duplicados
   @@index([email])
   @@map("organization_invites")
+}
+
+// ========================================
+// ADMIN MODELS
+// ========================================
+
+model Admin {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  name         String
+  role         AdminRole   @default(MODERATOR)
+  permissions  Json?       // Permissões granulares personalizadas
+  isActive     Boolean     @default(true)
+  lastLogin    DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Relações
+  actions      AdminAction[]
+
+  @@index([email])
+  @@index([role])
+  @@map("admins")
+}
+
+model AdminAction {
+  id          String   @id @default(cuid())
+  adminId     String
+  action      String   // Ex: "USER_SUSPENDED", "REVIEW_DELETED", "SERVICE_APPROVED"
+  entityType  String   // Ex: "User", "Review", "Service", "ProfessionalProfile"
+  entityId    String   // ID da entidade afetada
+  details     Json?    // Detalhes adicionais da ação (motivo, valores anteriores, etc)
+  ipAddress   String?  // IP de onde a ação foi executada
+  userAgent   String?  // User agent do navegador
+  createdAt   DateTime @default(now())
+
+  // Relações
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("admin_actions")
 }

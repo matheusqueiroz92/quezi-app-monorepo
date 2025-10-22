@@ -76,7 +76,7 @@ export class OrganizationController {
             type: "object",
             required: ["organizationId", "email", "role"],
             properties: {
-              organizationId: { type: "string", format: "uuid" },
+              organizationId: { type: "string" },
               email: { type: "string", format: "email" },
               role: { type: "string", enum: ["OWNER", "ADMIN", "MEMBER"] },
             },
@@ -99,8 +99,8 @@ export class OrganizationController {
             type: "object",
             required: ["organizationId", "memberId", "role"],
             properties: {
-              organizationId: { type: "string", format: "uuid" },
-              memberId: { type: "string", format: "uuid" },
+              organizationId: { type: "string" },
+              memberId: { type: "string" },
               role: { type: "string", enum: ["OWNER", "ADMIN", "MEMBER"] },
             },
           },

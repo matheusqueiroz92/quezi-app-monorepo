@@ -22,6 +22,33 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
 
+  // Definir schema de usuário com campos customizados
+  user: {
+    additionalFields: {
+      userType: {
+        type: "string",
+        required: false,
+        defaultValue: "CLIENT",
+        input: true, // Aceitar no input
+      },
+      phone: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      bio: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      city: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+    },
+  },
+
   // Configuração de email
   emailAndPassword: {
     enabled: true,
@@ -104,12 +131,27 @@ export const auth = betterAuth({
 
   // Callbacks
   callbacks: {
+    // Callback ANTES de criar usuário - permite modificar dados
+    async beforeUserCreate(user: any) {
+      console.log("📝 Dados recebidos para criar usuário:", user);
+
+      // Garantir que userType seja CLIENT se não fornecido
+      if (!user.userType) {
+        user.userType = "CLIENT";
+      }
+
+      console.log("✅ UserType definido como:", user.userType);
+
+      return user;
+    },
+
     // Callback após criar usuário
-    async onSignUp(user: any) {
+    async onSignUp(user: any, request: any) {
       console.log("✅ Novo usuário registrado:", {
         id: user.id,
         email: user.email,
         name: user.name,
+        userType: user.userType,
       });
 
       // TODO: Enviar email de boas-vindas
@@ -120,6 +162,7 @@ export const auth = betterAuth({
       console.log("🔐 Usuário fez login:", {
         id: user.id,
         email: user.email,
+        userType: user.userType,
       });
     },
   },

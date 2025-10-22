@@ -292,4 +292,230 @@ describe("UserController", () => {
       expect(serviceMock.deleteUser).toHaveBeenCalledWith(userId);
     });
   });
+
+  describe("updateUserProfile", () => {
+    it("deve atualizar perfil do usuário com sucesso", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      const mockUser = {
+        id: userId,
+        email: "user@test.com",
+        name: "User Name",
+        photoUrl: "https://example.com/photo.jpg",
+        bio: "Minha bio",
+        city: "São Paulo",
+        userType: "CLIENT",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      requestMock.params = { id: userId };
+      requestMock.body = {
+        photoUrl: "https://example.com/photo.jpg",
+        bio: "Minha bio",
+        city: "São Paulo",
+      };
+      requestMock.user = { id: userId };
+
+      serviceMock.updateUser.mockResolvedValue(mockUser);
+
+      await (controller as any).updateUserProfile(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(200);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        success: true,
+        data: mockUser,
+        message: "Perfil atualizado com sucesso",
+      });
+      expect(serviceMock.updateUser).toHaveBeenCalledWith(
+        userId,
+        requestMock.body
+      );
+    });
+
+    it("deve retornar 401 se usuário não estiver autenticado", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      requestMock.params = { id: userId };
+      requestMock.body = { bio: "Nova bio" };
+      requestMock.user = null;
+
+      await (controller as any).updateUserProfile(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(401);
+      expect(replyMock.send).toHaveBeenCalledWith({ error: "Não autenticado" });
+      expect(serviceMock.updateUser).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar 403 se usuário tentar atualizar perfil de outro", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      const currentUserId = "660e8400-e29b-41d4-a716-446655440001";
+
+      requestMock.params = { id: userId };
+      requestMock.body = { bio: "Nova bio" };
+      requestMock.user = { id: currentUserId };
+
+      await (controller as any).updateUserProfile(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(403);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        error: "Você só pode atualizar seu próprio perfil",
+      });
+      expect(serviceMock.updateUser).not.toHaveBeenCalled();
+    });
+
+    it("deve tratar erros", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      requestMock.params = { id: userId };
+      requestMock.body = { bio: "Nova bio" };
+      requestMock.user = { id: userId };
+
+      serviceMock.updateUser.mockRejectedValue(new Error("Database error"));
+
+      await (controller as any).updateUserProfile(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        error: "Erro ao atualizar perfil",
+      });
+    });
+  });
+
+  describe("getPublicProfile", () => {
+    it("deve buscar perfil público com sucesso", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      const mockUser = {
+        id: userId,
+        email: "user@test.com",
+        name: "User Name",
+        photoUrl: "https://example.com/photo.jpg",
+        bio: "Minha bio",
+        city: "São Paulo",
+        userType: "CLIENT",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      requestMock.params = { id: userId };
+      serviceMock.getUserById.mockResolvedValue(mockUser);
+
+      await (controller as any).getPublicProfile(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(200);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        success: true,
+        data: {
+          id: mockUser.id,
+          name: mockUser.name,
+          photoUrl: mockUser.photoUrl,
+          bio: mockUser.bio,
+          city: mockUser.city,
+          userType: mockUser.userType,
+          createdAt: mockUser.createdAt,
+        },
+      });
+      expect(serviceMock.getUserById).toHaveBeenCalledWith(userId);
+    });
+
+    it("deve tratar erro quando usuário não encontrado", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      requestMock.params = { id: userId };
+      serviceMock.getUserById.mockRejectedValue(new Error("User not found"));
+
+      await (controller as any).getPublicProfile(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(404);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        error: "Usuário não encontrado",
+      });
+    });
+  });
+
+  describe("updateNotificationPrefs", () => {
+    it("deve atualizar preferências de notificação com sucesso", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      const notificationPrefs = {
+        email: true,
+        push: false,
+        sms: true,
+      };
+      const expectedNotificationPrefs = {
+        email: true,
+        sms: true, // Valor passado no body
+        push: false, // Valor passado no body
+        appointmentReminder: true,
+        appointmentConfirmation: true,
+        reviewReminder: true,
+        marketing: false,
+      };
+      const mockUser = {
+        id: userId,
+        notificationPrefs: expectedNotificationPrefs,
+        email: "user@test.com",
+        name: "User Name",
+      };
+
+      requestMock.params = { id: userId };
+      requestMock.body = { notificationPrefs };
+      requestMock.user = { id: userId };
+
+      serviceMock.updateUser.mockResolvedValue(mockUser);
+
+      await (controller as any).updateNotificationPrefs(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(200);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        success: true,
+        data: { notificationPrefs: expectedNotificationPrefs },
+        message: "Preferências atualizadas com sucesso",
+      });
+      expect(serviceMock.updateUser).toHaveBeenCalledWith(userId, {
+        notificationPrefs: expectedNotificationPrefs,
+      });
+    });
+
+    it("deve retornar 401 se usuário não estiver autenticado", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      requestMock.params = { id: userId };
+      requestMock.body = { notificationPrefs: { email: true } };
+      requestMock.user = null;
+
+      await (controller as any).updateNotificationPrefs(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(401);
+      expect(replyMock.send).toHaveBeenCalledWith({ error: "Não autenticado" });
+      expect(serviceMock.updateUser).not.toHaveBeenCalled();
+    });
+
+    it("deve retornar 403 se usuário tentar atualizar preferências de outro", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      const currentUserId = "660e8400-e29b-41d4-a716-446655440001";
+
+      requestMock.params = { id: userId };
+      requestMock.body = { notificationPrefs: { email: true } };
+      requestMock.user = { id: currentUserId };
+
+      await (controller as any).updateNotificationPrefs(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(403);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        error: "Você só pode atualizar suas próprias preferências",
+      });
+      expect(serviceMock.updateUser).not.toHaveBeenCalled();
+    });
+
+    it("deve tratar erros", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      requestMock.params = { id: userId };
+      requestMock.body = { notificationPrefs: { email: true } };
+      requestMock.user = { id: userId };
+
+      serviceMock.updateUser.mockRejectedValue(new Error("Database error"));
+
+      await (controller as any).updateNotificationPrefs(requestMock, replyMock);
+
+      expect(replyMock.status).toHaveBeenCalledWith(500);
+      expect(replyMock.send).toHaveBeenCalledWith({
+        error: "Erro ao atualizar preferências",
+      });
+    });
+  });
 });

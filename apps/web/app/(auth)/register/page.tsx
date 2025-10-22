@@ -3,287 +3,738 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/hooks/use-auth";
+import {
+  Mail,
+  Lock,
+  User,
+  Phone,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle,
+  Briefcase,
+  ShoppingBag,
+  MapPin,
+  FileText,
+} from "lucide-react";
+
+import { Logo } from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { post, getErrorMessage } from "@/lib/api-client";
+import { setAuthToken, redirectByRole } from "@/lib/auth-utils";
+import { z } from "zod";
 
-/**
- * Schema de validação do formulário de registro
- * Segue as mesmas validações da API
- */
-const registerSchema = z.object({
-  name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
-  email: z.string().email("Email inválido"),
-  password: z
-    .string()
-    .min(8, "Senha deve ter no mínimo 8 caracteres")
-    .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
-    .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
-    .regex(/[0-9]/, "Senha deve conter pelo menos um número"),
+// Schemas de validação por etapa
+const step1Schema = z.object({
   userType: z.enum(["CLIENT", "PROFESSIONAL"], {
-    message: "Selecione um tipo de usuário",
+    required_error: "Selecione um tipo de conta",
   }),
 });
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+const step2Schema = z
+  .object({
+    name: z
+      .string()
+      .min(3, "Nome deve ter no mínimo 3 caracteres")
+      .max(100, "Nome deve ter no máximo 100 caracteres")
+      .regex(/^[A-Za-zÀ-ÿ\s]+$/, "Nome deve conter apenas letras"),
+    email: z.string().min(1, "Email é obrigatório").email("Email inválido"),
+    password: z
+      .string()
+      .min(8, "Senha deve ter no mínimo 8 caracteres")
+      .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
+      .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
+      .regex(/[0-9]/, "Senha deve conter pelo menos um número"),
+    confirmPassword: z.string(),
+    phone: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
+
+const step3Schema = z.object({
+  city: z.string().min(2, "Cidade é obrigatória"),
+  bio: z.string().optional(),
+  specialties: z.string().optional(),
+});
+
+type RegisterFormData = z.infer<typeof step1Schema> &
+  z.infer<typeof step2Schema> &
+  z.infer<typeof step3Schema>;
+
+type UserType = "CLIENT" | "PROFESSIONAL";
+
+const TOTAL_STEPS = 4;
 
 export default function RegisterPage() {
-  const { register: registerUser, isLoading, error } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [userType, setUserType] = useState<UserType | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [step, setStep] = useState(1);
-  const [selectedUserType, setSelectedUserType] = useState<
-    "CLIENT" | "PROFESSIONAL" | null
-  >(null);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Salvar progresso no localStorage
+  const [savedProgress, setSavedProgress, clearProgress] = useLocalStorage<
+    Partial<RegisterFormData>
+  >("register_progress", {});
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
     setValue,
     trigger,
+    getValues,
   } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    mode: "onBlur", // Valida ao sair do campo
+    mode: "onChange",
+    defaultValues: {
+      name: savedProgress.name || "",
+      email: savedProgress.email || "",
+      password: "",
+      confirmPassword: "",
+      phone: savedProgress.phone || "",
+      userType: savedProgress.userType || undefined,
+      city: savedProgress.city || "",
+      bio: savedProgress.bio || "",
+      specialties: savedProgress.specialties || "",
+    },
   });
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const password = watch("password");
+  const watchedUserType = watch("userType");
+
+  // Validações da senha
+  const passwordValidations = {
+    minLength: password?.length >= 8,
+    hasUpperCase: /[A-Z]/.test(password || ""),
+    hasLowerCase: /[a-z]/.test(password || ""),
+    hasNumber: /[0-9]/.test(password || ""),
+  };
+
+  const allValidationsPassed = Object.values(passwordValidations).every(
+    (v) => v
+  );
+
+  // Progresso visual
+  const progressPercentage = (currentStep / TOTAL_STEPS) * 100;
+
+  // Próxima etapa
+  const handleNext = async () => {
+    const values = getValues();
+
     try {
-      await registerUser(data);
-    } catch (err) {
-      // Erro já tratado pelo hook
+      // Validação com Zod por etapa
+      if (currentStep === 1) {
+        step1Schema.parse(values);
+      } else if (currentStep === 2) {
+        step2Schema.parse(values);
+      } else if (currentStep === 3) {
+        step3Schema.parse(values);
+      }
+
+      // Salvar progresso
+      setSavedProgress({
+        ...values,
+      });
+
+      // Avançar para próxima etapa
+      setCurrentStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast({
+          title: "Campo inválido",
+          description: firstError.message,
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // Etapa anterior
+  const handleBack = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+  };
+
+  // Selecionar tipo de usuário
+  const handleSelectUserType = (type: UserType) => {
+    setUserType(type);
+    setValue("userType", type);
+    setSavedProgress({ ...savedProgress, userType: type });
+  };
+
+  // Submit final
+  const onSubmit = async () => {
+    setIsLoading(true);
+
+    const values = getValues();
+
+    // Debug: verificar valores
+    console.log("📝 Dados do cadastro:", {
+      name: values.name,
+      email: values.email,
+      userType: values.userType,
+      city: values.city,
+    });
+
+    try {
+      const payload = {
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        userType: values.userType,
+        phone: values.phone || undefined,
+        // Campos adicionais para profissional
+        ...(values.userType === "PROFESSIONAL" && {
+          bio: values.bio,
+          city: values.city,
+          specialties: values.specialties?.split(",").map((s) => s.trim()),
+        }),
+        // Campos adicionais para cliente
+        ...(values.userType === "CLIENT" && {
+          city: values.city,
+        }),
+      };
+
+      console.log("📤 Payload enviado para API:", payload);
+
+      const response = await post<{ token: string }>(
+        "/auth/sign-up/email",
+        payload
+      );
+
+      setAuthToken(response.token, true);
+
+      toast({
+        title: "Cadastro realizado!",
+        description: "Bem-vinda ao Quezi!",
+      });
+
+      // Limpar progresso salvo
+      clearProgress();
+
+      setTimeout(() => {
+        redirectByRole();
+      }, 500);
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+
+      toast({
+        title: "Erro ao criar conta",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent-champagne via-neutral-white to-accent-blush p-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto mb-4">
-            <h1 className="font-display text-4xl text-marsala">Quezi</h1>
-            <div className="h-1 w-20 bg-gradient-to-r from-marsala to-dourado mx-auto mt-2 rounded-full" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent-champagne via-neutral-pearl to-accent-blush p-4 py-12">
+      <div className="w-full max-w-2xl">
+        <div className="bg-white rounded-quezi-lg shadow-xl p-8 animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <Logo size="lg" />
           </div>
 
-          <CardTitle className="text-2xl">Crie sua conta</CardTitle>
-          <CardDescription>
-            {step === 1
-              ? "Como você quer usar a Quezi?"
-              : "Preencha seus dados para começar"}
-          </CardDescription>
-
-          {/* Progress */}
-          <div className="flex gap-2 pt-4">
-            <div
-              role="progressbar"
-              aria-valuenow={step >= 1 ? 100 : 0}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                step >= 1 ? "bg-marsala" : "bg-neutral-medium"
-              }`}
-            />
-            <div
-              role="progressbar"
-              aria-valuenow={step >= 2 ? 100 : 0}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                step >= 2 ? "bg-marsala" : "bg-neutral-medium"
-              }`}
-            />
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          {/* Step 1: Selecionar tipo de usuário */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <div
-                onClick={() => {
-                  setSelectedUserType("CLIENT");
-                  setValue("userType", "CLIENT");
-                }}
-                className={`p-6 rounded-quezi-lg border-2 cursor-pointer transition-all ${
-                  selectedUserType === "CLIENT"
-                    ? "border-marsala bg-accent-blush"
-                    : "border-neutral-medium hover:border-marsala/50"
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="text-4xl">💆‍♀️</div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-xl text-marsala mb-2">
-                      Sou Cliente
-                    </h3>
-                    <p className="text-sm text-neutral-graphite">
-                      Quero encontrar e agendar serviços com profissionais
-                    </p>
-                  </div>
-                  {selectedUserType === "CLIENT" && (
-                    <div className="text-2xl text-marsala">✓</div>
-                  )}
-                </div>
-              </div>
-
-              <div
-                onClick={() => {
-                  setSelectedUserType("PROFESSIONAL");
-                  setValue("userType", "PROFESSIONAL");
-                }}
-                className={`p-6 rounded-quezi-lg border-2 cursor-pointer transition-all ${
-                  selectedUserType === "PROFESSIONAL"
-                    ? "border-marsala bg-accent-blush"
-                    : "border-neutral-medium hover:border-marsala/50"
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="text-4xl">💼</div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-xl text-marsala mb-2">
-                      Sou Profissional
-                    </h3>
-                    <p className="text-sm text-neutral-graphite">
-                      Quero oferecer meus serviços e gerenciar agendamentos
-                    </p>
-                  </div>
-                  {selectedUserType === "PROFESSIONAL" && (
-                    <div className="text-2xl text-marsala">✓</div>
-                  )}
-                </div>
-              </div>
-
-              <Button
-                onClick={() => setStep(2)}
-                disabled={!selectedUserType}
-                className="w-full bg-marsala hover:bg-marsala-dark"
-              >
-                Continuar
-              </Button>
+          {/* Progresso */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-neutral-graphite">
+                Etapa {currentStep} de {TOTAL_STEPS}
+              </span>
+              <span className="text-sm text-neutral-graphite">
+                {Math.round(progressPercentage)}%
+              </span>
             </div>
-          )}
+            <Progress value={progressPercentage} className="h-2" />
+          </div>
 
-          {/* Step 2: Dados pessoais */}
-          {step === 2 && (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Nome */}
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome completo</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Maria Silva"
-                  {...register("name")}
-                  className={errors.name ? "border-red-500" : ""}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
-                )}
-              </div>
+          <div>
+            {/* Step 1: Seleção de Perfil */}
+            {currentStep === 1 && (
+              <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-300">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-display font-bold text-marsala mb-2">
+                    Como você quer usar o Quezi?
+                  </h2>
+                  <p className="text-neutral-graphite">
+                    Selecione o tipo de conta que melhor se adequa a você
+                  </p>
+                </div>
 
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  {...register("email")}
-                  className={errors.email ? "border-red-500" : ""}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email.message}</p>
-                )}
-              </div>
-
-              {/* Senha */}
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    {...register("password")}
-                    className={errors.password ? "border-red-500" : ""}
-                  />
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Cliente */}
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-graphite hover:text-marsala"
-                    aria-label={
-                      showPassword ? "Ocultar senha" : "Mostrar senha"
-                    }
+                    onClick={() => handleSelectUserType("CLIENT")}
+                    className={`p-6 rounded-quezi-lg border-2 transition-all duration-200 ${
+                      watchedUserType === "CLIENT"
+                        ? "border-marsala bg-accent-blush shadow-lg scale-105"
+                        : "border-neutral-medium hover:border-marsala/50 hover:bg-accent-blush/30"
+                    }`}
                   >
-                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                    <div className="flex flex-col items-center text-center">
+                      <div
+                        className={`p-4 rounded-full mb-4 ${
+                          watchedUserType === "CLIENT"
+                            ? "bg-marsala"
+                            : "bg-neutral-pearl"
+                        }`}
+                      >
+                        <ShoppingBag
+                          className={`w-8 h-8 ${
+                            watchedUserType === "CLIENT"
+                              ? "text-white"
+                              : "text-marsala"
+                          }`}
+                        />
+                      </div>
+                      <h3 className="text-xl font-display font-bold text-marsala mb-2">
+                        Cliente
+                      </h3>
+                      <p className="text-sm text-neutral-graphite">
+                        Quero agendar e contratar serviços de beleza e estética
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Profissional */}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectUserType("PROFESSIONAL")}
+                    className={`p-6 rounded-quezi-lg border-2 transition-all duration-200 ${
+                      watchedUserType === "PROFESSIONAL"
+                        ? "border-marsala bg-accent-blush shadow-lg scale-105"
+                        : "border-neutral-medium hover:border-marsala/50 hover:bg-accent-blush/30"
+                    }`}
+                  >
+                    <div className="flex flex-col items-center text-center">
+                      <div
+                        className={`p-4 rounded-full mb-4 ${
+                          watchedUserType === "PROFESSIONAL"
+                            ? "bg-marsala"
+                            : "bg-neutral-pearl"
+                        }`}
+                      >
+                        <Briefcase
+                          className={`w-8 h-8 ${
+                            watchedUserType === "PROFESSIONAL"
+                              ? "text-white"
+                              : "text-marsala"
+                          }`}
+                        />
+                      </div>
+                      <h3 className="text-xl font-display font-bold text-marsala mb-2">
+                        Profissional
+                      </h3>
+                      <p className="text-sm text-neutral-graphite">
+                        Quero oferecer meus serviços e gerenciar meus
+                        agendamentos
+                      </p>
+                    </div>
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="text-sm text-red-500">
-                    {errors.password.message}
+              </div>
+            )}
+
+            {/* Step 2: Dados Básicos */}
+            {currentStep === 2 && (
+              <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-300">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-display font-bold text-marsala mb-2">
+                    Criar sua conta
+                  </h2>
+                  <p className="text-neutral-graphite text-sm">
+                    Preencha seus dados básicos
                   </p>
-                )}
-                <div className="text-xs text-neutral-graphite space-y-1 mt-2">
-                  <p>A senha deve conter:</p>
-                  <ul className="list-disc list-inside space-y-0.5 ml-2">
-                    <li>Mínimo 8 caracteres</li>
-                    <li>Uma letra maiúscula</li>
-                    <li>Uma letra minúscula</li>
-                    <li>Um número</li>
-                  </ul>
+                </div>
+
+                {/* Nome */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome Completo</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-graphite" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      className="pl-10 h-12 rounded-quezi"
+                      {...register("name")}
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-graphite" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      className="pl-10 h-12 rounded-quezi"
+                      {...register("email")}
+                    />
+                  </div>
+                </div>
+
+                {/* Telefone (opcional) */}
+                <div className="space-y-2">
+                  <Label htmlFor="phone">
+                    Telefone{" "}
+                    <span className="text-neutral-graphite/50">(opcional)</span>
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-graphite" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(99) 99999-9999"
+                      className="pl-10 h-12 rounded-quezi"
+                      {...register("phone")}
+                    />
+                  </div>
+                </div>
+
+                {/* Senha */}
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-graphite" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10 h-12 rounded-quezi"
+                      {...register("password")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-graphite hover:text-marsala transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Validações da senha */}
+                  {password && (
+                    <div className="space-y-1 mt-2 p-3 bg-neutral-pearl/50 rounded-quezi">
+                      <ValidationItem
+                        isValid={passwordValidations.minLength}
+                        text="Mínimo 8 caracteres"
+                      />
+                      <ValidationItem
+                        isValid={passwordValidations.hasUpperCase}
+                        text="Uma letra maiúscula"
+                      />
+                      <ValidationItem
+                        isValid={passwordValidations.hasLowerCase}
+                        text="Uma letra minúscula"
+                      />
+                      <ValidationItem
+                        isValid={passwordValidations.hasNumber}
+                        text="Um número"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Confirmar Senha */}
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-graphite" />
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10 h-12 rounded-quezi"
+                      {...register("confirmPassword")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-graphite hover:text-marsala transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* Erro da API */}
-              {error && (
-                <div className="p-3 rounded-quezi bg-red-50 border border-red-200">
-                  <p className="text-sm text-red-600">{error}</p>
+            {/* Step 3: Informações Adicionais */}
+            {currentStep === 3 && (
+              <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-300">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-display font-bold text-marsala mb-2">
+                    {watchedUserType === "PROFESSIONAL"
+                      ? "Informações Profissionais"
+                      : "Informações Adicionais"}
+                  </h2>
+                  <p className="text-neutral-graphite text-sm">
+                    {watchedUserType === "PROFESSIONAL"
+                      ? "Conte-nos mais sobre você e seus serviços"
+                      : "Complete seu perfil para melhorar sua experiência"}
+                  </p>
                 </div>
-              )}
 
-              {/* Botões */}
-              <div className="flex gap-3">
+                {/* Cidade */}
+                <div className="space-y-2">
+                  <Label htmlFor="city">Cidade</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-graphite" />
+                    <Input
+                      id="city"
+                      type="text"
+                      placeholder="São Paulo, SP"
+                      className="pl-10 h-12 rounded-quezi"
+                      {...register("city")}
+                    />
+                  </div>
+                </div>
+
+                {/* Campos específicos para Profissional */}
+                {watchedUserType === "PROFESSIONAL" && (
+                  <>
+                    {/* Bio */}
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">
+                        Sobre você{" "}
+                        <span className="text-neutral-graphite/50 text-sm font-normal">
+                          (máx. 500 caracteres)
+                        </span>
+                      </Label>
+                      <div className="relative">
+                        <FileText className="absolute left-3 top-3 w-5 h-5 text-neutral-graphite" />
+                        <Textarea
+                          id="bio"
+                          placeholder="Conte um pouco sobre sua experiência, especialidades e o que te diferencia..."
+                          className="pl-10 min-h-[120px] rounded-quezi resize-none"
+                          maxLength={500}
+                          {...register("bio")}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Especialidades */}
+                    <div className="space-y-2">
+                      <Label htmlFor="specialties">
+                        Especialidades{" "}
+                        <span className="text-neutral-graphite/50 text-sm font-normal">
+                          (separadas por vírgula)
+                        </span>
+                      </Label>
+                      <Input
+                        id="specialties"
+                        type="text"
+                        placeholder="Ex: Corte, Coloração, Penteados"
+                        className="h-12 rounded-quezi"
+                        {...register("specialties")}
+                      />
+                      <p className="text-xs text-neutral-graphite/70">
+                        Liste suas principais especialidades separadas por
+                        vírgula
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: Confirmação */}
+            {currentStep === 4 && (
+              <div className="space-y-6 animate-in fade-in-50 slide-in-from-right-4 duration-300">
+                <div className="text-center mb-6">
+                  <div className="flex justify-center mb-4">
+                    <div className="p-4 bg-green-50 rounded-full">
+                      <CheckCircle className="w-12 h-12 text-green-600" />
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-display font-bold text-marsala mb-2">
+                    Quase lá!
+                  </h2>
+                  <p className="text-neutral-graphite text-sm">
+                    Revise seus dados e confirme para criar sua conta
+                  </p>
+                </div>
+
+                {/* Resumo dos dados */}
+                <div className="space-y-4 p-6 bg-neutral-pearl/50 rounded-quezi">
+                  <div>
+                    <p className="text-xs text-neutral-graphite/70 mb-1">
+                      Tipo de conta
+                    </p>
+                    <p className="font-semibold text-marsala">
+                      {watchedUserType === "CLIENT"
+                        ? "Cliente"
+                        : "Profissional"}
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <p className="text-xs text-neutral-graphite/70 mb-1">
+                      Nome
+                    </p>
+                    <p className="font-semibold">{watch("name")}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-neutral-graphite/70 mb-1">
+                      Email
+                    </p>
+                    <p className="font-semibold">{watch("email")}</p>
+                  </div>
+
+                  {watch("phone") && (
+                    <div>
+                      <p className="text-xs text-neutral-graphite/70 mb-1">
+                        Telefone
+                      </p>
+                      <p className="font-semibold">{watch("phone")}</p>
+                    </div>
+                  )}
+
+                  {watch("city") && (
+                    <div>
+                      <p className="text-xs text-neutral-graphite/70 mb-1">
+                        Cidade
+                      </p>
+                      <p className="font-semibold">{watch("city")}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Termos de Uso */}
+                <div className="p-4 bg-accent-blush rounded-quezi">
+                  <p className="text-xs text-center text-neutral-graphite">
+                    Ao criar sua conta, você concorda com nossos{" "}
+                    <Link
+                      href="/terms"
+                      className="text-marsala hover:underline"
+                    >
+                      Termos de Uso
+                    </Link>{" "}
+                    e{" "}
+                    <Link
+                      href="/privacy"
+                      className="text-marsala hover:underline"
+                    >
+                      Política de Privacidade
+                    </Link>
+                    .
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Botões de Navegação */}
+            <div className="flex items-center gap-3 mt-8">
+              {currentStep > 1 && (
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setStep(1)}
-                  className="flex-1"
+                  onClick={handleBack}
+                  className="flex-1 h-12 rounded-quezi"
+                  disabled={isLoading}
                 >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
                   Voltar
                 </Button>
+              )}
+
+              {currentStep < TOTAL_STEPS ? (
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={handleNext}
+                  className="flex-1 h-12 bg-marsala hover:bg-marsala-dark text-white rounded-quezi"
+                  disabled={
+                    (currentStep === 1 && !watchedUserType) ||
+                    (currentStep === 2 && !allValidationsPassed)
+                  }
+                >
+                  Próximo
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={onSubmit}
                   disabled={isLoading}
-                  className="flex-1 bg-marsala hover:bg-marsala-dark"
+                  className="flex-1 h-12 bg-marsala hover:bg-marsala-dark text-white rounded-quezi shadow-md hover:shadow-lg transition-all"
                 >
                   {isLoading ? "Criando conta..." : "Criar Conta"}
                 </Button>
-              </div>
-            </form>
-          )}
-        </CardContent>
+              )}
+            </div>
+          </div>
+        </div>
 
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-center text-sm text-neutral-graphite">
+        {/* Link para login */}
+        <div className="text-center mt-6">
+          <p className="text-sm text-neutral-graphite">
             Já tem uma conta?{" "}
             <Link
               href="/login"
-              className="text-marsala hover:underline font-semibold"
+              className="text-marsala hover:text-marsala-dark font-semibold transition-colors"
             >
-              Faça login
+              Fazer login
             </Link>
-          </div>
-        </CardFooter>
-      </Card>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente auxiliar para validação de senha
+function ValidationItem({ isValid, text }: { isValid: boolean; text: string }) {
+  return (
+    <div
+      className={`text-xs flex items-center gap-2 transition-colors ${
+        isValid ? "text-green-600" : "text-neutral-graphite"
+      }`}
+    >
+      <div
+        className={`w-1.5 h-1.5 rounded-full transition-colors ${
+          isValid ? "bg-green-600" : "bg-neutral-medium"
+        }`}
+      />
+      {text}
     </div>
   );
 }
