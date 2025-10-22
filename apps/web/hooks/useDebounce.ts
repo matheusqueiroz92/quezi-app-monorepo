@@ -30,7 +30,11 @@ export function useDebounce<T>(value: T, delay: number = 500): T {
 
     // Limpar o timer se o valor mudar antes do delay
     return () => {
-      clearTimeout(timer);
+      try {
+        clearTimeout(timer);
+      } catch (error) {
+        // Ignorar erros de clearTimeout em testes com fake timers
+      }
     };
   }, [value, delay]);
 

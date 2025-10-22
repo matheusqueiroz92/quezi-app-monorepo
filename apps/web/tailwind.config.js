@@ -17,25 +17,26 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Paleta Quezi - Elegante e Sofisticada
+        // Paleta Quezi - Elegante e Sofisticada (conforme frontend.mdc)
         marsala: {
-          DEFAULT: "#8B4660",
-          light: "#A15468",
-          dark: "#954D5F",
+          DEFAULT: "#69042A", // Primária - Elegância, confiança e profundidade
+          light: "#8B4660",
+          dark: "#4A031D",
         },
-        dourado: {
-          DEFAULT: "#D4AF37",
+        gold: {
+          DEFAULT: "#D4AF37", // Secundária - Luxo, sucesso e refinamento
           light: "#F2E3B3",
           medium: "#E8C68A",
         },
         neutral: {
           white: "#FFFFFF",
-          pearl: "#F5F5F5",
+          pearl: "#F5F5F5", // Neutra - Suavidade, equilíbrio e leveza
           medium: "#E0E0E0",
           graphite: "#6B6B6B",
+          light: "#F8F8F8",
         },
         accent: {
-          blush: "#F4E4E6",
+          blush: "#F4E4E6", // Acento - Delicadeza, feminilidade e calor humano
           champagne: "#F9F4EF",
         },
         border: "hsl(var(--border))",

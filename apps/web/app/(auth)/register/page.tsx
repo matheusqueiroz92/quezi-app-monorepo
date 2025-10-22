@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+// import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -55,7 +55,11 @@ const step2Schema = z
       .min(8, "Senha deve ter no mínimo 8 caracteres")
       .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
       .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
-      .regex(/[0-9]/, "Senha deve conter pelo menos um número"),
+      .regex(/[0-9]/, "Senha deve conter pelo menos um número")
+      .regex(
+        /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
+        "Senha deve conter pelo menos um caractere especial"
+      ),
     confirmPassword: z.string(),
     phone: z.string().optional(),
   })
@@ -79,11 +83,11 @@ type UserType = "CLIENT" | "PROFESSIONAL";
 const TOTAL_STEPS = 4;
 
 export default function RegisterPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [userType, setUserType] = useState<UserType | null>(null);
+  const [_userType, setUserType] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -95,11 +99,11 @@ export default function RegisterPage() {
 
   const {
     register,
-    handleSubmit,
-    formState: { errors },
+    _handleSubmit,
+    formState: { _errors },
     watch,
     setValue,
-    trigger,
+    _trigger,
     getValues,
   } = useForm<RegisterFormData>({
     mode: "onChange",
@@ -117,6 +121,7 @@ export default function RegisterPage() {
   });
 
   const password = watch("password");
+  const confirmPassword = watch("confirmPassword");
   const watchedUserType = watch("userType");
 
   // Validações da senha
@@ -125,7 +130,12 @@ export default function RegisterPage() {
     hasUpperCase: /[A-Z]/.test(password || ""),
     hasLowerCase: /[a-z]/.test(password || ""),
     hasNumber: /[0-9]/.test(password || ""),
+    hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password || ""),
   };
+
+  // Validação de confirmação de senha
+  const passwordMatch =
+    password === confirmPassword && confirmPassword.length > 0;
 
   const allValidationsPassed = Object.values(passwordValidations).every(
     (v) => v
@@ -156,7 +166,11 @@ export default function RegisterPage() {
       // Avançar para próxima etapa
       setCurrentStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
     } catch (error) {
-      if (error instanceof z.ZodError) {
+      if (
+        error instanceof z.ZodError &&
+        error.errors &&
+        error.errors.length > 0
+      ) {
         const firstError = error.errors[0];
         toast({
           title: "Campo inválido",
@@ -460,6 +474,10 @@ export default function RegisterPage() {
                         isValid={passwordValidations.hasNumber}
                         text="Um número"
                       />
+                      <ValidationItem
+                        isValid={passwordValidations.hasSpecialChar}
+                        text="Um caractere especial"
+                      />
                     </div>
                   )}
                 </div>
@@ -473,7 +491,13 @@ export default function RegisterPage() {
                       id="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="pl-10 pr-10 h-12 rounded-quezi"
+                      className={`pl-10 pr-10 h-12 rounded-quezi ${
+                        confirmPassword && !passwordMatch
+                          ? "border-red-500 focus:border-red-500"
+                          : confirmPassword && passwordMatch
+                          ? "border-green-500 focus:border-green-500"
+                          : ""
+                      }`}
                       {...register("confirmPassword")}
                     />
                     <button
@@ -491,6 +515,20 @@ export default function RegisterPage() {
                       )}
                     </button>
                   </div>
+
+                  {/* Validação de confirmação de senha */}
+                  {confirmPassword && (
+                    <div className="mt-2">
+                      <ValidationItem
+                        isValid={passwordMatch}
+                        text={
+                          passwordMatch
+                            ? "Senhas coincidem"
+                            : "As senhas não coincidem"
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -684,7 +722,8 @@ export default function RegisterPage() {
                   className="flex-1 h-12 bg-marsala hover:bg-marsala-dark text-white rounded-quezi"
                   disabled={
                     (currentStep === 1 && !watchedUserType) ||
-                    (currentStep === 2 && !allValidationsPassed)
+                    (currentStep === 2 &&
+                      (!allValidationsPassed || !passwordMatch))
                   }
                 >
                   Próximo

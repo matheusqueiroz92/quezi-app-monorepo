@@ -26,7 +26,7 @@ export function Logo({
   className,
   size = "md",
   withText = true,
-  href = "/",
+  href,
 }: LogoProps) {
   const content = (
     <div className={cn("flex items-center gap-3", className)}>

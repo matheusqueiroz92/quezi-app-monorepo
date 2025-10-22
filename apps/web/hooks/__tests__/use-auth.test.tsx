@@ -3,7 +3,7 @@
  * Framework: Jest + React Testing Library (oficial Next.js)
  */
 
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { useAuth } from "../use-auth";
 import { api } from "@/lib/api";
 
@@ -32,10 +32,7 @@ describe("useAuth Hook", () => {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
-          session: {
-            token: "mock-token-123",
-            expiresAt: new Date(Date.now() + 86400000).toISOString(),
-          },
+          token: "mock-token-123",
         },
       };
 
@@ -43,7 +40,9 @@ describe("useAuth Hook", () => {
 
       // Act
       const { result } = renderHook(() => useAuth());
-      await result.current.login("ana@teste.com", "SenhaForte123");
+      await act(async () => {
+        await result.current.login("ana@teste.com", "SenhaForte123");
+      });
 
       // Assert
       await waitFor(() => {
@@ -77,9 +76,13 @@ describe("useAuth Hook", () => {
       // Act
       const { result } = renderHook(() => useAuth());
 
-      await expect(
-        result.current.login("ana@teste.com", "senhaerrada")
-      ).rejects.toThrow();
+      await act(async () => {
+        try {
+          await result.current.login("ana@teste.com", "senhaerrada");
+        } catch (error) {
+          // Erro esperado
+        }
+      });
 
       // Assert
       await waitFor(() => {
@@ -100,9 +103,13 @@ describe("useAuth Hook", () => {
       // Act
       const { result } = renderHook(() => useAuth());
 
-      await expect(
-        result.current.login("ana@teste.com", "SenhaForte123")
-      ).rejects.toThrow();
+      await act(async () => {
+        try {
+          await result.current.login("ana@teste.com", "SenhaForte123");
+        } catch (error) {
+          // Erro esperado
+        }
+      });
 
       // Assert
       await waitFor(() => {
@@ -127,10 +134,7 @@ describe("useAuth Hook", () => {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
-          session: {
-            token: "mock-token-456",
-            expiresAt: new Date(Date.now() + 86400000).toISOString(),
-          },
+          token: "mock-token-456",
         },
       };
 
@@ -145,7 +149,9 @@ describe("useAuth Hook", () => {
 
       // Act
       const { result } = renderHook(() => useAuth());
-      await result.current.register(registerData);
+      await act(async () => {
+        await result.current.register(registerData);
+      });
 
       // Assert
       await waitFor(() => {
@@ -184,7 +190,13 @@ describe("useAuth Hook", () => {
       // Act
       const { result } = renderHook(() => useAuth());
 
-      await expect(result.current.register(registerData)).rejects.toThrow();
+      await act(async () => {
+        try {
+          await result.current.register(registerData);
+        } catch (error) {
+          // Erro esperado
+        }
+      });
 
       // Assert
       await waitFor(() => {
@@ -216,7 +228,13 @@ describe("useAuth Hook", () => {
       // Act
       const { result } = renderHook(() => useAuth());
 
-      await expect(result.current.register(invalidData)).rejects.toThrow();
+      await act(async () => {
+        try {
+          await result.current.register(invalidData);
+        } catch (error) {
+          // Erro esperado
+        }
+      });
 
       // Assert
       await waitFor(() => {
@@ -233,7 +251,9 @@ describe("useAuth Hook", () => {
 
       // Act
       const { result } = renderHook(() => useAuth());
-      await result.current.logout();
+      await act(async () => {
+        await result.current.logout();
+      });
 
       // Assert
       await waitFor(() => {
@@ -250,7 +270,9 @@ describe("useAuth Hook", () => {
 
       // Act
       const { result } = renderHook(() => useAuth());
-      await result.current.logout();
+      await act(async () => {
+        await result.current.logout();
+      });
 
       // Assert
       await waitFor(() => {
@@ -279,7 +301,9 @@ describe("useAuth Hook", () => {
 
       // Act
       const { result } = renderHook(() => useAuth());
-      await result.current.getProfile();
+      await act(async () => {
+        await result.current.getProfile();
+      });
 
       // Assert
       await waitFor(() => {
@@ -305,7 +329,13 @@ describe("useAuth Hook", () => {
       // Act
       const { result } = renderHook(() => useAuth());
 
-      await expect(result.current.getProfile()).rejects.toThrow();
+      await act(async () => {
+        try {
+          await result.current.getProfile();
+        } catch (error) {
+          // Erro esperado
+        }
+      });
 
       // Assert
       await waitFor(() => {

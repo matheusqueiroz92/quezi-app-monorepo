@@ -2,7 +2,7 @@
  * Tipos do Frontend Quezi
  */
 
-export type UserType = "CLIENT" | "PROFESSIONAL";
+export type UserType = "CLIENT" | "PROFESSIONAL" | "ADMIN";
 
 export type OrganizationRole = "OWNER" | "ADMIN" | "MEMBER";
 
@@ -55,4 +55,3 @@ export interface PaginatedResponse<T> {
     totalPages: number;
   };
 }
-

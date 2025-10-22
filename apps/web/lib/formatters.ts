@@ -21,6 +21,11 @@ import { ptBR } from "date-fns/locale";
 export function formatCurrency(value: number | string): string {
   const numericValue = typeof value === "string" ? parseFloat(value) : value;
 
+  // Verificar se o valor é válido
+  if (isNaN(numericValue)) {
+    return "R$ 0,00";
+  }
+
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -252,7 +257,7 @@ export function truncate(text: string, maxLength: number): string {
     return text;
   }
 
-  return `${text.slice(0, maxLength)}...`;
+  return `${text.slice(0, maxLength - 3)}...`;
 }
 
 /**

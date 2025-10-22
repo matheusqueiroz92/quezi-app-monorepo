@@ -27,25 +27,41 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Mock do localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
+class LocalStorageMock {
+  public store: Record<string, string> = {};
 
-  return {
-    getItem: jest.fn((key: string) => store[key] || null),
-    setItem: jest.fn((key: string, value: string) => {
-      store[key] = value.toString();
-    }),
-    removeItem: jest.fn((key: string) => {
-      delete store[key];
-    }),
-    clear: jest.fn(() => {
-      store = {};
-    }),
-  };
-})();
+  getItem = jest.fn((key: string): string | null => {
+    return this.store[key] || null;
+  });
+
+  setItem = jest.fn((key: string, value: string): void => {
+    // Verificar se value não é undefined/null antes de chamar toString
+    this.store[key] = value != null ? String(value) : "";
+  });
+
+  removeItem = jest.fn((key: string): void => {
+    delete this.store[key];
+  });
+
+  clear = jest.fn((): void => {
+    this.store = {};
+  });
+
+  get length(): number {
+    return Object.keys(this.store).length;
+  }
+
+  key = jest.fn((index: number): string | null => {
+    const keys = Object.keys(this.store);
+    return keys[index] || null;
+  });
+}
+
+const localStorageMock = new LocalStorageMock();
 
 Object.defineProperty(global, "localStorage", {
   value: localStorageMock,
+  writable: true,
 });
 
 // Mock do fetch (caso necessário)
@@ -55,4 +71,5 @@ global.fetch = jest.fn();
 beforeEach(() => {
   jest.clearAllMocks();
   localStorageMock.clear();
+  localStorageMock.store = {}; // Reset do store interno
 });

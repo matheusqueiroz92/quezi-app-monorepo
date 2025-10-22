@@ -13,6 +13,7 @@ interface SearchBarProps {
   onClear?: () => void;
   showClearButton?: boolean;
   autoFocus?: boolean;
+  disabled?: boolean;
 }
 
 /**
@@ -27,6 +28,7 @@ export function SearchBar({
   onClear,
   showClearButton = true,
   autoFocus = false,
+  disabled = false,
 }: SearchBarProps) {
   const [internalValue, setInternalValue] = useState("");
   const isControlled = controlledValue !== undefined;
@@ -72,6 +74,7 @@ export function SearchBar({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         autoFocus={autoFocus}
+        disabled={disabled}
         className={cn(
           "pl-10 pr-10 h-12 rounded-quezi-lg",
           "border-neutral-medium focus:border-marsala focus:ring-marsala",

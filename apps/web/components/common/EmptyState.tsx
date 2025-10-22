@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 
 interface EmptyStateProps {
   className?: string;
-  icon?: LucideIcon;
+  icon?: LucideIcon | string;
   title: string;
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  size?: "sm" | "md" | "lg";
 }
 
 /**
@@ -23,7 +24,14 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
+  size = "md",
 }: EmptyStateProps) {
+  const sizeClasses = {
+    sm: "text-lg",
+    md: "text-xl",
+    lg: "text-2xl",
+  };
+
   return (
     <div
       className={cn(
@@ -33,11 +41,22 @@ export function EmptyState({
     >
       {Icon && (
         <div className="mb-4 p-6 rounded-full bg-accent-blush">
-          <Icon className="w-12 h-12 text-marsala" />
+          {typeof Icon === "string" ? (
+            <span className="w-12 h-12 text-marsala text-4xl flex items-center justify-center">
+              {Icon}
+            </span>
+          ) : (
+            <Icon className="w-12 h-12 text-marsala" />
+          )}
         </div>
       )}
 
-      <h3 className="text-xl font-display font-semibold text-neutral-graphite mb-2">
+      <h3
+        className={cn(
+          "font-display font-semibold text-neutral-graphite mb-2",
+          sizeClasses[size]
+        )}
+      >
         {title}
       </h3>
 

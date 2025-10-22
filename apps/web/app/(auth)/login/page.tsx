@@ -260,6 +260,16 @@ export default function LoginPage() {
               )}
             </div>
 
+            {/* Link para esqueci senha */}
+            <div className="text-right">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-marsala hover:text-marsala-dark transition-colors"
+              >
+                Esqueceu sua senha?
+              </Link>
+            </div>
+
             {/* Botão de Login */}
             <Button
               type="submit"

@@ -30,10 +30,12 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI das telas de 
 
 - Paleta de Cores:
 
-  - Primária: Marsala (#69042A, #954D5F) - transmite elegância e sofisticação
-  - Secundária: Dourado (#D4AF37, #E8C68A) - adiciona luxo e refinamento
-  - Neutras: cinza pérola (#F5F5F5), grafite suave (#6B6B6B)
-  - Acentos: Rosa blush (#F4E4E6), bege champagne (#F9F4EF)
+| Papel          | Cor          | Hex       | Significado                             |
+| -------------- | ------------ | --------- | --------------------------------------- |
+| **Primária**   | Marsala      | `#69042A` | Elegância, confiança e profundidade     |
+| **Secundária** | Dourado      | `#D4AF37` | Luxo, sucesso e refinamento             |
+| **Neutra**     | Cinza Pérola | `#F5F5F5` | Suavidade, equilíbrio e leveza          |
+| **Acento**     | Rosa Blush   | `#F4E4E6` | Delicadeza, feminilidade e calor humano |
 
 - Tipografia:
 
@@ -131,7 +133,7 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI das telas de 
     - Localização atual
     - Barra de busca proeminente com placeholder "Buscar serviços ou profissionais..."
 
-  - Aside Bar (à esquerda):
+  - Side Bar (à esquerda):
 
     - Logo do aplicação
     - Foto de perfil ou iniciais do nome circular com borda dourada
@@ -180,7 +182,7 @@ Você me auxiliará no desenvolvimento do design completo de UX/UI das telas de 
     - Configurações
     - Status do profissional (online/offline) toggle
 
-  - Aside Bar (à esquerda):
+  - Side Bar (à esquerda):
 
     - Logo da aplicação
     - Foto de perfil ou iniciais do nome circular com borda dourada
