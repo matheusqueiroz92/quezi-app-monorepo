@@ -1,5 +1,11 @@
 import { type FastifyInstance } from "fastify";
 import { auth } from "../../lib/auth";
+import { AuthService } from "./auth.service";
+import {
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyResetTokenSchema,
+} from "./auth.schema";
 
 /**
  * Rotas de Autenticação usando Better Auth
@@ -22,6 +28,8 @@ import { auth } from "../../lib/auth";
  * Docs: https://www.better-auth.com/docs/introduction
  */
 export async function authRoutes(app: FastifyInstance): Promise<void> {
+  const authService = new AuthService();
+
   // Registra todos os handlers do Better Auth
   // Better Auth expõe automaticamente os endpoints acima
   app.all("/auth/*", async (request, reply) => {
@@ -140,6 +148,120 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       }
 
       return session.user;
+    }
+  );
+
+  // ========================================
+  // ROTAS DE RESET DE SENHA
+  // ========================================
+
+  // Enviar email de reset de senha
+  app.post(
+    "/auth/forgot-password",
+    {
+      schema: {
+        tags: ["auth"],
+        description: "Enviar email de recuperação de senha",
+        body: forgotPasswordSchema,
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
+              error: { type: "string" },
+              message: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { email } = request.body as { email: string };
+
+      const result = await authService.forgotPassword(email);
+
+      return reply.send(result);
+    }
+  );
+
+  // Verificar token de reset
+  app.get(
+    "/auth/verify-reset-token",
+    {
+      schema: {
+        tags: ["auth"],
+        description: "Verificar se token de reset é válido",
+        querystring: verifyResetTokenSchema,
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              valid: { type: "boolean" },
+              message: { type: "string" },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
+              valid: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { token } = request.query as { token: string };
+
+      const result = await authService.verifyResetToken(token);
+
+      if (result.valid) {
+        return reply.send(result);
+      } else {
+        return reply.status(400).send(result);
+      }
+    }
+  );
+
+  // Resetar senha com token
+  app.post(
+    "/auth/reset-password",
+    {
+      schema: {
+        tags: ["auth"],
+        description: "Resetar senha com token válido",
+        body: resetPasswordSchema,
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
+              error: { type: "string" },
+              message: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { token, newPassword } = request.body as {
+        token: string;
+        newPassword: string;
+      };
+
+      const result = await authService.resetPassword(token, newPassword);
+
+      return reply.send(result);
     }
   );
 }

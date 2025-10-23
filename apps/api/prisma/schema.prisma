@@ -17,6 +17,7 @@ datasource db {
 enum UserType {
   CLIENT
   PROFESSIONAL
+  COMPANY
 }
 
 enum ServicePriceType {
@@ -25,8 +26,8 @@ enum ServicePriceType {
 }
 
 enum ServiceMode {
-  AT_LOCATION   // Atendimento no local próprio do profissional
-  AT_DOMICILE   // Atendimento a domicílio do cliente
+  AT_LOCATION // Atendimento no local próprio do profissional
+  AT_DOMICILE // Atendimento a domicílio do cliente
   BOTH
 }
 
@@ -38,9 +39,9 @@ enum AppointmentStatus {
 }
 
 enum OrganizationRole {
-  OWNER    // Dono da organização (salão/empresa)
-  ADMIN    // Administrador (gerente)
-  MEMBER   // Membro/Profissional da equipe
+  OWNER // Dono da organização (salão/empresa)
+  ADMIN // Administrador (gerente)
+  MEMBER // Membro/Profissional da equipe
 }
 
 enum InviteStatus {
@@ -51,11 +52,11 @@ enum InviteStatus {
 }
 
 enum AdminRole {
-  SUPER_ADMIN   // Acesso total à plataforma
-  ADMIN         // Gestão de usuários e moderação
-  MODERATOR     // Apenas moderação de conteúdo
-  SUPPORT       // Apenas suporte a usuários
-  ANALYST       // Apenas visualização de métricas
+  SUPER_ADMIN // Acesso total à plataforma
+  ADMIN // Gestão de usuários e moderação
+  MODERATOR // Apenas moderação de conteúdo
+  SUPPORT // Apenas suporte a usuários
+  ANALYST // Apenas visualização de métricas
 }
 
 // ========================================
@@ -76,24 +77,30 @@ model User {
   updatedAt        DateTime @updatedAt
 
   // Campos de perfil estendidos (opcionais, para clientes e profissionais)
-  photoUrl         String?  // Foto de perfil
-  bio              String?  // Bio/descrição (max 500 chars)
-  defaultAddress   String?  // Endereço padrão para atendimentos a domicílio
-  city             String?  // Cidade do usuário
-  notificationPrefs Json?   // Preferências de notificação (email, sms, push)
+  photoUrl          String? // Foto de perfil
+  bio               String? // Bio/descrição (max 500 chars)
+  defaultAddress    String? // Endereço padrão para atendimentos a domicílio
+  city              String? // Cidade do usuário
+  notificationPrefs Json? // Preferências de notificação (email, sms, push)
 
   // Relações
-  professionalProfile    ProfessionalProfile?   // 1:1, opcional (apenas para UserType: PROFESSIONAL)
-  clientAppointments     Appointment[]          @relation("ClientAppointments")
-  profAppointments       Appointment[]          @relation("ProfessionalAppointments")
-  reviews                Review[]
-  ownedOrganizations     Organization[]         @relation("OrganizationOwner")
+  professionalProfile     ProfessionalProfile? // 1:1, opcional (apenas para UserType: PROFESSIONAL)
+  clientAppointments      Appointment[]        @relation("ClientAppointments")
+  profAppointments        Appointment[]        @relation("ProfessionalAppointments")
+  reviews                 Review[]
+  ownedOrganizations      Organization[]       @relation("OrganizationOwner")
   organizationMemberships OrganizationMember[]
-  sentInvites            OrganizationInvite[]   @relation("InviteSender")
-  
+  sentInvites             OrganizationInvite[] @relation("InviteSender")
+
+  // Company relations (apenas para UserType: COMPANY)
+  companyEmployees          CompanyEmployee[]            @relation("CompanyEmployees")
+  companyServices           CompanyService[]             @relation("CompanyServices")
+  clientCompanyAppointments CompanyEmployeeAppointment[] @relation("ClientCompanyAppointments")
+  companyEmployeeReviews    CompanyEmployeeReview[]
+
   // Better Auth
-  accounts               Account[]
-  sessions               Session[]
+  accounts Account[]
+  sessions Session[]
 
   @@map("users")
 }
@@ -160,8 +167,8 @@ model ProfessionalProfile {
   totalRatings      Int         @default(0)
   photoUrl          String?
   portfolioImages   String[]    @default([]) // URLs de imagens do portfólio
-  workingHours      Json?       // Horários de trabalho por dia da semana
-  yearsOfExperience Int?        // Anos de experiência
+  workingHours      Json? // Horários de trabalho por dia da semana
+  yearsOfExperience Int? // Anos de experiência
   specialties       String[]    @default([]) // Especialidades/habilidades
   certifications    String[]    @default([]) // Certificações
   languages         String[]    @default([]) // Idiomas falados
@@ -178,12 +185,13 @@ model ProfessionalProfile {
 }
 
 model Category {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  slug      String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  services  Service[]
+  id              String           @id @default(cuid())
+  name            String           @unique
+  slug            String           @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  services        Service[]
+  companyServices CompanyService[]
 
   @@map("categories")
 }
@@ -209,18 +217,18 @@ model Service {
 }
 
 model Appointment {
-  id            String            @id @default(cuid())
-  clientId      String
+  id             String            @id @default(cuid())
+  clientId       String
   professionalId String
-  serviceId     String
-  scheduledDate DateTime
-  status        AppointmentStatus @default(PENDING)
-  locationType  ServiceMode // NOVO CAMPO: LOCAL_PROPRIO ou DOMICILIO (Tipo de ServiceMode)
-  clientAddress String? // Endereço de atendimento se for a domicílio
-  clientNotes   String?
-  isReviewed    Boolean           @default(false)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  serviceId      String
+  scheduledDate  DateTime
+  status         AppointmentStatus @default(PENDING)
+  locationType   ServiceMode // NOVO CAMPO: LOCAL_PROPRIO ou DOMICILIO (Tipo de ServiceMode)
+  clientAddress  String? // Endereço de atendimento se for a domicílio
+  clientNotes    String?
+  isReviewed     Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   // Relações
   client       User    @relation("ClientAppointments", fields: [clientId], references: [id])
@@ -289,15 +297,15 @@ model OrganizationMember {
 }
 
 model OrganizationInvite {
-  id             String       @id @default(cuid())
+  id             String           @id @default(cuid())
   organizationId String
   email          String
   role           OrganizationRole
   invitedBy      String
-  status         InviteStatus @default(PENDING)
+  status         InviteStatus     @default(PENDING)
   expiresAt      DateTime // Convite expira em 7 dias
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   // Relações
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -313,19 +321,19 @@ model OrganizationInvite {
 // ========================================
 
 model Admin {
-  id           String      @id @default(cuid())
-  email        String      @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   passwordHash String
   name         String
-  role         AdminRole   @default(MODERATOR)
-  permissions  Json?       // Permissões granulares personalizadas
-  isActive     Boolean     @default(true)
+  role         AdminRole @default(MODERATOR)
+  permissions  Json? // Permissões granulares personalizadas
+  isActive     Boolean   @default(true)
   lastLogin    DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relações
-  actions      AdminAction[]
+  actions AdminAction[]
 
   @@index([email])
   @@index([role])
@@ -333,22 +341,110 @@ model Admin {
 }
 
 model AdminAction {
-  id          String   @id @default(cuid())
-  adminId     String
-  action      String   // Ex: "USER_SUSPENDED", "REVIEW_DELETED", "SERVICE_APPROVED"
-  entityType  String   // Ex: "User", "Review", "Service", "ProfessionalProfile"
-  entityId    String   // ID da entidade afetada
-  details     Json?    // Detalhes adicionais da ação (motivo, valores anteriores, etc)
-  ipAddress   String?  // IP de onde a ação foi executada
-  userAgent   String?  // User agent do navegador
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String // Ex: "USER_SUSPENDED", "REVIEW_DELETED", "SERVICE_APPROVED"
+  entityType String // Ex: "User", "Review", "Service", "ProfessionalProfile"
+  entityId   String // ID da entidade afetada
+  details    Json? // Detalhes adicionais da ação (motivo, valores anteriores, etc)
+  ipAddress  String? // IP de onde a ação foi executada
+  userAgent  String? // User agent do navegador
+  createdAt  DateTime @default(now())
 
   // Relações
-  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   @@index([adminId])
   @@index([action])
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("admin_actions")
+}
+
+// ========================================
+// COMPANY EMPLOYEES (Funcionários da Empresa)
+// ========================================
+
+model CompanyEmployee {
+  id          String   @id @default(cuid())
+  companyId   String // ID do usuário do tipo COMPANY
+  name        String
+  email       String?
+  phone       String?
+  position    String? // Cargo/função (ex: "Cabeleireira", "Manicure")
+  specialties String[] @default([]) // Especialidades do funcionário
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  company      User                         @relation("CompanyEmployees", fields: [companyId], references: [id], onDelete: Cascade)
+  appointments CompanyEmployeeAppointment[]
+
+  @@index([companyId])
+  @@index([email])
+  @@map("company_employees")
+}
+
+model CompanyEmployeeAppointment {
+  id            String            @id @default(cuid())
+  employeeId    String
+  clientId      String
+  serviceId     String
+  scheduledDate DateTime
+  status        AppointmentStatus @default(PENDING)
+  locationType  ServiceMode
+  clientAddress String?
+  clientNotes   String?
+  isReviewed    Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relações
+  employee CompanyEmployee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  client   User                   @relation("ClientCompanyAppointments", fields: [clientId], references: [id])
+  service  CompanyService         @relation(fields: [serviceId], references: [id])
+  review   CompanyEmployeeReview?
+
+  @@index([employeeId, scheduledDate])
+  @@map("company_employee_appointments")
+}
+
+model CompanyService {
+  id              String           @id @default(cuid())
+  companyId       String
+  categoryId      String
+  name            String
+  description     String?
+  price           Decimal          @db.Money
+  priceType       ServicePriceType
+  durationMinutes Int
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relações
+  company      User                         @relation("CompanyServices", fields: [companyId], references: [id], onDelete: Cascade)
+  category     Category                     @relation(fields: [categoryId], references: [id])
+  appointments CompanyEmployeeAppointment[]
+
+  @@index([companyId])
+  @@map("company_services")
+}
+
+model CompanyEmployeeReview {
+  id            String   @id @default(cuid())
+  appointmentId String   @unique
+  reviewerId    String
+  employeeId    String
+  rating        Int
+  comment       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relações
+  appointment CompanyEmployeeAppointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  reviewer    User                       @relation(fields: [reviewerId], references: [id])
+
+  @@map("company_employee_reviews")
 }

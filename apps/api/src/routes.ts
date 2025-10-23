@@ -10,6 +10,7 @@ import { appointmentsRoutes } from "./modules/appointments";
 import { reviewsRoutes } from "./modules/reviews";
 import { profilesRoutes } from "./modules/professional-profiles";
 import { adminRoutes } from "./modules/admin";
+import { companyEmployeeRoutes } from "./modules/company-employees/company-employee.controller";
 
 /**
  * Registra todas as rotas da aplicação
@@ -87,6 +88,11 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       // MÓDULO ADMIN (PAINEL ADMINISTRATIVO)
       // ========================================
       await apiRoutes.register(adminRoutes, { prefix: "/admin" });
+
+      // ========================================
+      // MÓDULO COMPANY EMPLOYEES (FUNCIONÁRIOS DA EMPRESA)
+      // ========================================
+      await apiRoutes.register(companyEmployeeRoutes, { prefix: "/company-employees" });
     },
     { prefix: "/api/v1" }
   );

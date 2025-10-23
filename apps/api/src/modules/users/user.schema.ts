@@ -16,7 +16,7 @@ export const createUserSchema = z.object({
     .regex(/[0-9]/, "Senha deve conter pelo menos um número"),
   name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
   phone: z.string().optional(),
-  userType: z.enum(["CLIENT", "PROFESSIONAL"], {
+  userType: z.enum(["CLIENT", "PROFESSIONAL", "COMPANY"], {
     message: "Tipo de usuário inválido",
   }) as z.ZodType<UserType>,
 });
@@ -72,7 +72,7 @@ export const listUsersQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),
   userType: (
-    z.enum(["CLIENT", "PROFESSIONAL"]) as z.ZodType<UserType>
+    z.enum(["CLIENT", "PROFESSIONAL", "COMPANY"]) as z.ZodType<UserType>
   ).optional(),
   search: z.string().optional(),
 });
