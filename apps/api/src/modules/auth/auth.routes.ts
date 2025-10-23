@@ -164,7 +164,6 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           properties: {
             email: {
               type: "string",
-              format: "email",
             },
           },
         },
@@ -207,7 +206,6 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           properties: {
             token: {
               type: "string",
-              minLength: 1,
             },
           },
         },
@@ -255,12 +253,9 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           properties: {
             token: {
               type: "string",
-              minLength: 1,
             },
             newPassword: {
               type: "string",
-              minLength: 8,
-              pattern: "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).*$",
             },
           },
         },

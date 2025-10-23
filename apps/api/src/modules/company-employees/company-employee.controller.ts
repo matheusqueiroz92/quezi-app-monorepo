@@ -1,14 +1,6 @@
 import { type FastifyInstance } from "fastify";
 import { CompanyEmployeeService } from "./company-employee.service";
-import {
-  createCompanyEmployeeSchema,
-  updateCompanyEmployeeSchema,
-  companyEmployeeIdSchema,
-  listCompanyEmployeesQuerySchema,
-  createCompanyEmployeeAppointmentSchema,
-  updateCompanyEmployeeAppointmentSchema,
-  createCompanyEmployeeReviewSchema,
-} from "./company-employee.schema";
+// Schemas Zod removidos - usando JSON Schema diretamente no Fastify
 import {
   requireCompany,
   requireCompanyOwnership,
@@ -73,7 +65,16 @@ export async function companyEmployeeRoutes(
         tags: ["company-employees"],
         description: "Listar funcionários da empresa",
         security: [{ bearerAuth: [] }],
-        querystring: listCompanyEmployeesQuerySchema,
+        querystring: {
+          type: "object",
+          properties: {
+            page: { type: "number", minimum: 1 },
+            limit: { type: "number", minimum: 1, maximum: 100 },
+            search: { type: "string" },
+            position: { type: "string" },
+            isActive: { type: "boolean" },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -132,7 +133,17 @@ export async function companyEmployeeRoutes(
         tags: ["company-employees"],
         description: "Criar novo funcionário",
         security: [{ bearerAuth: [] }],
-        body: createCompanyEmployeeSchema,
+        body: {
+          type: "object",
+          required: ["name"],
+          properties: {
+            name: { type: "string" },
+            email: { type: "string", format: "email" },
+            phone: { type: "string" },
+            position: { type: "string" },
+            specialties: { type: "array", items: { type: "string" } },
+          },
+        },
         response: {
           201: {
             type: "object",
@@ -187,7 +198,13 @@ export async function companyEmployeeRoutes(
         tags: ["company-employees"],
         description: "Buscar funcionário por ID",
         security: [{ bearerAuth: [] }],
-        params: companyEmployeeIdSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -248,8 +265,24 @@ export async function companyEmployeeRoutes(
         tags: ["company-employees"],
         description: "Atualizar funcionário",
         security: [{ bearerAuth: [] }],
-        params: companyEmployeeIdSchema,
-        body: updateCompanyEmployeeSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            email: { type: "string", format: "email" },
+            phone: { type: "string" },
+            position: { type: "string" },
+            specialties: { type: "array", items: { type: "string" } },
+            isActive: { type: "boolean" },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -293,7 +326,13 @@ export async function companyEmployeeRoutes(
         tags: ["company-employees"],
         description: "Deletar funcionário",
         security: [{ bearerAuth: [] }],
-        params: companyEmployeeIdSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
         response: {
           204: {
             type: "null",
@@ -326,7 +365,13 @@ export async function companyEmployeeRoutes(
         tags: ["company-employees"],
         description: "Listar agendamentos do funcionário",
         security: [{ bearerAuth: [] }],
-        params: companyEmployeeIdSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
         querystring: {
           type: "object",
           properties: {
@@ -399,7 +444,18 @@ export async function companyEmployeeRoutes(
         tags: ["company-employees"],
         description: "Criar agendamento para funcionário",
         security: [{ bearerAuth: [] }],
-        body: createCompanyEmployeeAppointmentSchema,
+        body: {
+          type: "object",
+          required: ["employeeId", "clientId", "serviceId", "scheduledDate", "locationType"],
+          properties: {
+            employeeId: { type: "string" },
+            clientId: { type: "string" },
+            serviceId: { type: "string" },
+            scheduledDate: { type: "string", format: "date-time" },
+            locationType: { type: "string", enum: ["AT_LOCATION", "AT_DOMICILE"] },
+            clientNotes: { type: "string" },
+          },
+        },
         response: {
           201: {
             type: "object",
@@ -515,7 +571,16 @@ export async function companyEmployeeRoutes(
         tags: ["company-employees"],
         description: "Criar review para funcionário",
         security: [{ bearerAuth: [] }],
-        body: createCompanyEmployeeReviewSchema,
+        body: {
+          type: "object",
+          required: ["appointmentId", "employeeId", "rating"],
+          properties: {
+            appointmentId: { type: "string" },
+            employeeId: { type: "string" },
+            rating: { type: "number", minimum: 1, maximum: 5 },
+            comment: { type: "string" },
+          },
+        },
         response: {
           201: {
             type: "object",
@@ -569,7 +634,13 @@ export async function companyEmployeeRoutes(
         tags: ["company-employees"],
         description: "Buscar estatísticas do funcionário",
         security: [{ bearerAuth: [] }],
-        params: companyEmployeeIdSchema,
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: {
+            id: { type: "string" },
+          },
+        },
         response: {
           200: {
             type: "object",
