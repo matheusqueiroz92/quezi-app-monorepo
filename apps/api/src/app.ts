@@ -63,7 +63,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         info: {
           title: "Quezi API",
           description:
-            "API REST para plataforma de agendamento de serviços profissionais. " +
+            "API REST para Quezi - Plataforma de agendamento de serviços profissionais. " +
             "Autenticação via Better Auth com suporte a email/senha e OAuth (Google, GitHub). " +
             "Use o endpoint /auth/sign-in/email para obter um token de acesso.",
           version: "1.0.0",

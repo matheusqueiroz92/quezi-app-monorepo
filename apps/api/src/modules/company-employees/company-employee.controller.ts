@@ -446,13 +446,22 @@ export async function companyEmployeeRoutes(
         security: [{ bearerAuth: [] }],
         body: {
           type: "object",
-          required: ["employeeId", "clientId", "serviceId", "scheduledDate", "locationType"],
+          required: [
+            "employeeId",
+            "clientId",
+            "serviceId",
+            "scheduledDate",
+            "locationType",
+          ],
           properties: {
             employeeId: { type: "string" },
             clientId: { type: "string" },
             serviceId: { type: "string" },
             scheduledDate: { type: "string", format: "date-time" },
-            locationType: { type: "string", enum: ["AT_LOCATION", "AT_DOMICILE"] },
+            locationType: {
+              type: "string",
+              enum: ["AT_LOCATION", "AT_DOMICILE"],
+            },
             clientNotes: { type: "string" },
           },
         },
