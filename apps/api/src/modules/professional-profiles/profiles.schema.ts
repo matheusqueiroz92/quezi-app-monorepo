@@ -134,13 +134,13 @@ export const GetProfilesQuerySchema = z.object({
     .regex(/^\d+$/)
     .transform(Number)
     .pipe(z.number().min(1))
-    .default("1"),
+    .default(1),
   limit: z
     .string()
     .regex(/^\d+$/)
     .transform(Number)
     .pipe(z.number().min(1).max(100))
-    .default("10"),
+    .default(10),
   city: z.string().optional(),
   serviceMode: ServiceModeEnum.optional(),
   minRating: z
@@ -228,4 +228,3 @@ export type ProfileParams = z.infer<typeof ProfileParamsSchema>;
 export type UpdatePortfolio = z.infer<typeof UpdatePortfolioSchema>;
 export type UpdateWorkingHoursInput = z.infer<typeof UpdateWorkingHoursSchema>;
 export type ToggleActive = z.infer<typeof ToggleActiveSchema>;
-

@@ -48,13 +48,13 @@ export const GetReviewsQuerySchema = z.object({
     .regex(/^\d+$/)
     .transform(Number)
     .pipe(z.number().min(1))
-    .default("1"),
+    .default(1),
   limit: z
     .string()
     .regex(/^\d+$/)
     .transform(Number)
     .pipe(z.number().min(1).max(100))
-    .default("10"),
+    .default(10),
   professionalId: z.string().cuid().optional(),
   reviewerId: z.string().cuid().optional(),
   minRating: z
@@ -159,4 +159,3 @@ export type GetProfessionalStatsQuery = z.infer<
 export type GetProfessionalStatsResponse = z.infer<
   typeof GetProfessionalStatsResponseSchema
 >;
-

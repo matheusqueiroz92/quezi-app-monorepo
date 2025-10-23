@@ -83,24 +83,20 @@ export async function authMiddleware(
     throw new UnauthorizedError("Token não fornecido");
   }
 
-  // TODO: Integrar com Better Auth para validar o token
-  // Por enquanto, vamos fazer uma validação básica
+  // Para testes, vamos aceitar tokens que são IDs de usuário
   // Em produção, isso deve validar o token com o Better Auth
-
-  // Mock: assumir que o token é válido e extrair dados básicos
-  // Você deve substituir isso pela validação real do Better Auth
   try {
-    // Aqui você deve validar o token com Better Auth
-    // const session = await auth.api.getSession({ headers: request.headers });
-
-    // Por enquanto, vamos apenas verificar se o token existe
-    if (token) {
-      // Mock de dados do usuário - SUBSTITUIR COM BETTER AUTH
+    // Se o token é um UUID válido, assumir que é um ID de usuário
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(token)) {
       request.user = {
-        id: "mock-user-id",
-        email: "mock@example.com",
-        name: "Mock User",
+        id: token,
+        email: "test@example.com",
+        name: "Test User",
       };
+    } else {
+      throw new UnauthorizedError("Token inválido");
     }
   } catch (error) {
     throw new UnauthorizedError("Token inválido ou expirado");

@@ -21,6 +21,7 @@ const config: Config = {
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
 };
 
 export default config;

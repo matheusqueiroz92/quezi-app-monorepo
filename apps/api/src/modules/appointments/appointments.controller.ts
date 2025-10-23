@@ -1,6 +1,8 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { AppError } from "../../utils/app-error";
 import { AppointmentsService } from "./appointments.service";
+import { AppointmentService } from "../../application/services/appointment.service";
+import { AppointmentRepository } from "../../infrastructure/repositories/appointment.repository";
 import {
   CreateAppointmentInputSchema,
   CreateAppointmentResponseSchema,
@@ -18,7 +20,13 @@ import {
 } from "./appointments.schema";
 
 export class AppointmentsController {
-  constructor(private appointmentsService: AppointmentsService) {}
+  private appointmentService: AppointmentService;
+
+  constructor(private appointmentsService: AppointmentsService) {
+    // Inicializar o novo serviço com o repositório
+    const appointmentRepository = new AppointmentRepository();
+    this.appointmentService = new AppointmentService(appointmentRepository);
+  }
 
   // ========================================
   // CRUD OPERATIONS

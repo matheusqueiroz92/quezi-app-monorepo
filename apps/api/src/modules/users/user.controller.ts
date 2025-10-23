@@ -50,7 +50,10 @@ export class UserController {
               password: { type: "string", minLength: 8 },
               name: { type: "string", minLength: 3 },
               phone: { type: "string" },
-              userType: { type: "string", enum: ["CLIENT", "PROFESSIONAL"] },
+              userType: {
+                type: "string",
+                enum: ["CLIENT", "PROFESSIONAL", "COMPANY"],
+              },
             },
           },
           response: {
@@ -87,7 +90,10 @@ export class UserController {
             properties: {
               page: { type: "number", minimum: 1, default: 1 },
               limit: { type: "number", minimum: 1, maximum: 100, default: 10 },
-              userType: { type: "string", enum: ["CLIENT", "PROFESSIONAL"] },
+              userType: {
+                type: "string",
+                enum: ["CLIENT", "PROFESSIONAL", "COMPANY"],
+              },
               search: { type: "string" },
             },
           },

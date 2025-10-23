@@ -6,7 +6,8 @@
     "exactOptionalPropertyTypes": false,
     "verbatimModuleSyntax": false,
     "module": "node16",
-    "moduleResolution": "node16"
+    "moduleResolution": "node16",
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
