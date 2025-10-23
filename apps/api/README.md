@@ -512,13 +512,15 @@ npm test -- --testPathPattern="middleware"
 Implementamos **71 cenários de teste** para validar a segurança dos middlewares:
 
 #### **Cobertura de Testes:**
+
 - ✅ **Middleware de Autenticação** - 15 cenários
-- ✅ **Middleware de Funcionários** - 14 cenários  
+- ✅ **Middleware de Funcionários** - 14 cenários
 - ✅ **Integração de Rotas** - 19 cenários
 - ✅ **Integração com Sessões** - 14 cenários
 - ✅ **Testes de Segurança** - 13 cenários
 
 #### **Cenários de Segurança Testados:**
+
 - 🔐 **Autenticação** - Token válido/inválido, sessões expiradas
 - 🚫 **Autorização** - Controle de acesso por tipo de usuário
 - 🔒 **Isolamento de Dados** - Prevenção de acesso cross-tenant

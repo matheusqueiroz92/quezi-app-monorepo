@@ -1,11 +1,7 @@
 import { type FastifyInstance } from "fastify";
 import { auth } from "../../lib/auth";
 import { AuthService } from "./auth.service";
-import {
-  forgotPasswordSchema,
-  resetPasswordSchema,
-  verifyResetTokenSchema,
-} from "./auth.schema";
+// Schemas Zod removidos - usando JSON Schema diretamente no Fastify
 
 /**
  * Rotas de Autenticação usando Better Auth
@@ -162,7 +158,16 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       schema: {
         tags: ["auth"],
         description: "Enviar email de recuperação de senha",
-        body: forgotPasswordSchema,
+        body: {
+          type: "object",
+          required: ["email"],
+          properties: {
+            email: {
+              type: "string",
+              format: "email",
+            },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -196,7 +201,16 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       schema: {
         tags: ["auth"],
         description: "Verificar se token de reset é válido",
-        querystring: verifyResetTokenSchema,
+        querystring: {
+          type: "object",
+          required: ["token"],
+          properties: {
+            token: {
+              type: "string",
+              minLength: 1,
+            },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -235,7 +249,21 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       schema: {
         tags: ["auth"],
         description: "Resetar senha com token válido",
-        body: resetPasswordSchema,
+        body: {
+          type: "object",
+          required: ["token", "newPassword"],
+          properties: {
+            token: {
+              type: "string",
+              minLength: 1,
+            },
+            newPassword: {
+              type: "string",
+              minLength: 8,
+              pattern: "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).*$",
+            },
+          },
+        },
         response: {
           200: {
             type: "object",
