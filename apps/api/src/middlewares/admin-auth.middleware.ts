@@ -1,6 +1,6 @@
 import { type FastifyRequest, type FastifyReply } from "fastify";
 import { AdminService } from "../application/services/admin.service";
-import { UnauthorizedError } from "../../../utils/app-error";
+import { UnauthorizedError } from "../utils/app-error";
 
 /**
  * Middleware de autenticação para rotas administrativas
@@ -23,7 +23,11 @@ export async function requireAdmin(
   }
 
   try {
-    const adminService = new AdminService();
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    const adminRepository = new (require("../infrastructure/repositories/admin.repository").AdminRepository)(prisma);
+    const userRepository = new (require("../infrastructure/repositories/user.repository").UserRepository)(prisma);
+    const adminService = new AdminService(adminRepository, userRepository);
     const admin = await adminService.validateToken(token);
 
     // Anexar admin ao request

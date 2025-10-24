@@ -1,6 +1,6 @@
 import { type FastifyInstance } from "fastify";
 import { auth } from "../../lib/auth";
-import { AuthService } from "../../modules/auth/auth.service";
+// import { AuthService } from "../../modules/auth/auth.service";
 // Schemas Zod removidos - usando JSON Schema diretamente no Fastify
 
 /**

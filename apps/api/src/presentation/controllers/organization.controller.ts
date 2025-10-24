@@ -3,7 +3,7 @@ import {
   type FastifyRequest,
   type FastifyReply,
 } from "fastify";
-import { OrganizationService } from "../../modules/organizations/organization.service";
+// import { OrganizationService } from "../../modules/organizations/organization.service";
 import {
   createOrganizationSchema,
   inviteMemberSchema,
@@ -11,7 +11,7 @@ import {
   type CreateOrganizationInput,
   type InviteMemberInput,
   type UpdateMemberRoleInput,
-} from "../../modules/organizations/organization.schema";
+} from "../schemas/organization.schema";
 import { requireAdmin, requireOwner } from "../../middlewares/rbac.middleware";
 
 /**

@@ -1,7 +1,7 @@
 import { type FastifyRequest, type FastifyReply } from "fastify";
 import { type Admin } from "@prisma/client";
 import { AdminService } from "../application/services/admin.service";
-import { UnauthorizedError, ForbiddenError } from "../../../utils/app-error";
+import { UnauthorizedError, ForbiddenError } from "../utils/app-error";
 
 /**
  * Middleware de permissões para rotas administrativas
@@ -18,7 +18,11 @@ export function requirePermission(permission: string) {
       throw new UnauthorizedError("Admin não autenticado");
     }
 
-    const adminService = new AdminService();
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    const adminRepository = new (require("../infrastructure/repositories/admin.repository").AdminRepository)(prisma);
+    const userRepository = new (require("../infrastructure/repositories/user.repository").UserRepository)(prisma);
+    const adminService = new AdminService(adminRepository, userRepository);
     const hasPermission = adminService.hasPermission(admin, permission);
 
     if (!hasPermission) {
