@@ -10,17 +10,34 @@ import {
   type FastifyRequest,
   type FastifyReply,
 } from "fastify";
-import { ProfileService } from "../../modules/profiles/profile.service";
+import { ProfessionalProfileService } from "../../application/services/professional-profile.service";
+import { ClientProfileService } from "../../application/services/client-profile.service";
+import { CompanyProfileService } from "../../application/services/company-profile.service";
 import { authMiddleware } from "../../middlewares/auth.middleware";
 
 /**
  * Controller para gerenciar perfis específicos
  */
 export class ProfileController {
-  private profileService: ProfileService;
+  private professionalProfileService: ProfessionalProfileService;
+  private clientProfileService: ClientProfileService;
+  private companyProfileService: CompanyProfileService;
 
   constructor() {
-    this.profileService = new ProfileService();
+    const { PrismaClient } = require("@prisma/client");
+    const prisma = new PrismaClient();
+    
+    // Professional Profile Service
+    const professionalProfileRepository = new (require("../../infrastructure/repositories/professional-profile.repository").ProfessionalProfileRepository)(prisma);
+    this.professionalProfileService = new ProfessionalProfileService(professionalProfileRepository);
+    
+    // Client Profile Service
+    const clientProfileRepository = new (require("../../infrastructure/repositories/client-profile.repository").ClientProfileRepository)(prisma);
+    this.clientProfileService = new ClientProfileService(clientProfileRepository);
+    
+    // Company Profile Service
+    const companyProfileRepository = new (require("../../infrastructure/repositories/company-profile.repository").CompanyProfileRepository)(prisma);
+    this.companyProfileService = new CompanyProfileService(companyProfileRepository);
   }
 
   /**
@@ -438,10 +455,7 @@ export class ProfileController {
       }
 
       const profileData = request.body as any;
-      const profile = await this.profileService.createClientProfile(
-        userId,
-        profileData
-      );
+      const profile = await this.clientProfileService.createProfile(profileData);
 
       reply.status(201).send(profile);
     } catch (error: any) {
@@ -460,10 +474,7 @@ export class ProfileController {
       }
 
       const profileData = request.body as any;
-      const profile = await this.profileService.createProfessionalProfile(
-        userId,
-        profileData
-      );
+      const profile = await this.professionalProfileService.createProfile(profileData);
 
       reply.status(201).send(profile);
     } catch (error: any) {
@@ -482,10 +493,7 @@ export class ProfileController {
       }
 
       const profileData = request.body as any;
-      const profile = await this.profileService.createCompanyProfile(
-        userId,
-        profileData
-      );
+      const profile = await this.companyProfileService.createProfile(profileData);
 
       reply.status(201).send(profile);
     } catch (error: any) {
@@ -499,7 +507,7 @@ export class ProfileController {
   ): Promise<void> {
     try {
       const { userId } = request.params as { userId: string };
-      const profile = await this.profileService.getClientProfile(userId);
+      const profile = await this.clientProfileService.getProfileById(userId);
 
       reply.status(200).send(profile);
     } catch (error: any) {
@@ -513,7 +521,7 @@ export class ProfileController {
   ): Promise<void> {
     try {
       const { userId } = request.params as { userId: string };
-      const profile = await this.profileService.getProfessionalProfile(userId);
+      const profile = await this.professionalProfileService.getProfileById(userId);
 
       reply.status(200).send(profile);
     } catch (error: any) {
@@ -527,7 +535,7 @@ export class ProfileController {
   ): Promise<void> {
     try {
       const { userId } = request.params as { userId: string };
-      const profile = await this.profileService.getCompanyProfile(userId);
+      const profile = await this.companyProfileService.getProfileById(userId);
 
       reply.status(200).send(profile);
     } catch (error: any) {

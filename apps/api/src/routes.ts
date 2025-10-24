@@ -5,7 +5,7 @@ import { userRoutes } from "./presentation/routes/user.routes";
 // import { offeredServicesRoutes } from "./presentation/routes/offered-services.routes";
 import { appointmentsRoutes } from "./presentation/routes/appointments.routes";
 // import { profilesRoutes } from "./presentation/routes/professional-profiles.routes";
-// import { profileRoutes } from "./presentation/routes/profile.routes";
+import { profileRoutes } from "./presentation/routes/profile.routes";
 // import { adminRoutes } from "./presentation/routes/admin.routes";
 import { companyEmployeeRoutes } from "./presentation/routes/company-employee.routes";
 import { companyEmployeeAppointmentRoutes } from "./presentation/routes/company-employee-appointment.routes";
@@ -81,7 +81,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       // ========================================
       // MÓDULO PROFILES (PERFIS ESPECÍFICOS)
       // ========================================
-      // await apiRoutes.register(profileRoutes, { prefix: "/profiles" });
+      await apiRoutes.register(profileRoutes, { prefix: "/profiles" });
 
       // ========================================
       // MÓDULO ADMIN (PAINEL ADMINISTRATIVO)
