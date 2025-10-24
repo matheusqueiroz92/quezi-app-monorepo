@@ -26,18 +26,33 @@ export class ProfileController {
   constructor() {
     const { PrismaClient } = require("@prisma/client");
     const prisma = new PrismaClient();
-    
+
     // Professional Profile Service
-    const professionalProfileRepository = new (require("../../infrastructure/repositories/professional-profile.repository").ProfessionalProfileRepository)(prisma);
-    this.professionalProfileService = new ProfessionalProfileService(professionalProfileRepository);
-    
+    const professionalProfileRepository =
+      new (require("../../infrastructure/repositories/professional-profile.repository").ProfessionalProfileRepository)(
+        prisma
+      );
+    this.professionalProfileService = new ProfessionalProfileService(
+      professionalProfileRepository
+    );
+
     // Client Profile Service
-    const clientProfileRepository = new (require("../../infrastructure/repositories/client-profile.repository").ClientProfileRepository)(prisma);
-    this.clientProfileService = new ClientProfileService(clientProfileRepository);
-    
+    const clientProfileRepository =
+      new (require("../../infrastructure/repositories/client-profile.repository").ClientProfileRepository)(
+        prisma
+      );
+    this.clientProfileService = new ClientProfileService(
+      clientProfileRepository
+    );
+
     // Company Profile Service
-    const companyProfileRepository = new (require("../../infrastructure/repositories/company-profile.repository").CompanyProfileRepository)(prisma);
-    this.companyProfileService = new CompanyProfileService(companyProfileRepository);
+    const companyProfileRepository =
+      new (require("../../infrastructure/repositories/company-profile.repository").CompanyProfileRepository)(
+        prisma
+      );
+    this.companyProfileService = new CompanyProfileService(
+      companyProfileRepository
+    );
   }
 
   /**
@@ -455,7 +470,9 @@ export class ProfileController {
       }
 
       const profileData = request.body as any;
-      const profile = await this.clientProfileService.createProfile(profileData);
+      const profile = await this.clientProfileService.createProfile(
+        profileData
+      );
 
       reply.status(201).send(profile);
     } catch (error: any) {
@@ -474,7 +491,9 @@ export class ProfileController {
       }
 
       const profileData = request.body as any;
-      const profile = await this.professionalProfileService.createProfile(profileData);
+      const profile = await this.professionalProfileService.createProfile(
+        profileData
+      );
 
       reply.status(201).send(profile);
     } catch (error: any) {
@@ -493,7 +512,9 @@ export class ProfileController {
       }
 
       const profileData = request.body as any;
-      const profile = await this.companyProfileService.createProfile(profileData);
+      const profile = await this.companyProfileService.createProfile(
+        profileData
+      );
 
       reply.status(201).send(profile);
     } catch (error: any) {
@@ -521,7 +542,9 @@ export class ProfileController {
   ): Promise<void> {
     try {
       const { userId } = request.params as { userId: string };
-      const profile = await this.professionalProfileService.getProfileById(userId);
+      const profile = await this.professionalProfileService.getProfileById(
+        userId
+      );
 
       reply.status(200).send(profile);
     } catch (error: any) {
