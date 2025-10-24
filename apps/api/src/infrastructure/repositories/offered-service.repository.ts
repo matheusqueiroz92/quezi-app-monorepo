@@ -18,7 +18,7 @@ export class OfferedServiceRepository {
    */
   async create(data: any): Promise<OfferedService> {
     try {
-      const service = await prisma.offeredService.create({
+      const service = await prisma.service.create({
         data: {
           id: data.id,
           professionalId: data.professionalId,
@@ -44,7 +44,7 @@ export class OfferedServiceRepository {
    */
   async findById(id: string): Promise<OfferedService | null> {
     try {
-      const service = await prisma.offeredService.findUnique({
+      const service = await prisma.service.findUnique({
         where: { id },
         include: {
           professional: true,
@@ -88,7 +88,7 @@ export class OfferedServiceRepository {
       }
 
       const [services, total] = await Promise.all([
-        prisma.offeredService.findMany({
+        prisma.service.findMany({
           where,
           skip,
           take,
@@ -98,7 +98,7 @@ export class OfferedServiceRepository {
             category: true,
           },
         }),
-        prisma.offeredService.count({ where }),
+        prisma.service.count({ where }),
       ]);
 
       return {
@@ -121,7 +121,7 @@ export class OfferedServiceRepository {
    */
   async update(id: string, data: any): Promise<OfferedService> {
     try {
-      const service = await prisma.offeredService.update({
+      const service = await prisma.service.update({
         where: { id },
         data: {
           name: data.name,
@@ -148,7 +148,7 @@ export class OfferedServiceRepository {
    */
   async delete(id: string): Promise<void> {
     try {
-      await prisma.offeredService.delete({
+      await prisma.service.delete({
         where: { id },
       });
     } catch (error: any) {
@@ -164,7 +164,7 @@ export class OfferedServiceRepository {
    */
   async exists(id: string): Promise<boolean> {
     try {
-      const service = await prisma.offeredService.findUnique({
+      const service = await prisma.service.findUnique({
         where: { id },
         select: { id: true },
       });
@@ -180,7 +180,7 @@ export class OfferedServiceRepository {
    */
   async findByProfessional(professionalId: string): Promise<OfferedService[]> {
     try {
-      const services = await prisma.offeredService.findMany({
+      const services = await prisma.service.findMany({
         where: { professionalId },
         include: {
           category: true,
@@ -201,7 +201,7 @@ export class OfferedServiceRepository {
    */
   async findByCategory(categoryId: string): Promise<OfferedService[]> {
     try {
-      const services = await prisma.offeredService.findMany({
+      const services = await prisma.service.findMany({
         where: { categoryId, isActive: true },
         include: {
           professional: true,
@@ -223,7 +223,7 @@ export class OfferedServiceRepository {
    */
   async activate(id: string): Promise<OfferedService> {
     try {
-      const service = await prisma.offeredService.update({
+      const service = await prisma.service.update({
         where: { id },
         data: { isActive: true },
       });
@@ -242,7 +242,7 @@ export class OfferedServiceRepository {
    */
   async deactivate(id: string): Promise<OfferedService> {
     try {
-      const service = await prisma.offeredService.update({
+      const service = await prisma.service.update({
         where: { id },
         data: { isActive: false },
       });
