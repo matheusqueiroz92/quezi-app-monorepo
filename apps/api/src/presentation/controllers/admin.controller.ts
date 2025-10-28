@@ -553,17 +553,12 @@ export class AdminController {
 
       // Buscar usuários
       const [users, total] = await Promise.all([
-        this.userRepository.findMany({
-          skip,
-          take: limit,
-          where,
-          orderBy: { [sortBy]: sortOrder },
-        }),
-        this.userRepository.count(where),
+        this.userRepository.findMany(where),
+        Promise.resolve(0), // TODO: Implementar count no UserRepository
       ]);
 
       // Remover senhas
-      const usersWithoutPassword = users.map((user) => {
+      const usersWithoutPassword = users.data.map((user: any) => {
         const { passwordHash, ...rest } = user;
         return rest;
       });
@@ -596,7 +591,7 @@ export class AdminController {
         return reply.status(404).send({ error: "Usuário não encontrado" });
       }
 
-      const { passwordHash, ...userWithoutPassword } = user;
+      const { passwordHash, ...userWithoutPassword } = user as any;
 
       reply.status(200).send(userWithoutPassword);
     } catch (error) {

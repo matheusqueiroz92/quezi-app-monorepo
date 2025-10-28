@@ -85,7 +85,7 @@ export class ClientProfile implements IClientProfile {
     const address = this.addresses[addressIndex];
 
     // Se é o endereço padrão, torna outro como padrão
-    if (address.isDefault && this.addresses.length > 1) {
+    if (address?.isDefault && this.addresses.length > 1) {
       const nextAddress = this.addresses.find((addr) => addr.id !== addressId);
       if (nextAddress) {
         nextAddress.isDefault = true;
@@ -127,7 +127,7 @@ export class ClientProfile implements IClientProfile {
     const method = this.paymentMethods[methodIndex];
 
     // Se é o método padrão, torna outro como padrão
-    if (method.isDefault && this.paymentMethods.length > 1) {
+    if (method?.isDefault && this.paymentMethods.length > 1) {
       const nextMethod = this.paymentMethods.find((pm) => pm.id !== methodId);
       if (nextMethod) {
         nextMethod.isDefault = true;

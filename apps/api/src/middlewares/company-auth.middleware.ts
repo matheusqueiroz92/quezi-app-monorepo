@@ -65,7 +65,7 @@ export async function requireAppointmentAccess(
   }
 
   // Verificar se o usuário é CLIENT ou COMPANY
-  if (!["CLIENT", "COMPANY"].includes(request.user.userType)) {
+  if (!["CLIENT", "COMPANY"].includes(request.user.userType || "")) {
     throw new ForbiddenError(
       "Apenas clientes e empresas podem acessar agendamentos"
     );

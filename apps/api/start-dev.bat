@@ -1,10 +1,10 @@
 @echo off
-set DATABASE_URL=postgresql://postgres:password@localhost:5432/quezi_db
-set JWT_SECRET=your-super-secret-jwt-key-with-at-least-32-characters
+set DATABASE_URL=postgresql://userquezi-app:passwordquezi-app@localhost:5432/quezi-app_db
+set JWT_SECRET=C+5mZ7xJzGJ8U0OpbKTjNFkAYbqSnv0/0RhWCHQbpnY=
 set JWT_EXPIRES_IN=7d
 set CORS_ORIGIN=http://localhost:3000
 set SWAGGER_ENABLED=true
-set BETTER_AUTH_SECRET=your-super-secret-better-auth-key-with-at-least-32-characters
+set BETTER_AUTH_SECRET=YHuEXTrz8pHmOaNzWMaSSR+xGC+PXe0cAZO6o8Qq7i8=
 set BETTER_AUTH_URL=http://localhost:3333
 set GOOGLE_CLIENT_ID=
 set GOOGLE_CLIENT_SECRET=

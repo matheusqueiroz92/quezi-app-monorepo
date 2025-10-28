@@ -94,7 +94,7 @@ export class UserService implements IUserService {
     }
 
     // Verificar se é do tipo CLIENT
-    if (!user.isClient()) {
+    if (user.userType !== "CLIENT") {
       throw new BadRequestError(
         "Apenas usuários do tipo CLIENT podem ter perfil de cliente"
       );
@@ -117,7 +117,7 @@ export class UserService implements IUserService {
     }
 
     // Verificar se é do tipo PROFESSIONAL
-    if (!user.isProfessional()) {
+    if (user.userType !== "PROFESSIONAL") {
       throw new BadRequestError(
         "Apenas usuários do tipo PROFESSIONAL podem ter perfil de profissional"
       );
@@ -140,7 +140,7 @@ export class UserService implements IUserService {
     }
 
     // Verificar se é do tipo COMPANY
-    if (!user.isCompany()) {
+    if (user.userType !== "COMPANY") {
       throw new BadRequestError(
         "Apenas usuários do tipo COMPANY podem ter perfil de empresa"
       );
@@ -223,7 +223,7 @@ export class UserService implements IUserService {
     }
 
     // Validar dados específicos do perfil baseado no tipo de usuário
-    if (user.isClient()) {
+    if (user.userType === "CLIENT") {
       if (!profileData.cpf) {
         errors.push("CPF é obrigatório para clientes");
       } else if (!this.isValidCPF(profileData.cpf)) {
@@ -231,7 +231,7 @@ export class UserService implements IUserService {
       }
     }
 
-    if (user.isProfessional()) {
+    if (user.userType === "PROFESSIONAL") {
       if (!profileData.address) {
         errors.push("Endereço é obrigatório para profissionais");
       }
@@ -243,7 +243,7 @@ export class UserService implements IUserService {
       }
     }
 
-    if (user.isCompany()) {
+    if (user.userType === "COMPANY") {
       if (!profileData.cnpj) {
         errors.push("CNPJ é obrigatório para empresas");
       } else if (!this.isValidCNPJ(profileData.cnpj)) {

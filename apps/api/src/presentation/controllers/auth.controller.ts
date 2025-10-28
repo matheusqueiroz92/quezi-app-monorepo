@@ -1,6 +1,6 @@
 import { type FastifyInstance } from "fastify";
 import { auth } from "../../lib/auth";
-// import { AuthService } from "../../modules/auth/auth.service";
+import { AuthService } from "../../application/services/auth.service";
 // Schemas Zod removidos - usando JSON Schema diretamente no Fastify
 
 /**
@@ -26,22 +26,22 @@ import { auth } from "../../lib/auth";
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   const authService = new AuthService();
 
-  // Registra todos os handlers do Better Auth
-  // Better Auth expõe automaticamente os endpoints acima
+  // Configuração do Better Auth seguindo a documentação oficial
+  // Usa o método createAuthHandler para integração com Fastify
+  const authHandler = auth.handler;
+
+  // Registra o handler do Better Auth para todas as rotas de autenticação
   app.all("/auth/*", async (request, reply) => {
     try {
-      // Constrói a URL completa (Better Auth precisa da URL completa, não apenas do path)
-      const protocol = request.protocol;
-      const host = request.hostname;
-      const port = request.port || 3333;
-      const fullUrl = `${protocol}://${host}:${port}${request.url}`;
-
       console.log("🔐 Better Auth Request:", {
         method: request.method,
-        originalUrl: request.url,
-        fullUrl,
-        body: request.body,
+        url: request.url,
       });
+
+      // Constrói a URL completa para o Better Auth (configuração original)
+      const fullUrl = `http://localhost:3333${request.url}`;
+
+      console.log("🔍 URL construída:", fullUrl);
 
       // Converte headers do Fastify para Headers do Web API
       const webHeaders = new Headers();
@@ -54,41 +54,47 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         }
       }
 
-      // Converte requisição Fastify para formato do Better Auth
-      const response = await auth.handler(
-        new Request(fullUrl, {
-          method: request.method,
-          headers: webHeaders,
-          body:
-            request.method !== "GET" && request.method !== "HEAD"
-              ? JSON.stringify(request.body)
-              : undefined,
-        })
-      );
+      // Cria a requisição para o Better Auth
+      const webRequest = new Request(fullUrl, {
+        method: request.method,
+        headers: webHeaders,
+        body:
+          request.method !== "GET" && request.method !== "HEAD"
+            ? JSON.stringify(request.body)
+            : undefined,
+      });
 
-      // Lê o body da resposta (Response do Web API)
+      // Chama o handler do Better Auth
+      const response = await authHandler(webRequest);
+
+      // Lê o body da resposta
       const responseBody = await response.text();
 
       console.log("✅ Better Auth Response:", {
         status: response.status,
         hasBody: !!responseBody,
+        contentType: response.headers.get("content-type"),
       });
 
-      // Configura status e headers
+      // Configura o status da resposta
       reply.status(response.status);
 
-      // Copia headers da resposta
+      // Copia todos os headers da resposta
       response.headers.forEach((value, key) => {
         reply.header(key, value);
       });
 
-      // Se o body for JSON, parse e retorna
+      // Retorna o body da resposta
       if (responseBody) {
-        try {
-          return JSON.parse(responseBody);
-        } catch {
-          return responseBody;
+        const contentType = response.headers.get("content-type");
+        if (contentType?.includes("application/json")) {
+          try {
+            return JSON.parse(responseBody);
+          } catch {
+            return responseBody;
+          }
         }
+        return responseBody;
       }
 
       return reply.send();
@@ -97,6 +103,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(500).send({
         error: "Internal Server Error",
         message: "Erro interno do servidor de autenticação",
+        details: error instanceof Error ? error.message : "Erro desconhecido",
       });
     }
   });
@@ -131,19 +138,32 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      // Pega sessão do Better Auth
-      const session = await auth.api.getSession({
-        headers: request.headers as any,
-      });
+      try {
+        // Pega sessão do Better Auth
+        const session = await auth.api.getSession({
+          headers: request.headers as any,
+        });
 
-      if (!session) {
+        console.log("🔍 Session check:", {
+          session: !!session,
+          headers: request.headers,
+        });
+
+        if (!session) {
+          return reply.status(401).send({
+            error: "Unauthorized",
+            message: "Usuário não autenticado",
+          });
+        }
+
+        return session.user;
+      } catch (error) {
+        console.error("❌ Erro na rota /auth/me:", error);
         return reply.status(401).send({
-          error: "Unauthorized",
-          message: "Usuário não autenticado",
+          error: "Internal Server Error",
+          message: "Erro interno do servidor",
         });
       }
-
-      return session.user;
     }
   );
 

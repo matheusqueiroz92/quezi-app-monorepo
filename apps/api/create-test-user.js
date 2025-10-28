@@ -6,26 +6,46 @@ const prisma = new PrismaClient();
 async function createTestUser() {
   try {
     // Hash da senha
-    const hashedPassword = await bcrypt.hash("12345678", 10);
+    const hashedPassword = await bcrypt.hash("admin123456", 10);
 
-    // Criar usuário de teste
-    const user = await prisma.user.create({
+    // Criar admin na tabela Admin
+    const admin = await prisma.admin.create({
       data: {
-        email: "teste@teste.com",
+        email: "admin@quezi.com",
         passwordHash: hashedPassword,
-        name: "Usuário Teste",
-        userType: "CLIENT",
-        isEmailVerified: true,
+        name: "Administrador Quezi",
+        role: "SUPER_ADMIN",
+        permissions: {
+          users: { create: true, read: true, update: true, delete: true },
+          services: { create: true, read: true, update: true, delete: true },
+          appointments: {
+            create: true,
+            read: true,
+            update: true,
+            delete: true,
+          },
+          reviews: { create: true, read: true, update: true, delete: true },
+          organizations: {
+            create: true,
+            read: true,
+            update: true,
+            delete: true,
+          },
+        },
+        isActive: true,
       },
     });
 
-    console.log("✅ Usuário de teste criado:", {
-      id: user.id,
-      email: user.email,
-      name: user.name,
+    console.log("✅ Admin criado:", {
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      role: admin.role,
+      isActive: admin.isActive,
     });
 
-    console.log("🔐 Senha: 12345678");
+    console.log("🔐 Email: admin@quezi.com");
+    console.log("🔐 Senha: admin123456");
   } catch (error) {
     if (error.code === "P2002") {
       console.log("ℹ️  Usuário já existe");

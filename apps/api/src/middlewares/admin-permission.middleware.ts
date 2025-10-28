@@ -20,8 +20,14 @@ export function requirePermission(permission: string) {
 
     const { PrismaClient } = require("@prisma/client");
     const prisma = new PrismaClient();
-    const adminRepository = new (require("../infrastructure/repositories/admin.repository").AdminRepository)(prisma);
-    const userRepository = new (require("../infrastructure/repositories/user.repository").UserRepository)(prisma);
+    const adminRepository =
+      new (require("../infrastructure/repositories/admin.repository").AdminRepository)(
+        prisma
+      );
+    const userRepository =
+      new (require("../infrastructure/repositories/user.repository").UserRepository)(
+        prisma
+      );
     const adminService = new AdminService(adminRepository, userRepository);
     const hasPermission = adminService.hasPermission(admin, permission);
 

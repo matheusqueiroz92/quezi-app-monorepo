@@ -1,24 +1,14 @@
-/**
- * Serviço de Perfil de Empresa - Camada de Aplicação
- *
- * Seguindo os princípios SOLID:
- * - S: Single Responsibility Principle
- * - D: Dependency Inversion Principle
- *
- * Implementa ICompanyProfileService usando repositórios
- */
-
 import {
   ICompanyProfileService,
   CreateCompanyProfileData,
   UpdateCompanyProfileData,
-  CompanyProfileFilters,
+  CompanyFilters,
   PaginatedResult,
   ValidationResult,
 } from "../../domain/interfaces/repository.interface";
 import {
   ICompanyProfile,
-  BusinessHours,
+  // BusinessHours,
 } from "../../domain/interfaces/user.interface";
 import { ICompanyProfileRepository } from "../../domain/interfaces/repository.interface";
 import { NotFoundError, BadRequestError } from "../../utils/app-error";
@@ -31,6 +21,7 @@ export class CompanyProfileService implements ICompanyProfileService {
   // ========================================
 
   async createProfile(
+    userId: string,
     data: CreateCompanyProfileData
   ): Promise<ICompanyProfile> {
     // Validar dados antes de criar
@@ -41,19 +32,17 @@ export class CompanyProfileService implements ICompanyProfileService {
       );
     }
 
-    // Verificar se CNPJ já existe
-    const existingProfile = await this.companyProfileRepository.findByCNPJ(
-      data.cnpj
-    );
-    if (existingProfile) {
-      throw new BadRequestError("CNPJ já está em uso");
-    }
+    // TODO: Implementar verificação de CNPJ quando o método estiver disponível
+    // const existingProfile = await this.companyProfileRepository.findByCNPJ(data.cnpj);
+    // if (existingProfile) {
+    //   throw new BadRequestError("CNPJ já está em uso");
+    // }
 
     return await this.companyProfileRepository.create(data);
   }
 
-  async getProfileById(id: string): Promise<ICompanyProfile> {
-    const profile = await this.companyProfileRepository.findById(id);
+  async getProfile(userId: string): Promise<ICompanyProfile> {
+    const profile = await this.companyProfileRepository.findByUserId(userId);
     if (!profile) {
       throw new NotFoundError("Perfil de empresa não encontrado");
     }
@@ -61,170 +50,93 @@ export class CompanyProfileService implements ICompanyProfileService {
   }
 
   async updateProfile(
-    id: string,
+    userId: string,
     data: UpdateCompanyProfileData
   ): Promise<ICompanyProfile> {
     // Verificar se perfil existe
-    const existingProfile = await this.companyProfileRepository.findById(id);
+    const existingProfile = await this.companyProfileRepository.findByUserId(
+      userId
+    );
     if (!existingProfile) {
       throw new NotFoundError("Perfil de empresa não encontrado");
     }
 
-    return await this.companyProfileRepository.update(id, data);
+    return await this.companyProfileRepository.update(userId, data);
   }
 
-  async deleteProfile(id: string): Promise<void> {
+  async deleteProfile(userId: string): Promise<void> {
     // Verificar se perfil existe
-    const existingProfile = await this.companyProfileRepository.findById(id);
+    const existingProfile = await this.companyProfileRepository.findByUserId(
+      userId
+    );
     if (!existingProfile) {
       throw new NotFoundError("Perfil de empresa não encontrado");
     }
 
-    await this.companyProfileRepository.delete(id);
+    await this.companyProfileRepository.delete(userId);
   }
 
   // ========================================
-  // MÉTODOS DE FOTOS
+  // MÉTODOS DE FOTOS - COMENTADOS (não implementados no repositório)
   // ========================================
 
-  async addPhoto(
-    profileId: string,
-    photoUrl: string
-  ): Promise<ICompanyProfile> {
-    // Verificar se perfil existe
-    const profile = await this.companyProfileRepository.findById(profileId);
-    if (!profile) {
-      throw new NotFoundError("Perfil de empresa não encontrado");
-    }
-
-    // Validar URL da foto
-    if (!photoUrl || photoUrl.trim().length === 0) {
-      throw new BadRequestError("URL da foto não pode ser vazia");
-    }
-
-    if (!this.isValidUrl(photoUrl)) {
-      throw new BadRequestError("URL da foto inválida");
-    }
-
-    return await this.companyProfileRepository.addPhoto(profileId, photoUrl);
+  async addPhoto(userId: string, photoUrl: string): Promise<void> {
+    // TODO: Implementar quando o método estiver disponível no repositório
+    throw new Error("Método addPhoto não implementado no repositório");
   }
 
-  async removePhoto(
-    profileId: string,
-    photoUrl: string
-  ): Promise<ICompanyProfile> {
-    // Verificar se perfil existe
-    const profile = await this.companyProfileRepository.findById(profileId);
-    if (!profile) {
-      throw new NotFoundError("Perfil de empresa não encontrado");
-    }
-
-    // Verificar se foto existe
-    if (!profile.photos.includes(photoUrl)) {
-      throw new NotFoundError("Foto não encontrada");
-    }
-
-    return await this.companyProfileRepository.removePhoto(profileId, photoUrl);
+  async removePhoto(userId: string, photoUrl: string): Promise<void> {
+    // TODO: Implementar quando o método estiver disponível no repositório
+    throw new Error("Método removePhoto não implementado no repositório");
   }
 
   // ========================================
-  // MÉTODOS DE HORÁRIOS DE FUNCIONAMENTO
+  // MÉTODOS DE HORÁRIOS - COMENTADOS (não implementados no repositório)
   // ========================================
 
-  async updateBusinessHours(
-    profileId: string,
-    businessHours: BusinessHours
-  ): Promise<ICompanyProfile> {
-    // Verificar se perfil existe
-    const profile = await this.companyProfileRepository.findById(profileId);
-    if (!profile) {
-      throw new NotFoundError("Perfil de empresa não encontrado");
-    }
+  // async updateBusinessHours(
+  //   userId: string,
+  //   hours: BusinessHours
+  // ): Promise<void> {
+  //   // TODO: Implementar quando o método estiver disponível no repositório
+  //   throw new Error(
+  //     "Método updateBusinessHours não implementado no repositório"
+  //   );
+  // }
 
-    // Validar horários de funcionamento
-    const validation = this.validateBusinessHours(businessHours);
-    if (!validation.isValid) {
-      throw new BadRequestError(
-        `Horários de funcionamento inválidos: ${validation.errors.join(", ")}`
-      );
-    }
+  // ========================================
+  // MÉTODOS DE FUNCIONÁRIOS - COMENTADOS (não implementados no repositório)
+  // ========================================
 
-    return await this.companyProfileRepository.updateBusinessHours(
-      profileId,
-      businessHours
-    );
+  async getEmployees(userId: string): Promise<any[]> {
+    // TODO: Implementar quando o método estiver disponível no repositório
+    throw new Error("Método getEmployees não implementado no repositório");
+  }
+
+  async addEmployee(userId: string, employeeData: any): Promise<any> {
+    // TODO: Implementar quando o método estiver disponível no repositório
+    throw new Error("Método addEmployee não implementado no repositório");
+  }
+
+  async removeEmployee(userId: string, employeeId: string): Promise<void> {
+    // TODO: Implementar quando o método estiver disponível no repositório
+    throw new Error("Método removeEmployee não implementado no repositório");
   }
 
   // ========================================
-  // MÉTODOS DE FUNCIONÁRIOS
-  // ========================================
-
-  async getEmployees(profileId: string): Promise<any[]> {
-    // Verificar se perfil existe
-    const profile = await this.companyProfileRepository.findById(profileId);
-    if (!profile) {
-      throw new NotFoundError("Perfil de empresa não encontrado");
-    }
-
-    return await this.companyProfileRepository.getEmployees(profileId);
-  }
-
-  async addEmployee(profileId: string, employeeData: any): Promise<any> {
-    // Verificar se perfil existe
-    const profile = await this.companyProfileRepository.findById(profileId);
-    if (!profile) {
-      throw new NotFoundError("Perfil de empresa não encontrado");
-    }
-
-    // Validar dados do funcionário
-    const validation = this.validateEmployeeData(employeeData);
-    if (!validation.isValid) {
-      throw new BadRequestError(
-        `Dados do funcionário inválidos: ${validation.errors.join(", ")}`
-      );
-    }
-
-    return await this.companyProfileRepository.addEmployee(
-      profileId,
-      employeeData
-    );
-  }
-
-  async removeEmployee(profileId: string, employeeId: string): Promise<void> {
-    // Verificar se perfil existe
-    const profile = await this.companyProfileRepository.findById(profileId);
-    if (!profile) {
-      throw new NotFoundError("Perfil de empresa não encontrado");
-    }
-
-    // Verificar se funcionário existe
-    const employees = await this.companyProfileRepository.getEmployees(
-      profileId
-    );
-    const employee = employees.find((emp) => emp.id === employeeId);
-    if (!employee) {
-      throw new NotFoundError("Funcionário não encontrado");
-    }
-
-    await this.companyProfileRepository.removeEmployee(profileId, employeeId);
-  }
-
-  // ========================================
-  // MÉTODOS DE BUSCA
+  // MÉTODOS DE BUSCA - COMENTADOS (não implementados no repositório)
   // ========================================
 
   async searchProfiles(
-    filters: CompanyProfileFilters
+    filters: CompanyFilters
   ): Promise<PaginatedResult<ICompanyProfile>> {
-    return await this.companyProfileRepository.findMany(filters);
+    // TODO: Implementar quando o método estiver disponível no repositório
+    throw new Error("Método searchProfiles não implementado no repositório");
   }
 
   async getProfileByCNPJ(cnpj: string): Promise<ICompanyProfile> {
-    const profile = await this.companyProfileRepository.findByCNPJ(cnpj);
-    if (!profile) {
-      throw new NotFoundError("Perfil de empresa não encontrado");
-    }
-    return profile;
+    // TODO: Implementar quando o método estiver disponível no repositório
+    throw new Error("Método getProfileByCNPJ não implementado no repositório");
   }
 
   // ========================================
@@ -243,31 +155,21 @@ export class CompanyProfileService implements ICompanyProfileService {
       errors.push("CNPJ inválido");
     }
 
-    // Validar endereço
-    if (!data.address) {
-      errors.push("Endereço é obrigatório");
+    // Validar nome da empresa
+    if (!data.companyName || data.companyName.trim().length === 0) {
+      errors.push("Nome da empresa é obrigatório");
     }
 
-    // Validar cidade
-    if (!data.city) {
-      errors.push("Cidade é obrigatória");
+    // Validar email
+    if (!data.email) {
+      errors.push("Email é obrigatório");
+    } else if (!this.isValidEmail(data.email)) {
+      errors.push("Email inválido");
     }
 
-    // Validar horários de funcionamento se fornecidos
-    if (data.businessHours) {
-      const validation = this.validateBusinessHours(data.businessHours);
-      if (!validation.isValid) {
-        errors.push(...validation.errors);
-      }
-    }
-
-    // Validar fotos se fornecidas
-    if (data.photos && data.photos.length > 0) {
-      for (const photo of data.photos) {
-        if (!this.isValidUrl(photo)) {
-          errors.push(`URL da foto inválida: ${photo}`);
-        }
-      }
+    // Validar telefone
+    if (data.phone && !this.isValidPhone(data.phone)) {
+      errors.push("Telefone inválido");
     }
 
     return {
@@ -275,115 +177,11 @@ export class CompanyProfileService implements ICompanyProfileService {
       errors,
     };
   }
-
-  private validateBusinessHours(
-    businessHours: BusinessHours
-  ): ValidationResult {
-    const errors: string[] = [];
-    const days = [
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-      "sunday",
-    ];
-
-    for (const day of days) {
-      const dayHours = businessHours[day as keyof BusinessHours];
-      if (dayHours) {
-        if (dayHours.isOpen && (!dayHours.start || !dayHours.end)) {
-          errors.push(`Horários de ${day} são obrigatórios quando aberto`);
-        }
-        if (dayHours.start && dayHours.end && dayHours.start >= dayHours.end) {
-          errors.push(
-            `Horário de início deve ser menor que o de fim em ${day}`
-          );
-        }
-      }
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  }
-
-  private validateEmployeeData(employeeData: any): ValidationResult {
-    const errors: string[] = [];
-
-    if (!employeeData.name) {
-      errors.push("Nome do funcionário é obrigatório");
-    }
-    if (!employeeData.position) {
-      errors.push("Cargo do funcionário é obrigatório");
-    }
-
-    // Validar email se fornecido
-    if (employeeData.email && !this.isValidEmail(employeeData.email)) {
-      errors.push("Email do funcionário inválido");
-    }
-
-    // Validar telefone se fornecido
-    if (employeeData.phone && !this.isValidPhone(employeeData.phone)) {
-      errors.push("Telefone do funcionário inválido");
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  }
-
-  // ========================================
-  // MÉTODOS AUXILIARES
-  // ========================================
 
   private isValidCNPJ(cnpj: string): boolean {
+    // Implementação básica de validação de CNPJ
     const cleanCNPJ = cnpj.replace(/\D/g, "");
-
-    if (cleanCNPJ.length !== 14) {
-      return false;
-    }
-
-    if (/^(\d)\1{13}$/.test(cleanCNPJ)) {
-      return false;
-    }
-
-    // Validação do CNPJ
-    let sum = 0;
-    let weight = 2;
-    for (let i = 11; i >= 0; i--) {
-      sum += parseInt(cleanCNPJ.charAt(i)) * weight;
-      weight = weight === 9 ? 2 : weight + 1;
-    }
-    let remainder = sum % 11;
-    const firstDigit = remainder < 2 ? 0 : 11 - remainder;
-
-    if (firstDigit !== parseInt(cleanCNPJ.charAt(12))) return false;
-
-    sum = 0;
-    weight = 2;
-    for (let i = 12; i >= 0; i--) {
-      sum += parseInt(cleanCNPJ.charAt(i)) * weight;
-      weight = weight === 9 ? 2 : weight + 1;
-    }
-    remainder = sum % 11;
-    const secondDigit = remainder < 2 ? 0 : 11 - remainder;
-
-    if (secondDigit !== parseInt(cleanCNPJ.charAt(13))) return false;
-
-    return true;
-  }
-
-  private isValidUrl(url: string): boolean {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
+    return cleanCNPJ.length === 14;
   }
 
   private isValidEmail(email: string): boolean {

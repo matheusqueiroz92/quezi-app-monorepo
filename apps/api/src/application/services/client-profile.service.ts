@@ -12,7 +12,7 @@ import {
   IClientProfileService,
   CreateClientProfileData,
   UpdateClientProfileData,
-  ClientProfileFilters,
+  // ClientProfileFilters, // Não existe - usar UserFilters se necessário
   PaginatedResult,
   ValidationResult,
 } from "../../domain/interfaces/repository.interface";
@@ -32,7 +32,10 @@ export class ClientProfileService implements IClientProfileService {
   // MÉTODOS BÁSICOS
   // ========================================
 
-  async createProfile(data: CreateClientProfileData): Promise<IClientProfile> {
+  async createProfile(
+    userId: string,
+    data: CreateClientProfileData
+  ): Promise<IClientProfile> {
     // Validar dados antes de criar
     const validation = await this.validateProfileCreation(data);
     if (!validation.isValid) {
@@ -42,18 +45,17 @@ export class ClientProfileService implements IClientProfileService {
     }
 
     // Verificar se CPF já existe
-    const existingProfile = await this.clientProfileRepository.findByCPF(
-      data.cpf
-    );
-    if (existingProfile) {
-      throw new BadRequestError("CPF já está em uso");
-    }
+    // TODO: Implementar verificação de CPF quando o método estiver disponível
+    // const existingProfile = await this.clientProfileRepository.findByCPF(data.cpf);
+    // if (existingProfile) {
+    //   throw new BadRequestError("CPF já está em uso");
+    // }
 
     return await this.clientProfileRepository.create(data);
   }
 
-  async getProfileById(id: string): Promise<IClientProfile> {
-    const profile = await this.clientProfileRepository.findById(id);
+  async getProfile(userId: string): Promise<IClientProfile> {
+    const profile = await this.clientProfileRepository.findByUserId(userId);
     if (!profile) {
       throw new NotFoundError("Perfil de cliente não encontrado");
     }
@@ -61,38 +63,39 @@ export class ClientProfileService implements IClientProfileService {
   }
 
   async updateProfile(
-    id: string,
+    userId: string,
     data: UpdateClientProfileData
   ): Promise<IClientProfile> {
     // Verificar se perfil existe
-    const existingProfile = await this.clientProfileRepository.findById(id);
+    const existingProfile = await this.clientProfileRepository.findByUserId(
+      userId
+    );
     if (!existingProfile) {
       throw new NotFoundError("Perfil de cliente não encontrado");
     }
 
-    return await this.clientProfileRepository.update(id, data);
+    return await this.clientProfileRepository.update(userId, data);
   }
 
-  async deleteProfile(id: string): Promise<void> {
+  async deleteProfile(userId: string): Promise<void> {
     // Verificar se perfil existe
-    const existingProfile = await this.clientProfileRepository.findById(id);
+    const existingProfile = await this.clientProfileRepository.findByUserId(
+      userId
+    );
     if (!existingProfile) {
       throw new NotFoundError("Perfil de cliente não encontrado");
     }
 
-    await this.clientProfileRepository.delete(id);
+    await this.clientProfileRepository.delete(userId);
   }
 
   // ========================================
   // MÉTODOS DE ENDEREÇOS
   // ========================================
 
-  async addAddress(
-    profileId: string,
-    address: Address
-  ): Promise<IClientProfile> {
+  async addAddress(userId: string, address: Address): Promise<void> {
     // Verificar se perfil existe
-    const profile = await this.clientProfileRepository.findById(profileId);
+    const profile = await this.clientProfileRepository.findByUserId(userId);
     if (!profile) {
       throw new NotFoundError("Perfil de cliente não encontrado");
     }
@@ -105,15 +108,14 @@ export class ClientProfileService implements IClientProfileService {
       );
     }
 
-    return await this.clientProfileRepository.addAddress(profileId, address);
+    // TODO: Implementar quando o método estiver disponível no repositório
+    // await this.clientProfileRepository.addAddress(userId, address);
+    throw new Error("Método addAddress não implementado no repositório");
   }
 
-  async removeAddress(
-    profileId: string,
-    addressId: string
-  ): Promise<IClientProfile> {
+  async removeAddress(userId: string, addressId: string): Promise<void> {
     // Verificar se perfil existe
-    const profile = await this.clientProfileRepository.findById(profileId);
+    const profile = await this.clientProfileRepository.findByUserId(userId);
     if (!profile) {
       throw new NotFoundError("Perfil de cliente não encontrado");
     }
@@ -124,148 +126,164 @@ export class ClientProfileService implements IClientProfileService {
       throw new NotFoundError("Endereço não encontrado");
     }
 
-    return await this.clientProfileRepository.removeAddress(
-      profileId,
-      addressId
-    );
+    // TODO: Implementar quando o método estiver disponível no repositório
+    // return await this.clientProfileRepository.removeAddress(profileId, addressId);
+    throw new Error("Método removeAddress não implementado no repositório");
   }
 
-  async updateAddress(
-    profileId: string,
-    addressId: string,
-    address: Address
-  ): Promise<IClientProfile> {
-    // Verificar se perfil existe
-    const profile = await this.clientProfileRepository.findById(profileId);
-    if (!profile) {
-      throw new NotFoundError("Perfil de cliente não encontrado");
-    }
+  // Método não está na interface - comentado por enquanto
+  // async updateAddress(
+  //   profileId: string,
+  //   addressId: string,
+  //   address: Address
+  // ): Promise<IClientProfile> {
+  //   // Verificar se perfil existe
+  //   const profile = await this.clientProfileRepository.findByUserId(userId);
+  //   if (!profile) {
+  //     throw new NotFoundError("Perfil de cliente não encontrado");
+  //   }
 
-    // Verificar se endereço existe
-    const existingAddress = profile.addresses.find(
-      (addr) => addr.id === addressId
-    );
-    if (!existingAddress) {
-      throw new NotFoundError("Endereço não encontrado");
-    }
+  //   // Verificar se endereço existe
+  //   const existingAddress = profile.addresses.find(
+  //     (addr) => addr.id === addressId
+  //   );
+  //   if (!existingAddress) {
+  //     throw new NotFoundError("Endereço não encontrado");
+  //   }
 
-    // Validar endereço
-    const validation = this.validateAddress(address);
-    if (!validation.isValid) {
-      throw new BadRequestError(
-        `Endereço inválido: ${validation.errors.join(", ")}`
-      );
-    }
+  //   // Validar endereço
+  //   const validation = this.validateAddress(address);
+  //   if (!validation.isValid) {
+  //     throw new BadRequestError(
+  //       `Endereço inválido: ${validation.errors.join(", ")}`
+  //     );
+  //   }
 
-    return await this.clientProfileRepository.updateAddress(
-      profileId,
-      addressId,
-      address
-    );
-  }
+  //   // TODO: Implementar quando o método estiver disponível no repositório
+  //   // return await this.clientProfileRepository.updateAddress(profileId, addressId, address);
+  //   throw new Error("Método updateAddress não implementado no repositório");
+  // }
 
   // ========================================
   // MÉTODOS DE MÉTODOS DE PAGAMENTO
   // ========================================
 
-  async addPaymentMethod(
-    profileId: string,
-    paymentMethod: PaymentMethod
-  ): Promise<IClientProfile> {
+  async addPaymentMethod(userId: string, method: PaymentMethod): Promise<void> {
     // Verificar se perfil existe
-    const profile = await this.clientProfileRepository.findById(profileId);
+    const profile = await this.clientProfileRepository.findByUserId(userId);
     if (!profile) {
       throw new NotFoundError("Perfil de cliente não encontrado");
     }
 
     // Validar método de pagamento
-    const validation = this.validatePaymentMethod(paymentMethod);
+    const validation = this.validatePaymentMethod(method);
     if (!validation.isValid) {
       throw new BadRequestError(
         `Método de pagamento inválido: ${validation.errors.join(", ")}`
       );
     }
 
-    return await this.clientProfileRepository.addPaymentMethod(
-      profileId,
-      paymentMethod
-    );
+    // TODO: Implementar quando o método estiver disponível no repositório
+    // return await this.clientProfileRepository.addPaymentMethod(profileId, paymentMethod);
+    throw new Error("Método addPaymentMethod não implementado no repositório");
   }
 
-  async removePaymentMethod(
-    profileId: string,
-    paymentMethodId: string
-  ): Promise<IClientProfile> {
+  async removePaymentMethod(userId: string, methodId: string): Promise<void> {
     // Verificar se perfil existe
-    const profile = await this.clientProfileRepository.findById(profileId);
+    const profile = await this.clientProfileRepository.findByUserId(userId);
     if (!profile) {
       throw new NotFoundError("Perfil de cliente não encontrado");
     }
 
     // Verificar se método de pagamento existe
     const paymentMethod = profile.paymentMethods.find(
-      (pm) => pm.id === paymentMethodId
+      (pm) => pm.id === methodId
     );
     if (!paymentMethod) {
       throw new NotFoundError("Método de pagamento não encontrado");
     }
 
-    return await this.clientProfileRepository.removePaymentMethod(
-      profileId,
-      paymentMethodId
+    // TODO: Implementar quando o método estiver disponível no repositório
+    // return await this.clientProfileRepository.removePaymentMethod(profileId, paymentMethodId);
+    throw new Error(
+      "Método removePaymentMethod não implementado no repositório"
     );
   }
 
-  async updatePaymentMethod(
-    profileId: string,
-    paymentMethodId: string,
-    paymentMethod: PaymentMethod
-  ): Promise<IClientProfile> {
-    // Verificar se perfil existe
-    const profile = await this.clientProfileRepository.findById(profileId);
-    if (!profile) {
-      throw new NotFoundError("Perfil de cliente não encontrado");
-    }
+  // Método não está na interface - comentado por enquanto
+  // async updatePaymentMethod(
+  //   profileId: string,
+  //   paymentMethodId: string,
+  //   paymentMethod: PaymentMethod
+  // ): Promise<IClientProfile> {
+  //   // Verificar se perfil existe
+  //   const profile = await this.clientProfileRepository.findByUserId(userId);
+  //   if (!profile) {
+  //     throw new NotFoundError("Perfil de cliente não encontrado");
+  //   }
 
-    // Verificar se método de pagamento existe
-    const existingPaymentMethod = profile.paymentMethods.find(
-      (pm) => pm.id === paymentMethodId
-    );
-    if (!existingPaymentMethod) {
-      throw new NotFoundError("Método de pagamento não encontrado");
-    }
+  //   // Verificar se método de pagamento existe
+  //   const existingPaymentMethod = profile.paymentMethods.find(
+  //     (pm) => pm.id === methodId
+  //   );
+  //   if (!existingPaymentMethod) {
+  //     throw new NotFoundError("Método de pagamento não encontrado");
+  //   }
 
-    // Validar método de pagamento
-    const validation = this.validatePaymentMethod(paymentMethod);
-    if (!validation.isValid) {
-      throw new BadRequestError(
-        `Método de pagamento inválido: ${validation.errors.join(", ")}`
-      );
-    }
+  //   // Validar método de pagamento
+  //   const validation = this.validatePaymentMethod(method);
+  //   if (!validation.isValid) {
+  //     throw new BadRequestError(
+  //       `Método de pagamento inválido: ${validation.errors.join(", ")}`
+  //     );
+  //   }
 
-    return await this.clientProfileRepository.updatePaymentMethod(
-      profileId,
-      paymentMethodId,
-      paymentMethod
-    );
-  }
+  //   // TODO: Implementar quando o método estiver disponível no repositório
+  //   // return await this.clientProfileRepository.updatePaymentMethod(profileId, paymentMethodId, paymentMethod);
+  //   throw new Error("Método updatePaymentMethod não implementado no repositório");
+  // }
 
   // ========================================
   // MÉTODOS DE BUSCA
   // ========================================
 
   async searchProfiles(
-    filters: ClientProfileFilters
+    filters: any // TODO: Definir tipo correto quando necessário
   ): Promise<PaginatedResult<IClientProfile>> {
-    return await this.clientProfileRepository.findMany(filters);
+    // TODO: Implementar quando o método estiver disponível no repositório
+    // return await this.clientProfileRepository.findMany(filters);
+    throw new Error("Método findMany não implementado no repositório");
   }
 
   async getProfileByCPF(cpf: string): Promise<IClientProfile> {
-    const profile = await this.clientProfileRepository.findByCPF(cpf);
-    if (!profile) {
-      throw new NotFoundError("Perfil de cliente não encontrado");
-    }
-    return profile;
+    // TODO: Implementar quando o método estiver disponível no repositório
+    // const profile = await this.clientProfileRepository.findByCPF(cpf);
+    // if (!profile) {
+    //   throw new NotFoundError("Perfil de cliente não encontrado");
+    // }
+    // return profile;
+    throw new Error("Método findByCPF não implementado no repositório");
+  }
+
+  // ========================================
+  // MÉTODOS DE SERVIÇOS FAVORITOS
+  // ========================================
+
+  async addFavoriteService(userId: string, serviceId: string): Promise<void> {
+    // TODO: Implementar quando o método estiver disponível no repositório
+    throw new Error(
+      "Método addFavoriteService não implementado no repositório"
+    );
+  }
+
+  async removeFavoriteService(
+    userId: string,
+    serviceId: string
+  ): Promise<void> {
+    // TODO: Implementar quando o método estiver disponível no repositório
+    throw new Error(
+      "Método removeFavoriteService não implementado no repositório"
+    );
   }
 
   // ========================================
@@ -354,8 +372,8 @@ export class ClientProfileService implements IClientProfileService {
 
     // Validar detalhes específicos baseado no tipo
     if (
-      paymentMethod.type === "CREDIT_CARD" ||
-      paymentMethod.type === "DEBIT_CARD"
+      paymentMethod.type === "credit_card" ||
+      paymentMethod.type === "debit_card"
     ) {
       if (!paymentMethod.details) {
         errors.push("Detalhes do cartão são obrigatórios");

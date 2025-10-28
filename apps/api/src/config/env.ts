@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { config } from "dotenv";
+
+// Carrega variáveis de ambiente do arquivo .env
+config();
 
 /**
  * Schema de validação para variáveis de ambiente

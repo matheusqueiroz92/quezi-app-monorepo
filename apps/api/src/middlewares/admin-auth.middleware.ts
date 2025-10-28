@@ -25,8 +25,14 @@ export async function requireAdmin(
   try {
     const { PrismaClient } = require("@prisma/client");
     const prisma = new PrismaClient();
-    const adminRepository = new (require("../infrastructure/repositories/admin.repository").AdminRepository)(prisma);
-    const userRepository = new (require("../infrastructure/repositories/user.repository").UserRepository)(prisma);
+    const adminRepository =
+      new (require("../infrastructure/repositories/admin.repository").AdminRepository)(
+        prisma
+      );
+    const userRepository =
+      new (require("../infrastructure/repositories/user.repository").UserRepository)(
+        prisma
+      );
     const adminService = new AdminService(adminRepository, userRepository);
     const admin = await adminService.validateToken(token);
 

@@ -70,7 +70,7 @@ export const auth = betterAuth({
   // URLs da aplicação
   baseURL: env.BETTER_AUTH_URL || "http://localhost:3333",
 
-  // Prefixo das rotas (importante: deve corresponder ao prefixo no routes.ts)
+  // Prefixo das rotas (configuração original que funcionava)
   basePath: "/api/v1/auth",
 
   // Origens confiáveis (frontend)

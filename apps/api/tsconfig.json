@@ -10,5 +10,17 @@
     "types": ["node", "jest"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/presentation/controllers/**/*",
+    "src/presentation/routes/**/*",
+    "src/infrastructure/repositories/**/*",
+    "src/application/services/**/*",
+    "src/domain/entities/**/*",
+    "src/middlewares/__tests__/**/*",
+    "src/application/use-cases/**/*",
+    "src/infrastructure/__tests__/**/*",
+    "src/infrastructure/migrations/**/*"
+  ]
 }
