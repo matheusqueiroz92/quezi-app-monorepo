@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { CompanyEmployeeReviewService } from "../../application/services/company-employee-review.service";
 import { authMiddleware } from "../../middlewares/auth.middleware";
 import { rbacMiddleware } from "../../middlewares/rbac.middleware";
@@ -8,6 +9,46 @@ import {
   ForbiddenError,
 } from "../../utils/app-error";
 
+// Zod Schemas
+const IdParamSchema = z.object({ id: z.string().min(1) });
+const AppointmentParamSchema = z.object({ appointmentId: z.string().min(1) });
+const CompanyIdParamSchema = z.object({ companyId: z.string().min(1) });
+const EmployeeIdParamSchema = z.object({
+  companyEmployeeId: z.string().min(1),
+});
+const ClientIdParamSchema = z.object({ clientId: z.string().min(1) });
+
+const CreateReviewSchema = z.object({
+  appointmentId: z.string().min(1),
+  reviewerId: z.string().min(1),
+  employeeId: z.string().min(1),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().max(2000).optional(),
+});
+
+const UpdateReviewSchema = z.object({
+  rating: z.number().int().min(1).max(5).optional(),
+  comment: z.string().max(2000).optional(),
+});
+
+const ListQuerySchema = z.object({
+  companyId: z.string().optional(),
+  companyEmployeeId: z.string().optional(),
+  clientId: z.string().optional(),
+  rating: z
+    .string()
+    .transform((v) => (v ? parseInt(v) : undefined))
+    .optional(),
+  page: z
+    .string()
+    .default("1")
+    .transform((v) => parseInt(v)),
+  limit: z
+    .string()
+    .default("10")
+    .transform((v) => parseInt(v)),
+});
+
 export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   const reviewService = new CompanyEmployeeReviewService();
 
@@ -16,9 +57,20 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Criar avaliação
   app.post("/reviews", {
     preHandler: rbacMiddleware(["CLIENT"]),
+    schema: {
+      tags: ["reviews"],
+      body: { type: "object" },
+      response: {
+        201: { type: "object" },
+        400: { type: "object" },
+        404: { type: "object" },
+        500: { type: "object" },
+      },
+    },
     handler: async (request, reply) => {
       try {
-        const review = await reviewService.createReview(request.body as any);
+        const data = CreateReviewSchema.parse(request.body);
+        const review = await reviewService.createReview(data as any);
         return reply.status(201).send(review);
       } catch (error) {
         if (error instanceof BadRequestError) {
@@ -36,8 +88,16 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Obter avaliação por ID
   app.get("/reviews/:id", {
     preHandler: rbacMiddleware(["CLIENT", "PROFESSIONAL", "COMPANY", "ADMIN"]),
+    schema: {
+      tags: ["reviews"],
+      params: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+    },
     handler: async (request, reply) => {
-      const { id } = request.params as { id: string };
+      const { id } = IdParamSchema.parse(request.params);
       try {
         const review = await reviewService.getReviewById(id);
         if (!review) {
@@ -60,13 +120,20 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Atualizar avaliação
   app.put("/reviews/:id", {
     preHandler: rbacMiddleware(["CLIENT", "ADMIN"]),
+    schema: {
+      tags: ["reviews"],
+      params: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      body: { type: "object" },
+    },
     handler: async (request, reply) => {
-      const { id } = request.params as { id: string };
+      const { id } = IdParamSchema.parse(request.params);
       try {
-        const updatedReview = await reviewService.updateReview(
-          id,
-          request.body as any
-        );
+        const data = UpdateReviewSchema.parse(request.body ?? {});
+        const updatedReview = await reviewService.updateReview(id, data as any);
         return reply.status(200).send(updatedReview);
       } catch (error) {
         if (error instanceof NotFoundError) {
@@ -91,8 +158,16 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Deletar avaliação
   app.delete("/reviews/:id", {
     preHandler: rbacMiddleware(["CLIENT", "ADMIN"]),
+    schema: {
+      tags: ["reviews"],
+      params: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+    },
     handler: async (request, reply) => {
-      const { id } = request.params as { id: string };
+      const { id } = IdParamSchema.parse(request.params);
       try {
         await reviewService.deleteReview(id);
         return reply.status(204).send();
@@ -119,8 +194,16 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Obter avaliação por agendamento
   app.get("/reviews/appointment/:appointmentId", {
     preHandler: rbacMiddleware(["CLIENT", "PROFESSIONAL", "COMPANY", "ADMIN"]),
+    schema: {
+      tags: ["reviews"],
+      params: {
+        type: "object",
+        properties: { appointmentId: { type: "string" } },
+        required: ["appointmentId"],
+      },
+    },
     handler: async (request, reply) => {
-      const { appointmentId } = request.params as { appointmentId: string };
+      const { appointmentId } = AppointmentParamSchema.parse(request.params);
       try {
         const review = await reviewService.getReviewByAppointment(
           appointmentId
@@ -142,23 +225,18 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Listar avaliações com filtros
   app.get("/reviews", {
     preHandler: rbacMiddleware(["CLIENT", "PROFESSIONAL", "COMPANY", "ADMIN"]),
+    schema: { tags: ["reviews"], querystring: { type: "object" } },
     handler: async (request, reply) => {
-      const {
-        companyId,
-        companyEmployeeId,
-        clientId,
-        rating,
-        page = "1",
-        limit = "10",
-      } = request.query as any;
+      const { companyId, companyEmployeeId, clientId, rating, page, limit } =
+        ListQuerySchema.parse(request.query as any);
       try {
         const filters = {
           companyId,
           companyEmployeeId,
           clientId,
-          rating: rating ? parseInt(rating) : undefined,
-          page: parseInt(page),
-          limit: parseInt(limit),
+          rating,
+          page,
+          limit,
         };
         const result = await reviewService.listReviews(filters);
         return reply.status(200).send(result);
@@ -178,8 +256,16 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Obter avaliações da empresa
   app.get("/reviews/company/:companyId", {
     preHandler: rbacMiddleware(["CLIENT", "PROFESSIONAL", "COMPANY", "ADMIN"]),
+    schema: {
+      tags: ["reviews"],
+      params: {
+        type: "object",
+        properties: { companyId: { type: "string" } },
+        required: ["companyId"],
+      },
+    },
     handler: async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
+      const { companyId } = CompanyIdParamSchema.parse(request.params);
       try {
         const reviews = await reviewService.listReviews({
           employeeId: companyId,
@@ -201,10 +287,16 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Obter avaliações do funcionário
   app.get("/reviews/employee/:companyEmployeeId", {
     preHandler: rbacMiddleware(["CLIENT", "PROFESSIONAL", "COMPANY", "ADMIN"]),
+    schema: {
+      tags: ["reviews"],
+      params: {
+        type: "object",
+        properties: { companyEmployeeId: { type: "string" } },
+        required: ["companyEmployeeId"],
+      },
+    },
     handler: async (request, reply) => {
-      const { companyEmployeeId } = request.params as {
-        companyEmployeeId: string;
-      };
+      const { companyEmployeeId } = EmployeeIdParamSchema.parse(request.params);
       try {
         const reviews = await reviewService.getEmployeeReviews(
           companyEmployeeId
@@ -226,8 +318,16 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Obter avaliações do cliente
   app.get("/reviews/client/:clientId", {
     preHandler: rbacMiddleware(["CLIENT", "ADMIN"]),
+    schema: {
+      tags: ["reviews"],
+      params: {
+        type: "object",
+        properties: { clientId: { type: "string" } },
+        required: ["clientId"],
+      },
+    },
     handler: async (request, reply) => {
-      const { clientId } = request.params as { clientId: string };
+      const { clientId } = ClientIdParamSchema.parse(request.params);
       try {
         const reviews = await reviewService.getClientReviews(clientId);
         return reply.status(200).send(reviews);
@@ -246,13 +346,19 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
 
   // Obter estatísticas de avaliações
   app.get("/reviews/stats", {
-    preHandler: rbacMiddleware(["CLIENT", "PROFESSIONAL", "COMPANY", "ADMIN"]),
+    preHandler: rbacMiddleware(["CLIENT", "PROFISSIONAL", "COMPANY", "ADMIN"]),
+    schema: { tags: ["reviews"], querystring: { type: "object" } },
     handler: async (request, reply) => {
-      const { companyId, companyEmployeeId } = request.query as any;
+      const qs = z
+        .object({
+          companyId: z.string().optional(),
+          companyEmployeeId: z.string().optional(),
+        })
+        .parse(request.query as any);
       try {
         const stats = await reviewService.getReviewStats(
-          companyId,
-          companyEmployeeId
+          qs.companyId,
+          qs.companyEmployeeId
         );
         return reply.status(200).send(stats);
       } catch (error) {
@@ -271,8 +377,16 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Obter avaliação média da empresa
   app.get("/reviews/company/:companyId/average", {
     preHandler: rbacMiddleware(["CLIENT", "PROFESSIONAL", "COMPANY", "ADMIN"]),
+    schema: {
+      tags: ["reviews"],
+      params: {
+        type: "object",
+        properties: { companyId: { type: "string" } },
+        required: ["companyId"],
+      },
+    },
     handler: async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
+      const { companyId } = CompanyIdParamSchema.parse(request.params);
       try {
         const stats = await reviewService.getReviewStats(companyId);
         const average = stats.average;
@@ -293,10 +407,16 @@ export async function reviewRoutes(app: FastifyInstance): Promise<void> {
   // Obter avaliação média do funcionário
   app.get("/reviews/employee/:companyEmployeeId/average", {
     preHandler: rbacMiddleware(["CLIENT", "PROFESSIONAL", "COMPANY", "ADMIN"]),
+    schema: {
+      tags: ["reviews"],
+      params: {
+        type: "object",
+        properties: { companyEmployeeId: { type: "string" } },
+        required: ["companyEmployeeId"],
+      },
+    },
     handler: async (request, reply) => {
-      const { companyEmployeeId } = request.params as {
-        companyEmployeeId: string;
-      };
+      const { companyEmployeeId } = EmployeeIdParamSchema.parse(request.params);
       try {
         const average = await reviewService.getEmployeeAverageRating(
           companyEmployeeId

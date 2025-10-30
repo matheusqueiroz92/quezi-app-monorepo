@@ -6,6 +6,7 @@
  */
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { z } from "zod";
 
 import { AppointmentService } from "../../application/services/appointment.service";
 import { authMiddleware } from "../../middlewares/auth.middleware";
@@ -15,6 +16,54 @@ import {
   NotFoundError,
   ForbiddenError,
 } from "../../utils/app-error";
+
+// =============================
+// Zod Schemas (request/params)
+// =============================
+const AppointmentIdParamsSchema = z.object({
+  id: z.string().min(1, "ID é obrigatório"),
+});
+
+const CreateAppointmentSchema = z
+  .object({
+    clientId: z.string().min(1, "ID do cliente é obrigatório"),
+    professionalId: z.string().optional(),
+    companyEmployeeId: z.string().optional(),
+    serviceId: z.string().min(1, "ID do serviço é obrigatório"),
+    scheduledDate: z
+      .string()
+      .datetime({ offset: false, message: "Data inválida" }),
+    duration: z.number().int().positive("Duração deve ser maior que zero"),
+    notes: z.string().max(1000).optional(),
+  })
+  .refine((data) => Boolean(data.professionalId || data.companyEmployeeId), {
+    message: "ID do profissional ou funcionário é obrigatório",
+    path: ["professionalId"],
+  });
+
+const UpdateAppointmentSchema = z.object({
+  scheduledDate: z.string().datetime({ offset: false }).optional(),
+  duration: z.number().int().positive().optional(),
+  notes: z.string().max(1000).optional(),
+  status: z
+    .enum(["SCHEDULED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"])
+    .optional(),
+});
+
+const DateRangeQuerySchema = z.object({
+  startDate: z
+    .string()
+    .datetime({ offset: false, message: "startDate inválida" }),
+  endDate: z.string().datetime({ offset: false, message: "endDate inválida" }),
+});
+
+const UserIdParamsSchema = z.object({ userId: z.string().min(1) });
+const ProfessionalIdParamsSchema = z.object({
+  professionalId: z.string().min(1),
+});
+const CompanyEmployeeIdParamsSchema = z.object({
+  companyEmployeeId: z.string().min(1),
+});
 
 // Interfaces para tipagem
 interface CreateAppointmentRequest {
@@ -63,63 +112,65 @@ export async function appointmentRoutes(app: FastifyInstance) {
    */
   app.post<{
     Body: CreateAppointmentRequest;
-  }>("/", async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const appointmentData = request.body as CreateAppointmentRequest;
+  }>(
+    "/",
+    {
+      schema: {
+        tags: ["appointments"],
+        body: {
+          type: "object",
+          properties: {
+            clientId: { type: "string" },
+            professionalId: { type: "string" },
+            companyEmployeeId: { type: "string" },
+            serviceId: { type: "string" },
+            scheduledDate: { type: "string", format: "date-time" },
+            duration: { type: "number" },
+            notes: { type: "string" },
+          },
+          required: ["clientId", "serviceId", "scheduledDate", "duration"],
+        },
+        response: {
+          201: { type: "object" },
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const parsed = CreateAppointmentSchema.parse(request.body);
 
-      // Validações básicas
-      if (!appointmentData.clientId) {
-        throw new BadRequestError("ID do cliente é obrigatório");
-      }
+        const appointment = await appointmentService.createAppointment({
+          ...parsed,
+          scheduledDate: new Date(parsed.scheduledDate),
+        });
 
-      if (!appointmentData.scheduledDate) {
-        throw new BadRequestError("Data do agendamento é obrigatória");
-      }
+        return reply.status(201).send({
+          success: true,
+          data: appointment,
+          message: "Agendamento criado com sucesso",
+        });
+      } catch (error: any) {
+        if (error instanceof BadRequestError) {
+          return reply.status(400).send({
+            success: false,
+            error: error.message,
+          });
+        }
 
-      if (!appointmentData.duration || appointmentData.duration <= 0) {
-        throw new BadRequestError("Duração deve ser maior que zero");
-      }
+        if (error instanceof NotFoundError) {
+          return reply.status(404).send({
+            success: false,
+            error: error.message,
+          });
+        }
 
-      if (
-        !appointmentData.professionalId &&
-        !appointmentData.companyEmployeeId
-      ) {
-        throw new BadRequestError(
-          "ID do profissional ou funcionário é obrigatório"
-        );
-      }
-
-      const appointment = await appointmentService.createAppointment({
-        ...appointmentData,
-        scheduledDate: new Date(appointmentData.scheduledDate),
-      });
-
-      return reply.status(201).send({
-        success: true,
-        data: appointment,
-        message: "Agendamento criado com sucesso",
-      });
-    } catch (error: any) {
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({
+        return reply.status(500).send({
           success: false,
-          error: error.message,
+          error: "Erro interno do servidor",
         });
       }
-
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({
-          success: false,
-          error: error.message,
-        });
-      }
-
-      return reply.status(500).send({
-        success: false,
-        error: "Erro interno do servidor",
-      });
     }
-  });
+  );
 
   /**
    * GET /appointments/:id
@@ -127,41 +178,47 @@ export async function appointmentRoutes(app: FastifyInstance) {
    */
   app.get<{
     Params: AppointmentParams;
-  }>("/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const { id } = request.params as AppointmentParams;
+  }>(
+    "/:id",
+    {
+      schema: {
+        tags: ["appointments"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string" } },
+          required: ["id"],
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { id } = AppointmentIdParamsSchema.parse(request.params);
 
-      if (!id) {
-        throw new BadRequestError("ID do agendamento é obrigatório");
-      }
+        const appointment = await appointmentService.getAppointmentById(id);
+        if (!appointment) {
+          throw new NotFoundError("Agendamento não encontrado");
+        }
 
-      const appointment = await appointmentService.getAppointmentById(id);
+        return reply.status(200).send({
+          success: true,
+          data: appointment,
+          message: "Agendamento encontrado com sucesso",
+        });
+      } catch (error: any) {
+        if (error instanceof NotFoundError) {
+          return reply.status(404).send({
+            success: false,
+            error: error.message,
+          });
+        }
 
-      return reply.status(200).send({
-        success: true,
-        data: appointment,
-      });
-    } catch (error: any) {
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({
+        return reply.status(500).send({
           success: false,
-          error: error.message,
+          error: "Erro interno do servidor",
         });
       }
-
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({
-          success: false,
-          error: error.message,
-        });
-      }
-
-      return reply.status(500).send({
-        success: false,
-        error: "Erro interno do servidor",
-      });
     }
-  });
+  );
 
   /**
    * PUT /appointments/:id
@@ -170,167 +227,60 @@ export async function appointmentRoutes(app: FastifyInstance) {
   app.put<{
     Params: AppointmentParams;
     Body: UpdateAppointmentRequest;
-  }>("/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const { id } = request.params as AppointmentParams;
-      const updateData = request.body as UpdateAppointmentRequest;
-
-      if (!id) {
-        throw new BadRequestError("ID do agendamento é obrigatório");
-      }
-
-      // Validações de data
-      if (updateData.scheduledDate) {
-        const scheduledDate = new Date(updateData.scheduledDate);
-        if (isNaN(scheduledDate.getTime())) {
-          throw new BadRequestError("Data do agendamento inválida");
-        }
-      }
-
-      // Validação de duração
-      if (updateData.duration && updateData.duration <= 0) {
-        throw new BadRequestError("Duração deve ser maior que zero");
-      }
-
-      const appointment = await appointmentService.updateAppointment(id, {
-        ...updateData,
-        scheduledDate: updateData.scheduledDate
-          ? new Date(updateData.scheduledDate)
-          : undefined,
-      });
-
-      return reply.status(200).send({
-        success: true,
-        data: appointment,
-        message: "Agendamento atualizado com sucesso",
-      });
-    } catch (error: any) {
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({
-          success: false,
-          error: error.message,
-        });
-      }
-
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({
-          success: false,
-          error: error.message,
-        });
-      }
-
-      return reply.status(500).send({
-        success: false,
-        error: "Erro interno do servidor",
-      });
-    }
-  });
-
-  /**
-   * DELETE /appointments/:id
-   * Cancelar agendamento
-   */
-  app.delete<{
-    Params: AppointmentParams;
-  }>("/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const { id } = request.params as AppointmentParams;
-
-      if (!id) {
-        throw new BadRequestError("ID do agendamento é obrigatório");
-      }
-
-      await appointmentService.cancelAppointment(id);
-
-      return reply.status(200).send({
-        success: true,
-        message: "Agendamento cancelado com sucesso",
-      });
-    } catch (error: any) {
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({
-          success: false,
-          error: error.message,
-        });
-      }
-
-      if (error instanceof NotFoundError) {
-        return reply.status(404).send({
-          success: false,
-          error: error.message,
-        });
-      }
-
-      return reply.status(500).send({
-        success: false,
-        error: "Erro interno do servidor",
-      });
-    }
-  });
-
-  /**
-   * GET /appointments/user/:userId
-   * Buscar agendamentos do usuário
-   */
-  app.get<{
-    Params: UserParams;
-  }>("/user/:userId", async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const { userId } = request.params as UserParams;
-
-      if (!userId) {
-        throw new BadRequestError("ID do usuário é obrigatório");
-      }
-
-      const appointments = await appointmentService.getAppointmentsByUser(
-        userId
-      );
-
-      return reply.status(200).send({
-        success: true,
-        data: appointments,
-      });
-    } catch (error: any) {
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({
-          success: false,
-          error: error.message,
-        });
-      }
-
-      return reply.status(500).send({
-        success: false,
-        error: "Erro interno do servidor",
-      });
-    }
-  });
-
-  /**
-   * GET /appointments/professional/:professionalId
-   * Buscar agendamentos do profissional
-   */
-  app.get<{
-    Params: ProfessionalParams;
   }>(
-    "/professional/:professionalId",
+    "/:id",
+    {
+      schema: {
+        tags: ["appointments"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string" } },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            scheduledDate: { type: "string", format: "date-time" },
+            duration: { type: "number" },
+            notes: { type: "string" },
+            status: {
+              type: "string",
+              enum: [
+                "SCHEDULED",
+                "CONFIRMED",
+                "IN_PROGRESS",
+                "COMPLETED",
+                "CANCELLED",
+              ],
+            },
+          },
+        },
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { professionalId } = request.params as ProfessionalParams;
+        const { id } = AppointmentIdParamsSchema.parse(request.params);
+        const updateData = UpdateAppointmentSchema.parse(request.body ?? {});
 
-        if (!professionalId) {
-          throw new BadRequestError("ID do profissional é obrigatório");
-        }
-
-        const appointments =
-          await appointmentService.getAppointmentsByProfessional(
-            professionalId
-          );
+        const appointment = await appointmentService.updateAppointment(id, {
+          ...updateData,
+          scheduledDate: updateData.scheduledDate
+            ? new Date(updateData.scheduledDate)
+            : undefined,
+        });
 
         return reply.status(200).send({
           success: true,
-          data: appointments,
+          data: appointment,
+          message: "Agendamento atualizado com sucesso",
         });
       } catch (error: any) {
+        if (error instanceof NotFoundError) {
+          return reply.status(404).send({
+            success: false,
+            error: error.message,
+          });
+        }
         if (error instanceof BadRequestError) {
           return reply.status(400).send({
             success: false,
@@ -347,61 +297,191 @@ export async function appointmentRoutes(app: FastifyInstance) {
   );
 
   /**
+   * DELETE /appointments/:id
+   * Cancelar agendamento
+   */
+  app.delete<{
+    Params: AppointmentParams;
+  }>(
+    "/:id",
+    {
+      schema: {
+        tags: ["appointments"],
+        params: {
+          type: "object",
+          properties: { id: { type: "string" } },
+          required: ["id"],
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { id } = AppointmentIdParamsSchema.parse(request.params);
+        await appointmentService.cancelAppointment(id);
+        return reply.status(204).send();
+      } catch (error: any) {
+        if (error instanceof NotFoundError) {
+          return reply.status(404).send({
+            statusCode: 404,
+            error: "Not Found",
+            message: error.message,
+          });
+        }
+        if (error instanceof BadRequestError) {
+          return reply.status(400).send({
+            statusCode: 400,
+            error: "Bad Request",
+            message: error.message,
+          });
+        }
+        throw error;
+      }
+    }
+  );
+
+  /**
+   * GET /appointments/user/:userId
+   * Buscar agendamentos do usuário
+   */
+  app.get<{ Params: { userId: string } }>(
+    "/user/:userId",
+    {
+      preHandler: rbacMiddleware([
+        "CLIENT",
+        "PROFESSIONAL",
+        "COMPANY",
+        "ADMIN",
+      ]),
+      schema: {
+        tags: ["appointments"],
+        params: {
+          type: "object",
+          properties: { userId: { type: "string" } },
+          required: ["userId"],
+        },
+      },
+    },
+    async (request, reply) => {
+      const { userId } = UserIdParamsSchema.parse(request.params);
+      try {
+        const appointments = await appointmentService.getAppointmentsByUser(
+          userId
+        );
+        return reply.status(200).send({
+          success: true,
+          data: appointments,
+          message: "Agendamentos encontrados com sucesso",
+        });
+      } catch (error: any) {
+        if (error instanceof NotFoundError) {
+          return reply.status(404).send({
+            statusCode: 404,
+            error: "Not Found",
+            message: error.message,
+          });
+        }
+        throw error;
+      }
+    }
+  );
+
+  /**
+   * GET /appointments/professional/:professionalId
+   * Buscar agendamentos do profissional
+   */
+  app.get<{ Params: { professionalId: string } }>(
+    "/professional/:professionalId",
+    {
+      preHandler: rbacMiddleware(["PROFESSIONAL", "COMPANY", "ADMIN"]),
+      schema: {
+        tags: ["appointments"],
+        params: {
+          type: "object",
+          properties: { professionalId: { type: "string" } },
+          required: ["professionalId"],
+        },
+      },
+    },
+    async (request, reply) => {
+      const { professionalId } = ProfessionalIdParamsSchema.parse(
+        request.params
+      );
+      try {
+        const appointments =
+          await appointmentService.getAppointmentsByProfessional(
+            professionalId
+          );
+        return reply.status(200).send({
+          success: true,
+          data: appointments,
+          message: "Agendamentos encontrados com sucesso",
+        });
+      } catch (error: any) {
+        if (error instanceof NotFoundError) {
+          return reply.status(404).send({
+            statusCode: 404,
+            error: "Not Found",
+            message: error.message,
+          });
+        }
+        throw error;
+      }
+    }
+  );
+
+  /**
    * GET /appointments/date-range
    * Buscar agendamentos por período
    */
   app.get<{
-    Querystring: {
-      startDate: string;
-      endDate: string;
-    };
-  }>("/date-range", async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const { startDate, endDate } = request.query as {
-        startDate: string;
-        endDate: string;
-      };
-
-      if (!startDate || !endDate) {
-        throw new BadRequestError("Data inicial e final são obrigatórias");
-      }
-
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        throw new BadRequestError("Datas inválidas");
-      }
-
-      if (start >= end) {
-        throw new BadRequestError(
-          "Data inicial deve ser anterior à data final"
+    Querystring: { startDate: string; endDate: string };
+  }>(
+    "/date-range",
+    {
+      schema: {
+        tags: ["appointments"],
+        querystring: {
+          type: "object",
+          properties: {
+            startDate: { type: "string", format: "date-time" },
+            endDate: { type: "string", format: "date-time" },
+          },
+          required: ["startDate", "endDate"],
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { startDate, endDate } = DateRangeQuerySchema.parse(
+          request.query
         );
-      }
 
-      const appointments = await appointmentService.getAppointmentsByDateRange(
-        start,
-        end
-      );
+        const appointments =
+          await appointmentService.getAppointmentsByDateRange(
+            new Date(startDate),
+            new Date(endDate)
+          );
 
-      return reply.status(200).send({
-        success: true,
-        data: appointments,
-      });
-    } catch (error: any) {
-      if (error instanceof BadRequestError) {
-        return reply.status(400).send({
+        return reply.status(200).send({
+          success: true,
+          data: appointments,
+          message: "Agendamentos encontrados com sucesso",
+        });
+      } catch (error: any) {
+        if (error instanceof BadRequestError) {
+          return reply.status(400).send({
+            success: false,
+            error: error.message,
+          });
+        }
+
+        return reply.status(500).send({
           success: false,
-          error: error.message,
+          error: "Erro interno do servidor",
         });
       }
-
-      return reply.status(500).send({
-        success: false,
-        error: "Erro interno do servidor",
-      });
     }
-  });
+  );
 
   /**
    * POST /appointments/:id/confirm
