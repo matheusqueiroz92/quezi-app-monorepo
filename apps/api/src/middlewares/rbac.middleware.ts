@@ -68,3 +68,28 @@ export const requireMember = requireOrganizationRole([
   "ADMIN",
   "MEMBER",
 ]);
+
+/**
+ * Middleware RBAC genérico que verifica tipos de usuário
+ */
+export function rbacMiddleware(allowedUserTypes: string[]) {
+  return async (
+    request: FastifyRequest,
+    reply: FastifyReply
+  ): Promise<void> => {
+    // Verifica se usuário está autenticado
+    if (!request.user) {
+      throw new UnauthorizedError("Usuário não autenticado");
+    }
+
+    // Verifica se o tipo de usuário está permitido
+    const userType = request.user.userType;
+    if (!userType || !allowedUserTypes.includes(userType)) {
+      throw new ForbiddenError(
+        `Acesso negado. Tipos de usuário permitidos: ${allowedUserTypes.join(
+          ", "
+        )}`
+      );
+    }
+  };
+}

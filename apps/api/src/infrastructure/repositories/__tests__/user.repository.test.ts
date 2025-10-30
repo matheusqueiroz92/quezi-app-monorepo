@@ -85,13 +85,11 @@ describe("UserRepository", () => {
       expect(result.userType).toBe("CLIENT");
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
         data: {
-          id: userData.id,
           email: userData.email,
-          passwordHash: userData.passwordHash,
+          passwordHash: userData.password,
           name: userData.name,
           phone: userData.phone,
           userType: userData.userType,
-          isEmailVerified: userData.isEmailVerified,
         },
       });
     });
@@ -245,7 +243,6 @@ describe("UserRepository", () => {
             { name: { contains: "test", mode: "insensitive" } },
             { email: { contains: "test", mode: "insensitive" } },
           ],
-          isEmailVerified: true,
         },
         skip: 0,
         take: 10,

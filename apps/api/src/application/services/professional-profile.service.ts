@@ -1,70 +1,89 @@
+/**
+ * Serviço de Perfil de Profissional - Camada de Aplicação
+ *
+ * Implementação seguindo Clean Architecture e TDD
+ */
+
 import {
-  IProfessionalProfileService,
+  ProfessionalProfileRepository,
   CreateProfessionalProfileData,
   UpdateProfessionalProfileData,
-  ProfessionalFilters,
-  PaginatedResult,
-  ValidationResult,
-} from "../../domain/interfaces/repository.interface";
-import {
-  IProfessionalProfile,
-  Certification,
-} from "../../domain/interfaces/user.interface";
-import { IProfessionalProfileRepository } from "../../domain/interfaces/repository.interface";
+  ProfessionalProfileFilters,
+} from "../../infrastructure/repositories/professional-profile.repository";
+import { UserRepository } from "../../infrastructure/repositories/user.repository";
 import { NotFoundError, BadRequestError } from "../../utils/app-error";
+import { prisma } from "../../lib/prisma";
 
-export class ProfessionalProfileService implements IProfessionalProfileService {
+export class ProfessionalProfileService {
   constructor(
-    private professionalProfileRepository: IProfessionalProfileRepository
+    private professionalProfileRepository = new ProfessionalProfileRepository(
+      prisma
+    ),
+    private userRepository = new UserRepository(prisma)
   ) {}
 
-  // ========================================
-  // MÉTODOS BÁSICOS
-  // ========================================
-
+  /**
+   * Cria perfil de profissional
+   */
   async createProfile(
     userId: string,
-    data: CreateProfessionalProfileData
-  ): Promise<IProfessionalProfile> {
-    // Validar dados antes de criar
-    const validation = await this.validateProfileCreation(data);
-    if (!validation.isValid) {
+    data: Omit<CreateProfessionalProfileData, "userId">
+  ) {
+    // Verificar se usuário existe e é do tipo PROFESSIONAL
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError("Usuário não encontrado");
+    }
+
+    if (user.userType !== "PROFESSIONAL") {
       throw new BadRequestError(
-        `Dados inválidos: ${validation.errors.join(", ")}`
+        "Apenas usuários do tipo PROFESSIONAL podem ter perfil de profissional"
       );
     }
 
-    // TODO: Implementar verificação de CPF/CNPJ quando os métodos estiverem disponíveis
-    // if (data.cpf) {
-    //   const existingProfile = await this.professionalProfileRepository.findByCPF(data.cpf);
-    //   if (existingProfile) {
-    //     throw new BadRequestError("CPF já está em uso");
-    //   }
-    // }
-    // if (data.cnpj) {
-    //   const existingProfile = await this.professionalProfileRepository.findByCNPJ(data.cnpj);
-    //   if (existingProfile) {
-    //     throw new BadRequestError("CNPJ já está em uso");
-    //   }
-    // }
+    // Verificar se já existe perfil
+    const existingProfile =
+      await this.professionalProfileRepository.findByUserId(userId);
+    if (existingProfile) {
+      throw new BadRequestError("Usuário já possui perfil de profissional");
+    }
 
-    return await this.professionalProfileRepository.create(data);
+    // Validar dados obrigatórios
+    if (!data.city) {
+      throw new BadRequestError("Cidade é obrigatória");
+    }
+
+    if (!data.serviceMode) {
+      throw new BadRequestError("Modo de serviço é obrigatório");
+    }
+
+    // Criar perfil
+    const profile = await this.professionalProfileRepository.create({
+      userId,
+      ...data,
+    });
+
+    return profile;
   }
 
-  async getProfile(userId: string): Promise<IProfessionalProfile> {
+  /**
+   * Obtém perfil de profissional
+   */
+  async getProfileByUserId(userId: string) {
     const profile = await this.professionalProfileRepository.findByUserId(
       userId
     );
     if (!profile) {
       throw new NotFoundError("Perfil de profissional não encontrado");
     }
+
     return profile;
   }
 
-  async updateProfile(
-    userId: string,
-    data: UpdateProfessionalProfileData
-  ): Promise<IProfessionalProfile> {
+  /**
+   * Atualiza perfil de profissional
+   */
+  async updateProfile(userId: string, data: UpdateProfessionalProfileData) {
     // Verificar se perfil existe
     const existingProfile =
       await this.professionalProfileRepository.findByUserId(userId);
@@ -72,10 +91,18 @@ export class ProfessionalProfileService implements IProfessionalProfileService {
       throw new NotFoundError("Perfil de profissional não encontrado");
     }
 
-    return await this.professionalProfileRepository.update(userId, data);
+    // Atualizar perfil
+    const profile = await this.professionalProfileRepository.updateByUserId(
+      userId,
+      data
+    );
+    return profile;
   }
 
-  async deleteProfile(userId: string): Promise<void> {
+  /**
+   * Deleta perfil de profissional
+   */
+  async deleteProfile(userId: string) {
     // Verificar se perfil existe
     const existingProfile =
       await this.professionalProfileRepository.findByUserId(userId);
@@ -83,130 +110,183 @@ export class ProfessionalProfileService implements IProfessionalProfileService {
       throw new NotFoundError("Perfil de profissional não encontrado");
     }
 
-    await this.professionalProfileRepository.delete(userId);
+    // Deletar perfil
+    await this.professionalProfileRepository.deleteByUserId(userId);
   }
 
-  // ========================================
-  // MÉTODOS DE ESPECIALIDADES - COMENTADOS (não implementados no repositório)
-  // ========================================
-
-  async addSpecialty(userId: string, specialty: string): Promise<void> {
-    // TODO: Implementar quando o método estiver disponível no repositório
-    throw new Error("Método addSpecialty não implementado no repositório");
+  /**
+   * Lista perfis com filtros
+   */
+  async listProfiles(
+    filters: ProfessionalProfileFilters & { skip?: number; take?: number }
+  ) {
+    return await this.professionalProfileRepository.findMany(filters);
   }
 
-  async removeSpecialty(userId: string, specialty: string): Promise<void> {
-    // TODO: Implementar quando o método estiver disponível no repositório
-    throw new Error("Método removeSpecialty não implementado no repositório");
+  /**
+   * Busca perfis por cidade
+   */
+  async getProfilesByCity(city: string) {
+    if (!city || city.trim().length === 0) {
+      throw new BadRequestError("Cidade é obrigatória");
+    }
+
+    return await this.professionalProfileRepository.findByCity(city);
   }
 
-  // ========================================
-  // MÉTODOS DE CERTIFICAÇÕES - COMENTADOS (não implementados no repositório)
-  // ========================================
+  /**
+   * Busca perfis por especialidade
+   */
+  async getProfilesBySpecialty(specialty: string) {
+    if (!specialty || specialty.trim().length === 0) {
+      throw new BadRequestError("Especialidade é obrigatória");
+    }
 
-  async addCertification(
-    userId: string,
-    certification: Certification
-  ): Promise<void> {
-    // TODO: Implementar quando o método estiver disponível no repositório
-    throw new Error("Método addCertification não implementado no repositório");
+    return await this.professionalProfileRepository.findBySpecialty(specialty);
   }
 
-  async removeCertification(
-    userId: string,
-    certificationId: string
-  ): Promise<void> {
-    // TODO: Implementar quando o método estiver disponível no repositório
-    throw new Error(
-      "Método removeCertification não implementado no repositório"
+  /**
+   * Adiciona especialidade ao perfil
+   */
+  async addSpecialty(userId: string, specialty: string) {
+    if (!specialty || specialty.trim().length === 0) {
+      throw new BadRequestError("Especialidade é obrigatória");
+    }
+
+    const profile = await this.professionalProfileRepository.findByUserId(
+      userId
+    );
+    if (!profile) {
+      throw new NotFoundError("Perfil de profissional não encontrado");
+    }
+
+    if (profile.specialties.includes(specialty)) {
+      throw new BadRequestError("Especialidade já existe no perfil");
+    }
+
+    const updatedSpecialties = [...profile.specialties, specialty];
+
+    return await this.professionalProfileRepository.updateByUserId(userId, {
+      specialties: updatedSpecialties,
+    });
+  }
+
+  /**
+   * Remove especialidade do perfil
+   */
+  async removeSpecialty(userId: string, specialty: string) {
+    if (!specialty || specialty.trim().length === 0) {
+      throw new BadRequestError("Especialidade é obrigatória");
+    }
+
+    const profile = await this.professionalProfileRepository.findByUserId(
+      userId
+    );
+    if (!profile) {
+      throw new NotFoundError("Perfil de profissional não encontrado");
+    }
+
+    if (!profile.specialties.includes(specialty)) {
+      throw new BadRequestError("Especialidade não existe no perfil");
+    }
+
+    const updatedSpecialties = profile.specialties.filter(
+      (s) => s !== specialty
+    );
+
+    return await this.professionalProfileRepository.updateByUserId(userId, {
+      specialties: updatedSpecialties,
+    });
+  }
+
+  /**
+   * Adiciona certificação ao perfil
+   */
+  async addCertification(userId: string, certification: string) {
+    if (!certification || certification.trim().length === 0) {
+      throw new BadRequestError("Certificação é obrigatória");
+    }
+
+    const profile = await this.professionalProfileRepository.findByUserId(
+      userId
+    );
+    if (!profile) {
+      throw new NotFoundError("Perfil de profissional não encontrado");
+    }
+
+    if (profile.certifications.includes(certification)) {
+      throw new BadRequestError("Certificação já existe no perfil");
+    }
+
+    const updatedCertifications = [...profile.certifications, certification];
+
+    return await this.professionalProfileRepository.updateByUserId(userId, {
+      certifications: updatedCertifications,
+    });
+  }
+
+  /**
+   * Remove certificação do perfil
+   */
+  async removeCertification(userId: string, certification: string) {
+    if (!certification || certification.trim().length === 0) {
+      throw new BadRequestError("Certificação é obrigatória");
+    }
+
+    const profile = await this.professionalProfileRepository.findByUserId(
+      userId
+    );
+    if (!profile) {
+      throw new NotFoundError("Perfil de profissional não encontrado");
+    }
+
+    if (!profile.certifications.includes(certification)) {
+      throw new BadRequestError("Certificação não existe no perfil");
+    }
+
+    const updatedCertifications = profile.certifications.filter(
+      (c) => c !== certification
+    );
+
+    return await this.professionalProfileRepository.updateByUserId(userId, {
+      certifications: updatedCertifications,
+    });
+  }
+
+  /**
+   * Atualiza rating do profissional
+   */
+  async updateRating(userId: string, rating: number) {
+    if (rating < 1 || rating > 5) {
+      throw new BadRequestError("Rating deve estar entre 1 e 5");
+    }
+
+    const profile = await this.professionalProfileRepository.findByUserId(
+      userId
+    );
+    if (!profile) {
+      throw new NotFoundError("Perfil de profissional não encontrado");
+    }
+
+    return await this.professionalProfileRepository.updateRating(
+      userId,
+      rating
     );
   }
 
-  // ========================================
-  // MÉTODOS DE BUSCA - COMENTADOS (não implementados no repositório)
-  // ========================================
-
-  async searchProfiles(
-    filters: ProfessionalFilters
-  ): Promise<PaginatedResult<IProfessionalProfile>> {
-    // TODO: Implementar quando o método estiver disponível no repositório
-    throw new Error("Método searchProfiles não implementado no repositório");
-  }
-
-  async getProfileByCPF(cpf: string): Promise<IProfessionalProfile> {
-    // TODO: Implementar quando o método estiver disponível no repositório
-    throw new Error("Método getProfileByCPF não implementado no repositório");
-  }
-
-  async getProfileByCNPJ(cnpj: string): Promise<IProfessionalProfile> {
-    // TODO: Implementar quando o método estiver disponível no repositório
-    throw new Error("Método getProfileByCNPJ não implementado no repositório");
-  }
-
-  // ========================================
-  // MÉTODOS DE VALIDAÇÃO
-  // ========================================
-
-  async validateProfileCreation(
-    data: CreateProfessionalProfileData
-  ): Promise<ValidationResult> {
-    const errors: string[] = [];
-
-    // Validar CPF ou CNPJ
-    if (!data.cpf && !data.cnpj) {
-      errors.push("CPF ou CNPJ é obrigatório");
+  /**
+   * Ativa/desativa perfil
+   */
+  async toggleActive(userId: string) {
+    const profile = await this.professionalProfileRepository.findByUserId(
+      userId
+    );
+    if (!profile) {
+      throw new NotFoundError("Perfil de profissional não encontrado");
     }
 
-    if (data.cpf && !this.isValidCPF(data.cpf)) {
-      errors.push("CPF inválido");
-    }
-
-    if (data.cnpj && !this.isValidCNPJ(data.cnpj)) {
-      errors.push("CNPJ inválido");
-    }
-
-    // Validar nome
-    if (!data.name || data.name.trim().length === 0) {
-      errors.push("Nome é obrigatório");
-    }
-
-    // Validar email
-    if (!data.email) {
-      errors.push("Email é obrigatório");
-    } else if (!this.isValidEmail(data.email)) {
-      errors.push("Email inválido");
-    }
-
-    // Validar telefone
-    if (data.phone && !this.isValidPhone(data.phone)) {
-      errors.push("Telefone inválido");
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  }
-
-  private isValidCPF(cpf: string): boolean {
-    // Implementação básica de validação de CPF
-    const cleanCPF = cpf.replace(/\D/g, "");
-    return cleanCPF.length === 11;
-  }
-
-  private isValidCNPJ(cnpj: string): boolean {
-    // Implementação básica de validação de CNPJ
-    const cleanCNPJ = cnpj.replace(/\D/g, "");
-    return cleanCNPJ.length === 14;
-  }
-
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  private isValidPhone(phone: string): boolean {
-    const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
-    return phoneRegex.test(phone);
+    return await this.professionalProfileRepository.updateByUserId(userId, {
+      isActive: !profile.isActive,
+    });
   }
 }

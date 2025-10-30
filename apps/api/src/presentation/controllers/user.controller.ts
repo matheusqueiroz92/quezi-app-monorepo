@@ -502,6 +502,13 @@ export class UserController {
 
       const user = await this.userService.getUserById(id);
 
+      if (!user) {
+        return reply.status(404).send({
+          success: false,
+          message: "Usuário não encontrado",
+        });
+      }
+
       // Retornar apenas dados públicos
       const publicProfile = {
         id: user.id,

@@ -1,8 +1,4 @@
 import { z } from "zod";
-import { config } from "dotenv";
-
-// Carrega variáveis de ambiente do arquivo .env
-config();
 
 /**
  * Schema de validação para variáveis de ambiente
@@ -13,7 +9,10 @@ const envSchema = z.object({
     .default("development"),
   PORT: z.coerce.number().default(3333),
   HOST: z.string().default("0.0.0.0"),
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z
+    .string()
+    .url()
+    .default("postgresql://postgres:password@localhost:5432/quezi_db"),
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default("7d"),
   CORS_ORIGIN: z.string().default("*"),

@@ -2,6 +2,7 @@ import { type Admin, type AdminRole } from "@prisma/client";
 import { AdminRepository } from "../../infrastructure/repositories/admin.repository";
 import { UserRepository } from "../../infrastructure/repositories/user.repository";
 import { hashPassword, verifyPassword } from "../../utils/password";
+import { prisma } from "../../lib/prisma";
 import {
   ConflictError,
   NotFoundError,
@@ -21,8 +22,8 @@ export class AdminService {
   private userRepository: UserRepository;
 
   constructor(
-    adminRepository: AdminRepository,
-    userRepository: UserRepository
+    adminRepository: AdminRepository = new AdminRepository(),
+    userRepository: UserRepository = new UserRepository(prisma)
   ) {
     this.adminRepository = adminRepository;
     this.userRepository = userRepository;
@@ -287,7 +288,7 @@ export class AdminService {
    */
   async deleteAdmin(id: string, requestingAdminId: string): Promise<void> {
     // Verificar se quem está deletando é SUPER_ADMIN
-    const requestingAdmin = await this.adminRepository.findById(
+    const requestingAdmin = await this.adminRepository.findByEmail(
       requestingAdminId
     );
 
@@ -667,5 +668,80 @@ export class AdminService {
       growthRate:
         totalUsers > 0 ? ((newUsers / totalUsers) * 100).toFixed(2) : 0,
     };
+  }
+
+  // ========================================
+  // MÉTODOS DE USUÁRIOS (DELEGAÇÃO PARA USER SERVICE)
+  // ========================================
+
+  /**
+   * Lista usuários com filtros e paginação
+   */
+  async getUsers(filters: any): Promise<any> {
+    return await this.userRepository.findMany(filters);
+  }
+
+  /**
+   * Busca usuário por ID
+   */
+  async getUserById(id: string): Promise<any> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw new NotFoundError("Usuário não encontrado");
+    }
+    return user;
+  }
+
+  /**
+   * Atualiza usuário
+   */
+  async updateUser(id: string, data: any): Promise<any> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw new NotFoundError("Usuário não encontrado");
+    }
+    return await this.userRepository.update(id, data);
+  }
+
+  /**
+   * Deleta usuário
+   */
+  async deleteUser(id: string): Promise<boolean> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw new NotFoundError("Usuário não encontrado");
+    }
+    await this.userRepository.delete(id);
+    return true;
+  }
+
+  /**
+   * Cria usuário
+   */
+  async createUser(data: any): Promise<any> {
+    return await this.userRepository.create(data);
+  }
+
+  // ========================================
+  // MÉTODOS DE ADMINISTRADORES
+  // ========================================
+
+  /**
+   * Lista administradores com filtros e paginação
+   */
+  async getAdmins(filters: any): Promise<any> {
+    return await this.adminRepository.findMany(filters);
+  }
+
+  /**
+   * Busca administrador por ID
+   */
+  async getAdminById(id: string): Promise<any> {
+    const admin = await this.adminRepository.findById(id);
+    if (!admin) {
+      throw new NotFoundError("Administrador não encontrado");
+    }
+    const { passwordHash, ...adminWithoutPassword } = admin;
+    return adminWithoutPassword;
   }
 }

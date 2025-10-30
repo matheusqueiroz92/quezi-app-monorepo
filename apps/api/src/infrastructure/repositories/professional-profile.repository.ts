@@ -1,502 +1,245 @@
 /**
  * Repositório de Perfil de Profissional - Camada de Infraestrutura
- *
- * Implementação concreta de IProfessionalProfileRepository
- * Seguindo os princípios SOLID e Clean Architecture
+ * 
+ * Implementação concreta seguindo Clean Architecture
+ * Compatível com o schema Prisma atual
  */
 
 import { PrismaClient } from "@prisma/client";
-import {
-  IProfessionalProfileRepository,
-  CreateProfessionalProfileData,
-  UpdateProfessionalProfileData,
-  ProfessionalProfileFilters,
-  PaginatedResult,
-} from "../../domain/interfaces/repository.interface";
-import {
-  IProfessionalProfile,
-  WorkingHours,
-  Certification,
-} from "../../domain/interfaces/user.interface";
-import { NotFoundError, BadRequestError } from "../../utils/app-error";
 
-export class ProfessionalProfileRepository
-  implements IProfessionalProfileRepository
-{
+export interface CreateProfessionalProfileData {
+  userId: string;
+  bio?: string;
+  city: string;
+  address?: string;
+  serviceMode: "AT_LOCATION" | "AT_DOMICILE" | "BOTH";
+  photoUrl?: string;
+  portfolioImages?: string[];
+  workingHours?: any;
+  yearsOfExperience?: number;
+  specialties?: string[];
+  certifications?: string[];
+  languages?: string[];
+  isActive?: boolean;
+  isVerified?: boolean;
+}
+
+export interface UpdateProfessionalProfileData {
+  bio?: string;
+  city?: string;
+  address?: string;
+  serviceMode?: "AT_LOCATION" | "AT_DOMICILE" | "BOTH";
+  photoUrl?: string;
+  portfolioImages?: string[];
+  workingHours?: any;
+  yearsOfExperience?: number;
+  specialties?: string[];
+  certifications?: string[];
+  languages?: string[];
+  isActive?: boolean;
+  isVerified?: boolean;
+}
+
+export interface ProfessionalProfileFilters {
+  city?: string;
+  specialties?: string[];
+  serviceMode?: "AT_LOCATION" | "AT_DOMICILE" | "BOTH";
+  isActive?: boolean;
+  isVerified?: boolean;
+  minRating?: number;
+}
+
+export class ProfessionalProfileRepository {
   constructor(private prisma: PrismaClient) {}
 
-  // ========================================
-  // MÉTODOS BÁSICOS
-  // ========================================
+  /**
+   * Cria perfil de profissional
+   */
+  async create(data: CreateProfessionalProfileData) {
+    const profile = await this.prisma.professionalProfile.create({
+      data: {
+        userId: data.userId,
+        bio: data.bio,
+        city: data.city,
+        address: data.address,
+        serviceMode: data.serviceMode,
+        photoUrl: data.photoUrl,
+        portfolioImages: data.portfolioImages || [],
+        workingHours: data.workingHours,
+        yearsOfExperience: data.yearsOfExperience,
+        specialties: data.specialties || [],
+        certifications: data.certifications || [],
+        languages: data.languages || [],
+        isActive: data.isActive ?? true,
+        isVerified: data.isVerified ?? false,
+      },
+    });
 
-  async create(
-    data: CreateProfessionalProfileData
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profileData = await this.prisma.professionalProfile.create({
-        data: {
-          userId: data.userId,
-          cpf: data.cpf,
-          cnpj: data.cnpj,
-          address: data.address,
-          city: data.city,
-          serviceMode: data.serviceMode,
-          specialties: data.specialties || [],
-          workingHours: data.workingHours || {},
-          certifications: data.certifications || [],
-          portfolio: data.portfolio || [],
+    return profile;
+  }
+
+  /**
+   * Busca perfil por ID do usuário
+   */
+  async findByUserId(userId: string) {
+    const profile = await this.prisma.professionalProfile.findUnique({
+      where: { userId },
+      include: {
+        user: true,
+        services: true,
+      },
+    });
+
+    return profile;
+  }
+
+  /**
+   * Atualiza perfil de profissional
+   */
+  async updateByUserId(userId: string, data: UpdateProfessionalProfileData) {
+    const profile = await this.prisma.professionalProfile.update({
+      where: { userId },
+      data: {
+        bio: data.bio,
+        city: data.city,
+        address: data.address,
+        serviceMode: data.serviceMode,
+        photoUrl: data.photoUrl,
+        portfolioImages: data.portfolioImages,
+        workingHours: data.workingHours,
+        yearsOfExperience: data.yearsOfExperience,
+        specialties: data.specialties,
+        certifications: data.certifications,
+        languages: data.languages,
+        isActive: data.isActive,
+        isVerified: data.isVerified,
+      },
+      include: {
+        user: true,
+        services: true,
+      },
+    });
+
+    return profile;
+  }
+
+  /**
+   * Deleta perfil de profissional
+   */
+  async deleteByUserId(userId: string) {
+    await this.prisma.professionalProfile.delete({
+      where: { userId },
+    });
+  }
+
+  /**
+   * Lista perfis com filtros
+   */
+  async findMany(filters: ProfessionalProfileFilters & { skip?: number; take?: number }) {
+    const where: any = {};
+
+    if (filters.city) {
+      where.city = { contains: filters.city, mode: "insensitive" };
+    }
+
+    if (filters.specialties && filters.specialties.length > 0) {
+      where.specialties = { hasSome: filters.specialties };
+    }
+
+    if (filters.serviceMode) {
+      where.serviceMode = filters.serviceMode;
+    }
+
+    if (filters.isActive !== undefined) {
+      where.isActive = filters.isActive;
+    }
+
+    if (filters.isVerified !== undefined) {
+      where.isVerified = filters.isVerified;
+    }
+
+    if (filters.minRating !== undefined) {
+      where.averageRating = { gte: filters.minRating };
+    }
+
+    const [profiles, total] = await Promise.all([
+      this.prisma.professionalProfile.findMany({
+        where,
+        skip: filters.skip || 0,
+        take: filters.take || 10,
+        include: {
+          user: true,
+          services: true,
         },
-      });
+        orderBy: { averageRating: "desc" },
+      }),
+      this.prisma.professionalProfile.count({ where }),
+    ]);
 
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(
-        `Erro ao criar perfil de profissional: ${error}`
-      );
-    }
-  }
-
-  async findById(id: string): Promise<IProfessionalProfile | null> {
-    try {
-      const profileData = await this.prisma.professionalProfile.findUnique({
-        where: { userId: id },
-      });
-
-      if (!profileData) {
-        return null;
-      }
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(
-        `Erro ao buscar perfil de profissional: ${error}`
-      );
-    }
-  }
-
-  async update(
-    id: string,
-    data: UpdateProfessionalProfileData
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profileData = await this.prisma.professionalProfile.update({
-        where: { userId: id },
-        data: {
-          cpf: data.cpf,
-          cnpj: data.cnpj,
-          address: data.address,
-          city: data.city,
-          serviceMode: data.serviceMode,
-          specialties: data.specialties,
-          workingHours: data.workingHours,
-          certifications: data.certifications,
-          portfolio: data.portfolio,
-          isActive: data.isActive,
-          isVerified: data.isVerified,
-        },
-      });
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(
-        `Erro ao atualizar perfil de profissional: ${error}`
-      );
-    }
-  }
-
-  async delete(id: string): Promise<void> {
-    try {
-      await this.prisma.professionalProfile.delete({
-        where: { userId: id },
-      });
-    } catch (error) {
-      throw new BadRequestError(
-        `Erro ao deletar perfil de profissional: ${error}`
-      );
-    }
-  }
-
-  // ========================================
-  // MÉTODOS DE BUSCA
-  // ========================================
-
-  async findMany(
-    filters: ProfessionalProfileFilters
-  ): Promise<PaginatedResult<IProfessionalProfile>> {
-    try {
-      const {
-        page = 1,
-        limit = 10,
-        city,
-        serviceMode,
-        specialties,
-        isActive,
-        isVerified,
-      } = filters;
-      const skip = (page - 1) * limit;
-
-      const where: any = {};
-
-      if (city) {
-        where.city = { contains: city, mode: "insensitive" };
-      }
-
-      if (serviceMode) {
-        where.serviceMode = serviceMode;
-      }
-
-      if (specialties && specialties.length > 0) {
-        where.specialties = {
-          hasSome: specialties,
-        };
-      }
-
-      if (isActive !== undefined) {
-        where.isActive = isActive;
-      }
-
-      if (isVerified !== undefined) {
-        where.isVerified = isVerified;
-      }
-
-      const [profiles, total] = await Promise.all([
-        this.prisma.professionalProfile.findMany({
-          where,
-          skip,
-          take: limit,
-          orderBy: { createdAt: "desc" },
-        }),
-        this.prisma.professionalProfile.count({ where }),
-      ]);
-
-      const profileEntities = profiles.map((profile) =>
-        this.mapToEntity(profile)
-      );
-
-      return {
-        data: profileEntities,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1,
-        },
-      };
-    } catch (error) {
-      throw new BadRequestError(
-        `Erro ao listar perfis de profissional: ${error}`
-      );
-    }
-  }
-
-  async findByCPF(cpf: string): Promise<IProfessionalProfile | null> {
-    try {
-      const profileData = await this.prisma.professionalProfile.findUnique({
-        where: { cpf },
-      });
-
-      if (!profileData) {
-        return null;
-      }
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(`Erro ao buscar perfil por CPF: ${error}`);
-    }
-  }
-
-  async findByCNPJ(cnpj: string): Promise<IProfessionalProfile | null> {
-    try {
-      const profileData = await this.prisma.professionalProfile.findUnique({
-        where: { cnpj },
-      });
-
-      if (!profileData) {
-        return null;
-      }
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(`Erro ao buscar perfil por CNPJ: ${error}`);
-    }
-  }
-
-  // ========================================
-  // MÉTODOS DE ESPECIALIDADES
-  // ========================================
-
-  async addSpecialty(
-    profileId: string,
-    specialty: string
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profile = await this.prisma.professionalProfile.findUnique({
-        where: { userId: profileId },
-      });
-
-      if (!profile) {
-        throw new NotFoundError("Perfil de profissional não encontrado");
-      }
-
-      const currentSpecialties = profile.specialties;
-      if (!currentSpecialties.includes(specialty)) {
-        const updatedSpecialties = [...currentSpecialties, specialty];
-
-        const profileData = await this.prisma.professionalProfile.update({
-          where: { userId: profileId },
-          data: { specialties: updatedSpecialties },
-        });
-
-        return this.mapToEntity(profileData);
-      }
-
-      return this.mapToEntity(profile);
-    } catch (error) {
-      throw new BadRequestError(`Erro ao adicionar especialidade: ${error}`);
-    }
-  }
-
-  async removeSpecialty(
-    profileId: string,
-    specialty: string
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profile = await this.prisma.professionalProfile.findUnique({
-        where: { userId: profileId },
-      });
-
-      if (!profile) {
-        throw new NotFoundError("Perfil de profissional não encontrado");
-      }
-
-      const currentSpecialties = profile.specialties;
-      const updatedSpecialties = currentSpecialties.filter(
-        (s) => s !== specialty
-      );
-
-      const profileData = await this.prisma.professionalProfile.update({
-        where: { userId: profileId },
-        data: { specialties: updatedSpecialties },
-      });
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(`Erro ao remover especialidade: ${error}`);
-    }
-  }
-
-  // ========================================
-  // MÉTODOS DE CERTIFICAÇÕES
-  // ========================================
-
-  async addCertification(
-    profileId: string,
-    certification: Certification
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profile = await this.prisma.professionalProfile.findUnique({
-        where: { userId: profileId },
-      });
-
-      if (!profile) {
-        throw new NotFoundError("Perfil de profissional não encontrado");
-      }
-
-      const currentCertifications = profile.certifications as Certification[];
-      const updatedCertifications = [...currentCertifications, certification];
-
-      const profileData = await this.prisma.professionalProfile.update({
-        where: { userId: profileId },
-        data: { certifications: updatedCertifications },
-      });
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(`Erro ao adicionar certificação: ${error}`);
-    }
-  }
-
-  async removeCertification(
-    profileId: string,
-    certificationId: string
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profile = await this.prisma.professionalProfile.findUnique({
-        where: { userId: profileId },
-      });
-
-      if (!profile) {
-        throw new NotFoundError("Perfil de profissional não encontrado");
-      }
-
-      const currentCertifications = profile.certifications as Certification[];
-      const updatedCertifications = currentCertifications.filter(
-        (cert) => cert.id !== certificationId
-      );
-
-      const profileData = await this.prisma.professionalProfile.update({
-        where: { userId: profileId },
-        data: { certifications: updatedCertifications },
-      });
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(`Erro ao remover certificação: ${error}`);
-    }
-  }
-
-  async updateCertification(
-    profileId: string,
-    certificationId: string,
-    certification: Certification
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profile = await this.prisma.professionalProfile.findUnique({
-        where: { userId: profileId },
-      });
-
-      if (!profile) {
-        throw new NotFoundError("Perfil de profissional não encontrado");
-      }
-
-      const currentCertifications = profile.certifications as Certification[];
-      const updatedCertifications = currentCertifications.map((cert) =>
-        cert.id === certificationId ? certification : cert
-      );
-
-      const profileData = await this.prisma.professionalProfile.update({
-        where: { userId: profileId },
-        data: { certifications: updatedCertifications },
-      });
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(`Erro ao atualizar certificação: ${error}`);
-    }
-  }
-
-  // ========================================
-  // MÉTODOS DE PORTFÓLIO
-  // ========================================
-
-  async addPortfolioItem(
-    profileId: string,
-    portfolioItem: string
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profile = await this.prisma.professionalProfile.findUnique({
-        where: { userId: profileId },
-      });
-
-      if (!profile) {
-        throw new NotFoundError("Perfil de profissional não encontrado");
-      }
-
-      const currentPortfolio = profile.portfolio;
-      if (!currentPortfolio.includes(portfolioItem)) {
-        const updatedPortfolio = [...currentPortfolio, portfolioItem];
-
-        const profileData = await this.prisma.professionalProfile.update({
-          where: { userId: profileId },
-          data: { portfolio: updatedPortfolio },
-        });
-
-        return this.mapToEntity(profileData);
-      }
-
-      return this.mapToEntity(profile);
-    } catch (error) {
-      throw new BadRequestError(
-        `Erro ao adicionar item ao portfólio: ${error}`
-      );
-    }
-  }
-
-  async removePortfolioItem(
-    profileId: string,
-    portfolioItem: string
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profile = await this.prisma.professionalProfile.findUnique({
-        where: { userId: profileId },
-      });
-
-      if (!profile) {
-        throw new NotFoundError("Perfil de profissional não encontrado");
-      }
-
-      const currentPortfolio = profile.portfolio;
-      const updatedPortfolio = currentPortfolio.filter(
-        (item) => item !== portfolioItem
-      );
-
-      const profileData = await this.prisma.professionalProfile.update({
-        where: { userId: profileId },
-        data: { portfolio: updatedPortfolio },
-      });
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(`Erro ao remover item do portfólio: ${error}`);
-    }
-  }
-
-  // ========================================
-  // MÉTODOS DE HORÁRIOS DE TRABALHO
-  // ========================================
-
-  async updateWorkingHours(
-    profileId: string,
-    workingHours: WorkingHours
-  ): Promise<IProfessionalProfile> {
-    try {
-      const profileData = await this.prisma.professionalProfile.update({
-        where: { userId: profileId },
-        data: { workingHours: workingHours as any },
-      });
-
-      return this.mapToEntity(profileData);
-    } catch (error) {
-      throw new BadRequestError(
-        `Erro ao atualizar horários de trabalho: ${error}`
-      );
-    }
-  }
-
-  // ========================================
-  // MÉTODOS AUXILIARES
-  // ========================================
-
-  private mapToEntity(profileData: any): IProfessionalProfile {
     return {
-      userId: profileData.userId,
-      cpf: profileData.cpf,
-      cnpj: profileData.cnpj,
-      address: profileData.address,
-      city: profileData.city,
-      serviceMode: profileData.serviceMode,
-      specialties: profileData.specialties,
-      workingHours: profileData.workingHours as WorkingHours,
-      certifications: profileData.certifications as Certification[],
-      portfolio: profileData.portfolio,
-      averageRating: profileData.averageRating,
-      totalRatings: profileData.totalRatings,
-      isActive: profileData.isActive,
-      isVerified: profileData.isVerified,
-      createdAt: profileData.createdAt,
-      updatedAt: profileData.updatedAt,
-
-      // Métodos de domínio
-      addSpecialty: jest.fn(),
-      removeSpecialty: jest.fn(),
-      addCertification: jest.fn(),
-      removeCertification: jest.fn(),
-      updateCertification: jest.fn(),
-      addPortfolioItem: jest.fn(),
-      removePortfolioItem: jest.fn(),
-      updateWorkingHours: jest.fn(),
+      data: profiles,
+      total,
+      skip: filters.skip || 0,
+      take: filters.take || 10,
     };
+  }
+
+  /**
+   * Busca perfis por cidade
+   */
+  async findByCity(city: string) {
+    return await this.prisma.professionalProfile.findMany({
+      where: {
+        city: { contains: city, mode: "insensitive" },
+        isActive: true,
+      },
+      include: {
+        user: true,
+        services: true,
+      },
+      orderBy: { averageRating: "desc" },
+    });
+  }
+
+  /**
+   * Busca perfis por especialidade
+   */
+  async findBySpecialty(specialty: string) {
+    return await this.prisma.professionalProfile.findMany({
+      where: {
+        specialties: { has: specialty },
+        isActive: true,
+      },
+      include: {
+        user: true,
+        services: true,
+      },
+      orderBy: { averageRating: "desc" },
+    });
+  }
+
+  /**
+   * Atualiza rating do profissional
+   */
+  async updateRating(userId: string, newRating: number) {
+    const profile = await this.prisma.professionalProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!profile) {
+      throw new Error("Perfil não encontrado");
+    }
+
+    const totalRatings = profile.totalRatings + 1;
+    const averageRating = 
+      (profile.averageRating * profile.totalRatings + newRating) / totalRatings;
+
+    return await this.prisma.professionalProfile.update({
+      where: { userId },
+      data: {
+        averageRating,
+        totalRatings,
+      },
+    });
   }
 }

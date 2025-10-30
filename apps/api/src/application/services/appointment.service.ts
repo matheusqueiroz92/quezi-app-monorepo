@@ -1,133 +1,292 @@
 /**
- * AppointmentService - Camada de Aplicação
+ * AppointmentService
  *
  * Serviço de aplicação para gerenciamento de agendamentos
- * Seguindo os princípios SOLID e Clean Architecture
+ * Camada de Aplicação - Clean Architecture
+ *
+ * Responsabilidades:
+ * - Lógica de negócio para agendamentos
+ * - Validações de regras de negócio
+ * - Orquestração entre repositórios
  */
 
-import { Appointment } from "../../domain/entities/appointment.entity";
 import { AppointmentRepository } from "../../infrastructure/repositories/appointment.repository";
-import { BadRequestError, NotFoundError } from "../../utils/app-error";
+import { UserRepository } from "../../infrastructure/repositories/user.repository";
+import { ProfessionalProfileRepository } from "../../infrastructure/repositories/professional-profile.repository";
+import { CompanyEmployeeRepository } from "../../infrastructure/repositories/company-employee.repository";
+import {
+  NotFoundError,
+  BadRequestError,
+  ConflictError,
+} from "../../utils/app-error";
+import { prisma } from "../../lib/prisma";
+
+export interface CreateAppointmentData {
+  clientId: string;
+  professionalId?: string;
+  companyEmployeeId?: string;
+  serviceId: string;
+  scheduledDate: Date;
+  duration: number;
+  notes?: string;
+  status?:
+    | "SCHEDULED"
+    | "CONFIRMED"
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "CANCELLED";
+}
+
+export interface UpdateAppointmentData {
+  scheduledDate?: Date;
+  duration?: number;
+  notes?: string;
+  status?:
+    | "SCHEDULED"
+    | "CONFIRMED"
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "CANCELLED";
+  cancellationReason?: string;
+}
+
+export interface AppointmentFilters {
+  status?: string;
+  professionalId?: string;
+  companyEmployeeId?: string;
+  clientId?: string;
+  startDate?: Date;
+  endDate?: Date;
+  page?: number;
+  limit?: number;
+}
 
 /**
- * Serviço de aplicação para Appointment
+ * Serviço de Agendamentos
+ *
+ * Gerencia a lógica de negócio dos agendamentos entre clientes e profissionais/empresas
  */
 export class AppointmentService {
-  constructor(private appointmentRepository: AppointmentRepository) {}
+  private appointmentRepository: AppointmentRepository;
+  private userRepository: UserRepository;
+  private professionalProfileRepository: ProfessionalProfileRepository;
+  private companyEmployeeRepository: CompanyEmployeeRepository;
+
+  constructor(
+    appointmentRepository: AppointmentRepository = new AppointmentRepository(
+      prisma
+    ),
+    userRepository: UserRepository = new UserRepository(prisma),
+    professionalProfileRepository: ProfessionalProfileRepository = new ProfessionalProfileRepository(
+      prisma
+    ),
+    companyEmployeeRepository: CompanyEmployeeRepository = new CompanyEmployeeRepository(
+      prisma
+    )
+  ) {
+    this.appointmentRepository = appointmentRepository;
+    this.userRepository = userRepository;
+    this.professionalProfileRepository = professionalProfileRepository;
+    this.companyEmployeeRepository = companyEmployeeRepository;
+  }
 
   /**
    * Cria um novo agendamento
    */
-  async createAppointment(data: {
-    clientId: string;
-    professionalId: string;
-    serviceId: string;
-    scheduledDate: Date;
-    scheduledTime: string;
-    location?: string;
-    clientNotes?: string;
-  }): Promise<Appointment> {
+  async createAppointment(data: CreateAppointmentData): Promise<any> {
+    // Validar se a data não é no passado
+    if (data.scheduledDate < new Date()) {
+      throw new BadRequestError(
+        "Não é possível agendar para uma data no passado"
+      );
+    }
+
+    // Validar se o cliente existe
+    const client = await this.userRepository.findById(data.clientId);
+    if (!client || client.userType !== "CLIENT") {
+      throw new NotFoundError("Cliente não encontrado");
+    }
+
+    // Validar se o profissional ou funcionário da empresa existe
+    if (data.professionalId) {
+      const professional =
+        await this.professionalProfileRepository.findByUserId(
+          data.professionalId
+        );
+      if (!professional || !professional.isActive) {
+        throw new NotFoundError("Profissional não encontrado ou inativo");
+      }
+    } else if (data.companyEmployeeId) {
+      const employee = await this.companyEmployeeRepository.findById(
+        data.companyEmployeeId
+      );
+      if (!employee || !employee.isActive) {
+        throw new NotFoundError("Funcionário não encontrado ou inativo");
+      }
+    } else {
+      throw new BadRequestError(
+        "É necessário informar um profissional ou funcionário"
+      );
+    }
+
     // Verificar conflitos de horário
-    const hasConflict = await this.appointmentRepository.hasConflict(
-      data.professionalId,
-      data.scheduledDate,
-      data.scheduledTime
-    );
+    const startTime = data.scheduledDate;
+    const endTime = new Date(startTime.getTime() + data.duration * 60000);
+
+    const conflictingAppointments =
+      await this.appointmentRepository.findByDateRange(startTime, endTime);
+
+    const hasConflict = conflictingAppointments.some((appointment) => {
+      const appointmentStart = appointment.scheduledDate;
+      const appointmentEnd = new Date(
+        appointmentStart.getTime() + appointment.duration * 60000
+      );
+
+      return (
+        (startTime >= appointmentStart && startTime < appointmentEnd) ||
+        (endTime > appointmentStart && endTime <= appointmentEnd) ||
+        (startTime <= appointmentStart && endTime >= appointmentEnd)
+      );
+    });
 
     if (hasConflict) {
-      throw new BadRequestError("Já existe um agendamento neste horário");
+      throw new ConflictError("Já existe um agendamento neste horário");
     }
 
-    // Validar data (não pode ser no passado)
-    const now = new Date();
-    const appointmentDateTime = new Date(
-      `${data.scheduledDate.toISOString().split("T")[0]}T${data.scheduledTime}`
-    );
-
-    if (appointmentDateTime <= now) {
-      throw new BadRequestError("Não é possível agendar no passado");
-    }
-
-    // Criar agendamento
-    const appointmentData = {
-      id: crypto.randomUUID(),
+    // Criar o agendamento
+    return await this.appointmentRepository.create({
       ...data,
-      status: "PENDING",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    return await this.appointmentRepository.create(appointmentData);
+      status: data.status || "SCHEDULED",
+    });
   }
 
   /**
-   * Busca agendamento por ID
+   * Busca um agendamento por ID
    */
-  async getAppointmentById(id: string): Promise<Appointment> {
+  async getAppointmentById(id: string): Promise<any> {
     const appointment = await this.appointmentRepository.findById(id);
+    if (!appointment) {
+      throw new NotFoundError("Agendamento não encontrado");
+    }
+    return appointment;
+  }
 
+  /**
+   * Atualiza um agendamento
+   */
+  async updateAppointment(
+    id: string,
+    data: UpdateAppointmentData
+  ): Promise<any> {
+    const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
       throw new NotFoundError("Agendamento não encontrado");
     }
 
-    return appointment;
+    // Validar se a nova data não é no passado (se fornecida)
+    if (data.scheduledDate && data.scheduledDate < new Date()) {
+      throw new BadRequestError(
+        "Não é possível agendar para uma data no passado"
+      );
+    }
+
+    return await this.appointmentRepository.update(id, data);
+  }
+
+  /**
+   * Cancela um agendamento
+   */
+  async cancelAppointment(id: string, reason?: string): Promise<any> {
+    const appointment = await this.appointmentRepository.findById(id);
+    if (!appointment) {
+      throw new NotFoundError("Agendamento não encontrado");
+    }
+
+    if (appointment.status === "CANCELLED") {
+      throw new BadRequestError("Agendamento já está cancelado");
+    }
+
+    return await this.appointmentRepository.update(id, {
+      status: "CANCELLED",
+      cancellationReason: reason,
+    });
+  }
+
+  /**
+   * Busca agendamentos de um usuário (cliente)
+   */
+  async getAppointmentsByUser(userId: string): Promise<any[]> {
+    return await this.appointmentRepository.findByUserId(userId);
+  }
+
+  /**
+   * Busca agendamentos de um profissional
+   */
+  async getAppointmentsByProfessional(professionalId: string): Promise<any[]> {
+    return await this.appointmentRepository.findByProfessionalId(
+      professionalId
+    );
+  }
+
+  /**
+   * Busca agendamentos de um funcionário de empresa
+   */
+  async getAppointmentsByCompanyEmployee(
+    companyEmployeeId: string
+  ): Promise<any[]> {
+    return await this.appointmentRepository.findByCompanyEmployeeId(
+      companyEmployeeId
+    );
+  }
+
+  /**
+   * Busca agendamentos por período
+   */
+  async getAppointmentsByDateRange(
+    startDate: Date,
+    endDate: Date
+  ): Promise<any[]> {
+    return await this.appointmentRepository.findByDateRange(startDate, endDate);
+  }
+
+  /**
+   * Busca agendamentos por status
+   */
+  async getAppointmentsByStatus(status: string): Promise<any[]> {
+    return await this.appointmentRepository.findByStatus(status);
   }
 
   /**
    * Lista agendamentos com filtros
    */
-  async listAppointments(filters: {
-    skip?: number;
-    take?: number;
-    clientId?: string;
-    professionalId?: string;
-    status?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }) {
-    return await this.appointmentRepository.findMany(filters);
+  async getAppointments(filters: AppointmentFilters = {}): Promise<{
+    data: any[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const { page = 1, limit = 10, ...otherFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.appointmentRepository.findMany({
+        ...otherFilters,
+        skip,
+        take: limit,
+      }),
+      this.appointmentRepository.count(otherFilters),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 
   /**
-   * Atualiza agendamento
-   */
-  async updateAppointment(
-    id: string,
-    data: {
-      scheduledDate?: Date;
-      scheduledTime?: string;
-      location?: string;
-      clientNotes?: string;
-      professionalNotes?: string;
-    }
-  ): Promise<Appointment> {
-    // Verificar se agendamento existe
-    const existingAppointment = await this.appointmentRepository.findById(id);
-    if (!existingAppointment) {
-      throw new NotFoundError("Agendamento não encontrado");
-    }
-
-    // Se está alterando data/hora, verificar conflitos
-    if (data.scheduledDate && data.scheduledTime) {
-      const hasConflict = await this.appointmentRepository.hasConflict(
-        existingAppointment.professionalId,
-        data.scheduledDate,
-        data.scheduledTime
-      );
-
-      if (hasConflict) {
-        throw new BadRequestError("Já existe um agendamento neste horário");
-      }
-    }
-
-    return await this.appointmentRepository.update(id, {
-      ...data,
-      updatedAt: new Date(),
-    });
-  }
-
-  /**
-   * Remove agendamento
+   * Deleta um agendamento
    */
   async deleteAppointment(id: string): Promise<void> {
     const appointment = await this.appointmentRepository.findById(id);
@@ -135,151 +294,69 @@ export class AppointmentService {
       throw new NotFoundError("Agendamento não encontrado");
     }
 
-    // Verificar se pode ser cancelado (apenas PENDING ou ACCEPTED)
-    if (!["PENDING", "ACCEPTED"].includes(appointment.status)) {
-      throw new BadRequestError("Não é possível cancelar este agendamento");
-    }
-
     await this.appointmentRepository.delete(id);
   }
 
   /**
-   * Atualiza status do agendamento
+   * Confirma um agendamento
    */
-  async updateAppointmentStatus(
-    id: string,
-    status: "PENDING" | "ACCEPTED" | "COMPLETED" | "CANCELLED",
-    notes?: string
-  ): Promise<Appointment> {
+  async confirmAppointment(id: string): Promise<any> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
       throw new NotFoundError("Agendamento não encontrado");
     }
 
-    // Validar transições de status
-    const validTransitions: Record<string, string[]> = {
-      PENDING: ["ACCEPTED", "CANCELLED"],
-      ACCEPTED: ["COMPLETED", "CANCELLED"],
-      COMPLETED: [],
-      CANCELLED: [],
-    };
-
-    if (!validTransitions[appointment.status].includes(status)) {
+    if (appointment.status !== "SCHEDULED") {
       throw new BadRequestError(
-        `Não é possível alterar status de ${appointment.status} para ${status}`
+        "Apenas agendamentos pendentes podem ser confirmados"
       );
     }
 
-    return await this.appointmentRepository.updateStatus(id, status, notes);
+    return await this.appointmentRepository.update(id, {
+      status: "CONFIRMED",
+    });
   }
 
   /**
-   * Busca agendamentos por cliente
+   * Marca um agendamento como concluído
    */
-  async getClientAppointments(
-    clientId: string,
-    filters: {
-      skip?: number;
-      take?: number;
-      status?: string;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {}
-  ) {
-    return await this.appointmentRepository.findByClient(clientId, filters);
-  }
-
-  /**
-   * Busca agendamentos por profissional
-   */
-  async getProfessionalAppointments(
-    professionalId: string,
-    filters: {
-      skip?: number;
-      take?: number;
-      status?: string;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {}
-  ) {
-    return await this.appointmentRepository.findByProfessional(
-      professionalId,
-      filters
-    );
-  }
-
-  /**
-   * Obtém estatísticas de agendamentos
-   */
-  async getAppointmentStats(
-    filters: {
-      professionalId?: string;
-      clientId?: string;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {}
-  ) {
-    return await this.appointmentRepository.getStats(filters);
-  }
-
-  /**
-   * Verifica disponibilidade de horário
-   */
-  async checkAvailability(
-    professionalId: string,
-    scheduledDate: Date,
-    scheduledTime: string
-  ): Promise<boolean> {
-    const hasConflict = await this.appointmentRepository.hasConflict(
-      professionalId,
-      scheduledDate,
-      scheduledTime
-    );
-
-    return !hasConflict;
-  }
-
-  /**
-   * Obtém horários disponíveis para um profissional em uma data
-   */
-  async getAvailableTimeSlots(
-    professionalId: string,
-    date: Date,
-    workingHours: any = {}
-  ): Promise<string[]> {
-    const timeSlots = [];
-    const startHour = 8; // 08:00
-    const endHour = 18; // 18:00
-
-    // Gerar slots de 30 em 30 minutos
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let minutes = 0; minutes < 60; minutes += 30) {
-        const timeString = `${hour.toString().padStart(2, "0")}:${minutes
-          .toString()
-          .padStart(2, "0")}`;
-
-        // Verificar se está dentro do horário de funcionamento
-        if (this.isWithinWorkingHours(timeString, workingHours)) {
-          const isAvailable = await this.checkAvailability(
-            professionalId,
-            date,
-            timeString
-          );
-          if (isAvailable) {
-            timeSlots.push(timeString);
-          }
-        }
-      }
+  async completeAppointment(id: string): Promise<any> {
+    const appointment = await this.appointmentRepository.findById(id);
+    if (!appointment) {
+      throw new NotFoundError("Agendamento não encontrado");
     }
 
-    return timeSlots;
+    if (
+      appointment.status !== "CONFIRMED" &&
+      appointment.status !== "IN_PROGRESS"
+    ) {
+      throw new BadRequestError(
+        "Apenas agendamentos confirmados ou em andamento podem ser concluídos"
+      );
+    }
+
+    return await this.appointmentRepository.update(id, {
+      status: "COMPLETED",
+    });
   }
 
   /**
-   * Verifica se horário está dentro do horário de funcionamento
+   * Marca um agendamento como em andamento
    */
-  private isWithinWorkingHours(time: string, workingHours: any): boolean {
-    // Implementação simplificada - pode ser expandida
-    return true; // Por enquanto, aceita todos os horários
+  async startAppointment(id: string): Promise<any> {
+    const appointment = await this.appointmentRepository.findById(id);
+    if (!appointment) {
+      throw new NotFoundError("Agendamento não encontrado");
+    }
+
+    if (appointment.status !== "CONFIRMED") {
+      throw new BadRequestError(
+        "Apenas agendamentos confirmados podem ser iniciados"
+      );
+    }
+
+    return await this.appointmentRepository.update(id, {
+      status: "IN_PROGRESS",
+    });
   }
 }

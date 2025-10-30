@@ -1,68 +1,81 @@
 /**
- * CompanyEmployeeService - Camada de Aplicação
+ * Serviço de Funcionário da Empresa - Camada de Aplicação
  *
- * Serviço de aplicação para gerenciamento de funcionários de empresas
- * Seguindo os princípios SOLID e Clean Architecture
+ * Implementação seguindo Clean Architecture e TDD
  */
 
-import { CompanyEmployee } from "../../domain/entities/company-employee.entity";
-import { CompanyEmployeeRepository } from "../../infrastructure/repositories/company-employee.repository";
-import { BadRequestError, NotFoundError } from "../../utils/app-error";
+import {
+  CompanyEmployeeRepository,
+  CreateCompanyEmployeeData,
+  UpdateCompanyEmployeeData,
+  CompanyEmployeeFilters,
+} from "../../infrastructure/repositories/company-employee.repository";
+import { UserRepository } from "../../infrastructure/repositories/user.repository";
+import { NotFoundError, BadRequestError } from "../../utils/app-error";
+import { prisma } from "../../lib/prisma";
 
-/**
- * Serviço de aplicação para CompanyEmployee
- */
 export class CompanyEmployeeService {
-  constructor(private companyEmployeeRepository: CompanyEmployeeRepository) {}
+  constructor(
+    private companyEmployeeRepository = new CompanyEmployeeRepository(prisma),
+    private userRepository = new UserRepository(prisma)
+  ) {}
 
   /**
-   * Cria um novo funcionário
+   * Cria funcionário da empresa
    */
-  async createEmployee(data: {
-    companyId: string;
-    name: string;
-    email: string;
-    phone: string;
-    position: string;
-    specialties?: string[];
-    isActive?: boolean;
-    workingHours?: any;
-  }): Promise<CompanyEmployee> {
-    // Validar dados
-    if (!data.name || data.name.trim().length < 3) {
-      throw new BadRequestError("Nome deve ter no mínimo 3 caracteres");
+  async createEmployee(
+    companyId: string,
+    data: Omit<CreateCompanyEmployeeData, "companyId">
+  ) {
+    // Verificar se empresa existe e é do tipo COMPANY
+    const company = await this.userRepository.findById(companyId);
+    if (!company) {
+      throw new NotFoundError("Empresa não encontrada");
     }
 
-    if (!data.email || !this.isValidEmail(data.email)) {
-      throw new BadRequestError("Email inválido");
+    if (company.userType !== "COMPANY") {
+      throw new BadRequestError(
+        "Apenas usuários do tipo COMPANY podem ter funcionários"
+      );
     }
 
-    if (!data.phone || data.phone.trim().length < 10) {
-      throw new BadRequestError("Telefone inválido");
+    // Validar dados obrigatórios
+    if (!data.name || data.name.trim().length === 0) {
+      throw new BadRequestError("Nome do funcionário é obrigatório");
     }
 
-    if (!data.position || data.position.trim().length < 3) {
-      throw new BadRequestError("Cargo deve ter no mínimo 3 caracteres");
-    }
+    // Verificar se email já existe (se fornecido)
+    if (data.email) {
+      const existingEmployee = await this.companyEmployeeRepository.findMany({
+        companyId,
+        skip: 0,
+        take: 1,
+      });
 
-    // Verificar se email já existe
-    const existingEmployee = await this.companyEmployeeRepository.findByEmail(
-      data.email
-    );
-    if (existingEmployee) {
-      throw new BadRequestError("Email já está em uso");
+      const emailExists = existingEmployee.data.some(
+        (emp) => emp.email === data.email
+      );
+      if (emailExists) {
+        throw new BadRequestError(
+          "Email já está sendo usado por outro funcionário"
+        );
+      }
     }
 
     // Criar funcionário
-    return await this.companyEmployeeRepository.create(data);
+    const employee = await this.companyEmployeeRepository.create({
+      companyId,
+      ...data,
+    });
+
+    return employee;
   }
 
   /**
-   * Busca funcionário por ID
+   * Obtém funcionário por ID
    */
-  async getEmployeeById(id: string): Promise<CompanyEmployee> {
+  async getEmployeeById(id: string) {
     const employee = await this.companyEmployeeRepository.findById(id);
-
     if (!employee) {
       throw new NotFoundError("Funcionário não encontrado");
     }
@@ -71,141 +84,222 @@ export class CompanyEmployeeService {
   }
 
   /**
-   * Lista funcionários com filtros
+   * Lista funcionários da empresa
    */
-  async listEmployees(filters: {
-    companyId?: string;
-    isActive?: boolean;
-    position?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    employees: CompanyEmployee[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const page = filters.page || 1;
-    const limit = filters.limit || 10;
+  async getEmployeesByCompanyId(companyId: string) {
+    // Verificar se empresa existe
+    const company = await this.userRepository.findById(companyId);
+    if (!company) {
+      throw new NotFoundError("Empresa não encontrada");
+    }
 
-    const employees = await this.companyEmployeeRepository.findMany(filters);
-    const total = await this.companyEmployeeRepository.count(filters);
+    if (company.userType !== "COMPANY") {
+      throw new BadRequestError(
+        "Apenas usuários do tipo COMPANY podem ter funcionários"
+      );
+    }
 
-    return {
-      employees,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return await this.companyEmployeeRepository.findByCompanyId(companyId);
   }
 
   /**
    * Atualiza funcionário
    */
-  async updateEmployee(
-    id: string,
-    data: {
-      name?: string;
-      email?: string;
-      phone?: string;
-      position?: string;
-      specialties?: string[];
-      isActive?: boolean;
-      workingHours?: any;
-    }
-  ): Promise<CompanyEmployee> {
+  async updateEmployee(id: string, data: UpdateCompanyEmployeeData) {
     // Verificar se funcionário existe
-    await this.getEmployeeById(id);
-
-    // Validar dados
-    if (data.name && data.name.trim().length < 3) {
-      throw new BadRequestError("Nome deve ter no mínimo 3 caracteres");
+    const existingEmployee = await this.companyEmployeeRepository.findById(id);
+    if (!existingEmployee) {
+      throw new NotFoundError("Funcionário não encontrado");
     }
 
-    if (data.email && !this.isValidEmail(data.email)) {
-      throw new BadRequestError("Email inválido");
+    // Validar nome se fornecido
+    if (data.name && data.name.trim().length === 0) {
+      throw new BadRequestError("Nome do funcionário não pode ser vazio");
     }
 
-    if (data.phone && data.phone.trim().length < 10) {
-      throw new BadRequestError("Telefone inválido");
-    }
-
-    if (data.position && data.position.trim().length < 3) {
-      throw new BadRequestError("Cargo deve ter no mínimo 3 caracteres");
-    }
-
-    // Verificar se email já existe (se estiver sendo alterado)
-    if (data.email) {
-      const existingEmployee = await this.companyEmployeeRepository.findByEmail(
-        data.email
+    // Verificar se email já existe (se fornecido e diferente do atual)
+    if (data.email && data.email !== existingEmployee.email) {
+      const employees = await this.companyEmployeeRepository.findByCompanyId(
+        existingEmployee.companyId
       );
-      if (existingEmployee && existingEmployee.id !== id) {
-        throw new BadRequestError("Email já está em uso");
+      const emailExists = employees.some(
+        (emp) => emp.email === data.email && emp.id !== id
+      );
+      if (emailExists) {
+        throw new BadRequestError(
+          "Email já está sendo usado por outro funcionário"
+        );
       }
     }
 
     // Atualizar funcionário
-    return await this.companyEmployeeRepository.update(id, data);
+    const employee = await this.companyEmployeeRepository.update(id, data);
+    return employee;
   }
 
   /**
    * Deleta funcionário
    */
-  async deleteEmployee(id: string): Promise<void> {
+  async deleteEmployee(id: string) {
     // Verificar se funcionário existe
-    await this.getEmployeeById(id);
+    const existingEmployee = await this.companyEmployeeRepository.findById(id);
+    if (!existingEmployee) {
+      throw new NotFoundError("Funcionário não encontrado");
+    }
+
+    // Verificar se funcionário tem agendamentos futuros
+    const futureAppointments = existingEmployee.appointments.filter(
+      (apt) => new Date(apt.scheduledDate) > new Date()
+    );
+
+    if (futureAppointments.length > 0) {
+      throw new BadRequestError(
+        "Não é possível deletar funcionário com agendamentos futuros"
+      );
+    }
 
     // Deletar funcionário
     await this.companyEmployeeRepository.delete(id);
   }
 
   /**
-   * Busca funcionários por empresa
+   * Lista funcionários com filtros
    */
-  async getEmployeesByCompany(companyId: string): Promise<CompanyEmployee[]> {
-    return await this.companyEmployeeRepository.findByCompany(companyId);
+  async listEmployees(
+    filters: CompanyEmployeeFilters & { skip?: number; take?: number }
+  ) {
+    return await this.companyEmployeeRepository.findMany(filters);
+  }
+
+  /**
+   * Busca funcionários por especialidade
+   */
+  async getEmployeesBySpecialty(specialty: string, companyId?: string) {
+    if (!specialty || specialty.trim().length === 0) {
+      throw new BadRequestError("Especialidade é obrigatória");
+    }
+
+    if (companyId) {
+      // Verificar se empresa existe
+      const company = await this.userRepository.findById(companyId);
+      if (!company) {
+        throw new NotFoundError("Empresa não encontrada");
+      }
+
+      if (company.userType !== "COMPANY") {
+        throw new BadRequestError(
+          "Apenas usuários do tipo COMPANY podem ter funcionários"
+        );
+      }
+    }
+
+    return await this.companyEmployeeRepository.findBySpecialty(
+      specialty,
+      companyId
+    );
+  }
+
+  /**
+   * Adiciona especialidade ao funcionário
+   */
+  async addSpecialty(id: string, specialty: string) {
+    if (!specialty || specialty.trim().length === 0) {
+      throw new BadRequestError("Especialidade é obrigatória");
+    }
+
+    const employee = await this.companyEmployeeRepository.findById(id);
+    if (!employee) {
+      throw new NotFoundError("Funcionário não encontrado");
+    }
+
+    if (employee.specialties.includes(specialty)) {
+      throw new BadRequestError(
+        "Especialidade já existe no perfil do funcionário"
+      );
+    }
+
+    const updatedSpecialties = [...employee.specialties, specialty];
+
+    return await this.companyEmployeeRepository.update(id, {
+      specialties: updatedSpecialties,
+    });
+  }
+
+  /**
+   * Remove especialidade do funcionário
+   */
+  async removeSpecialty(id: string, specialty: string) {
+    if (!specialty || specialty.trim().length === 0) {
+      throw new BadRequestError("Especialidade é obrigatória");
+    }
+
+    const employee = await this.companyEmployeeRepository.findById(id);
+    if (!employee) {
+      throw new NotFoundError("Funcionário não encontrado");
+    }
+
+    if (!employee.specialties.includes(specialty)) {
+      throw new BadRequestError(
+        "Especialidade não existe no perfil do funcionário"
+      );
+    }
+
+    const updatedSpecialties = employee.specialties.filter(
+      (s) => s !== specialty
+    );
+
+    return await this.companyEmployeeRepository.update(id, {
+      specialties: updatedSpecialties,
+    });
   }
 
   /**
    * Ativa/desativa funcionário
    */
-  async toggleEmployeeStatus(id: string): Promise<CompanyEmployee> {
-    const employee = await this.getEmployeeById(id);
-    return await this.companyEmployeeRepository.update(id, {
-      isActive: !employee.isActive,
-    });
+  async toggleActive(id: string) {
+    const employee = await this.companyEmployeeRepository.findById(id);
+    if (!employee) {
+      throw new NotFoundError("Funcionário não encontrado");
+    }
+
+    return await this.companyEmployeeRepository.toggleActive(id);
   }
 
   /**
-   * Busca funcionários ativos
+   * Conta funcionários da empresa
    */
-  async getActiveEmployees(companyId: string): Promise<CompanyEmployee[]> {
-    return await this.companyEmployeeRepository.findMany({
-      companyId,
-      isActive: true,
-    });
+  async countEmployeesByCompany(companyId: string) {
+    // Verificar se empresa existe
+    const company = await this.userRepository.findById(companyId);
+    if (!company) {
+      throw new NotFoundError("Empresa não encontrada");
+    }
+
+    if (company.userType !== "COMPANY") {
+      throw new BadRequestError(
+        "Apenas usuários do tipo COMPANY podem ter funcionários"
+      );
+    }
+
+    return await this.companyEmployeeRepository.countByCompany(companyId);
   }
 
   /**
-   * Busca funcionários por cargo
+   * Conta funcionários ativos da empresa
    */
-  async getEmployeesByPosition(
-    companyId: string,
-    position: string
-  ): Promise<CompanyEmployee[]> {
-    return await this.companyEmployeeRepository.findMany({
-      companyId,
-      position,
-    });
-  }
+  async countActiveEmployeesByCompany(companyId: string) {
+    // Verificar se empresa existe
+    const company = await this.userRepository.findById(companyId);
+    if (!company) {
+      throw new NotFoundError("Empresa não encontrada");
+    }
 
-  /**
-   * Valida email
-   */
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    if (company.userType !== "COMPANY") {
+      throw new BadRequestError(
+        "Apenas usuários do tipo COMPANY podem ter funcionários"
+      );
+    }
+
+    return await this.companyEmployeeRepository.countActiveByCompany(companyId);
   }
 }

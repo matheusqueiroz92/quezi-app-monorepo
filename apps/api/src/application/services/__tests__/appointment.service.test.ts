@@ -1,104 +1,215 @@
 /**
- * Testes unitários para AppointmentService
- * Seguindo TDD e garantindo máxima cobertura
+ * Testes para AppointmentService
+ *
+ * Testa a lógica de negócio dos agendamentos
+ * Seguindo TDD e princípios SOLID
  */
 
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { AppointmentService } from "../appointment.service";
-import { AppointmentRepository } from "../../../infrastructure/repositories/appointment.repository";
-import { BadRequestError, NotFoundError } from "../../../utils/app-error";
+import {
+  NotFoundError,
+  BadRequestError,
+  ConflictError,
+} from "../../../utils/app-error";
 
-// Mock do repositório
-jest.mock("../../../infrastructure/repositories/appointment.repository");
-const MockedAppointmentRepository = AppointmentRepository as jest.MockedClass<
-  typeof AppointmentRepository
->;
+// Mock do AppointmentRepository
+const mockAppointmentRepository = {
+  create: jest.fn(),
+  findById: jest.fn(),
+  findByUserId: jest.fn(),
+  findByProfessionalId: jest.fn(),
+  findByCompanyEmployeeId: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+  findMany: jest.fn(),
+  findByDateRange: jest.fn(),
+  findByStatus: jest.fn(),
+  count: jest.fn(),
+};
+
+// Mock do UserRepository
+const mockUserRepository = {
+  findById: jest.fn(),
+  findByEmail: jest.fn(),
+};
+
+// Mock do ProfessionalProfileRepository
+const mockProfessionalProfileRepository = {
+  findByUserId: jest.fn(),
+};
+
+// Mock do CompanyEmployeeRepository
+const mockCompanyEmployeeRepository = {
+  findById: jest.fn(),
+  findByUserId: jest.fn(),
+};
+
+jest.mock(
+  "../../../infrastructure/repositories/appointment.repository",
+  () => ({
+    AppointmentRepository: jest
+      .fn()
+      .mockImplementation(() => mockAppointmentRepository),
+  })
+);
+
+jest.mock("../../../infrastructure/repositories/user.repository", () => ({
+  UserRepository: jest.fn().mockImplementation(() => mockUserRepository),
+}));
+
+jest.mock(
+  "../../../infrastructure/repositories/professional-profile.repository",
+  () => ({
+    ProfessionalProfileRepository: jest
+      .fn()
+      .mockImplementation(() => mockProfessionalProfileRepository),
+  })
+);
+
+jest.mock(
+  "../../../infrastructure/repositories/company-employee.repository",
+  () => ({
+    CompanyEmployeeRepository: jest
+      .fn()
+      .mockImplementation(() => mockCompanyEmployeeRepository),
+  })
+);
 
 describe("AppointmentService", () => {
   let appointmentService: AppointmentService;
-  let mockRepository: jest.Mocked<AppointmentRepository>;
 
   beforeEach(() => {
-    mockRepository =
-      new MockedAppointmentRepository() as jest.Mocked<AppointmentRepository>;
-    appointmentService = new AppointmentService(mockRepository);
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
+    appointmentService = new AppointmentService(
+      mockAppointmentRepository as any,
+      mockUserRepository as any,
+      mockProfessionalProfileRepository as any,
+      mockCompanyEmployeeRepository as any
+    );
   });
 
   describe("createAppointment", () => {
-    const validAppointmentData = {
-      clientId: "client-123",
-      professionalId: "professional-123",
-      serviceId: "service-123",
-      scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Amanhã
-      scheduledTime: "14:00",
-      location: "Local do serviço",
-      clientNotes: "Observações do cliente",
-    };
-
-    it("deve criar um agendamento com sucesso", async () => {
+    it("deve criar agendamento com sucesso", async () => {
       // Arrange
-      mockRepository.hasConflict.mockResolvedValue(false);
-      mockRepository.create.mockResolvedValue({
+      const appointmentData = {
+        clientId: "client-123",
+        professionalId: "professional-123",
+        serviceId: "service-123",
+        scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Amanhã
+        duration: 60,
+        notes: "Corte de cabelo",
+        status: "SCHEDULED" as const,
+      };
+
+      const mockClient = {
+        id: "client-123",
+        userType: "CLIENT",
+        name: "João Cliente",
+        email: "joao@example.com",
+      };
+
+      const mockProfessional = {
+        id: "professional-123",
+        userId: "professional-123",
+        specialties: ["Cabelo", "Barba"],
+        isActive: true,
+      };
+
+      const mockAppointment = {
         id: "appointment-123",
-        ...validAppointmentData,
-        status: "PENDING",
+        ...appointmentData,
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as any);
+      };
+
+      mockUserRepository.findById.mockResolvedValue(mockClient);
+      mockProfessionalProfileRepository.findByUserId.mockResolvedValue(
+        mockProfessional
+      );
+      mockAppointmentRepository.findByDateRange.mockResolvedValue([]); // Sem conflitos
+      mockAppointmentRepository.create.mockResolvedValue(mockAppointment);
 
       // Act
       const result = await appointmentService.createAppointment(
-        validAppointmentData
+        appointmentData
       );
 
       // Assert
-      expect(mockRepository.hasConflict).toHaveBeenCalledWith(
-        validAppointmentData.professionalId,
-        validAppointmentData.scheduledDate,
-        validAppointmentData.scheduledTime
-      );
-      expect(mockRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: expect.any(String),
-          ...validAppointmentData,
-          status: "PENDING",
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        })
-      );
-      expect(result).toBeDefined();
-    });
-
-    it("deve lançar erro quando há conflito de horário", async () => {
-      // Arrange
-      mockRepository.hasConflict.mockResolvedValue(true);
-
-      // Act & Assert
-      await expect(
-        appointmentService.createAppointment(validAppointmentData)
-      ).rejects.toThrow(
-        new BadRequestError("Já existe um agendamento neste horário")
+      expect(result).toEqual(mockAppointment);
+      expect(mockUserRepository.findById).toHaveBeenCalledWith("client-123");
+      expect(
+        mockProfessionalProfileRepository.findByUserId
+      ).toHaveBeenCalledWith("professional-123");
+      expect(mockAppointmentRepository.create).toHaveBeenCalledWith(
+        appointmentData
       );
     });
 
-    it("deve lançar erro quando data é no passado", async () => {
+    it("deve lançar erro se cliente não encontrado", async () => {
       // Arrange
-      const pastDate = new Date("2020-01-01");
       const appointmentData = {
-        ...validAppointmentData,
-        scheduledDate: pastDate,
+        clientId: "non-existent",
+        professionalId: "professional-123",
+        serviceId: "service-123",
+        scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Amanhã
+        duration: 60,
+        notes: "Corte de cabelo",
+        status: "SCHEDULED" as const,
       };
-      mockRepository.hasConflict.mockResolvedValue(false);
+
+      mockUserRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
       await expect(
         appointmentService.createAppointment(appointmentData)
-      ).rejects.toThrow(
-        new BadRequestError("Não é possível agendar no passado")
-      );
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("deve lançar erro se profissional não encontrado", async () => {
+      // Arrange
+      const appointmentData = {
+        clientId: "client-123",
+        professionalId: "non-existent",
+        serviceId: "service-123",
+        scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Amanhã
+        duration: 60,
+        notes: "Corte de cabelo",
+        status: "SCHEDULED" as const,
+      };
+
+      const mockClient = {
+        id: "client-123",
+        userType: "CLIENT",
+        name: "João Cliente",
+        email: "joao@example.com",
+      };
+
+      mockUserRepository.findById.mockResolvedValue(mockClient);
+      mockProfessionalProfileRepository.findByUserId.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        appointmentService.createAppointment(appointmentData)
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("deve lançar erro se data for no passado", async () => {
+      // Arrange
+      const appointmentData = {
+        clientId: "client-123",
+        professionalId: "professional-123",
+        serviceId: "service-123",
+        scheduledDate: new Date("2020-01-15T10:00:00Z"), // Data no passado
+        duration: 60,
+        notes: "Corte de cabelo",
+        status: "SCHEDULED" as const,
+      };
+
+      // Act & Assert
+      await expect(
+        appointmentService.createAppointment(appointmentData)
+      ).rejects.toThrow(BadRequestError);
     });
   });
 
@@ -106,49 +217,40 @@ describe("AppointmentService", () => {
     it("deve retornar agendamento quando encontrado", async () => {
       // Arrange
       const appointmentId = "appointment-123";
-      const mockAppointment = { id: appointmentId, status: "PENDING" };
-      mockRepository.findById.mockResolvedValue(mockAppointment as any);
+      const mockAppointment = {
+        id: appointmentId,
+        clientId: "client-123",
+        professionalId: "professional-123",
+        serviceId: "service-123",
+        scheduledDate: new Date("2024-01-15T10:00:00Z"),
+        duration: 60,
+        notes: "Corte de cabelo",
+        status: "SCHEDULED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment);
 
       // Act
       const result = await appointmentService.getAppointmentById(appointmentId);
 
       // Assert
-      expect(mockRepository.findById).toHaveBeenCalledWith(appointmentId);
       expect(result).toEqual(mockAppointment);
+      expect(mockAppointmentRepository.findById).toHaveBeenCalledWith(
+        appointmentId
+      );
     });
 
     it("deve lançar erro quando agendamento não encontrado", async () => {
       // Arrange
-      const appointmentId = "appointment-123";
-      mockRepository.findById.mockResolvedValue(null);
+      const appointmentId = "non-existent";
+      mockAppointmentRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
       await expect(
         appointmentService.getAppointmentById(appointmentId)
-      ).rejects.toThrow(new NotFoundError("Agendamento não encontrado"));
-    });
-  });
-
-  describe("listAppointments", () => {
-    it("deve listar agendamentos com filtros", async () => {
-      // Arrange
-      const filters = { skip: 0, take: 10, status: "PENDING" };
-      const mockResult = {
-        data: [{ id: "appointment-1" }, { id: "appointment-2" }],
-        total: 2,
-        page: 1,
-        limit: 10,
-        hasNext: false,
-        hasPrev: false,
-      };
-      mockRepository.findMany.mockResolvedValue(mockResult);
-
-      // Act
-      const result = await appointmentService.listAppointments(filters);
-
-      // Assert
-      expect(mockRepository.findMany).toHaveBeenCalledWith(filters);
-      expect(result).toEqual(mockResult);
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -157,19 +259,32 @@ describe("AppointmentService", () => {
       // Arrange
       const appointmentId = "appointment-123";
       const updateData = {
-        scheduledDate: new Date("2024-12-31"),
-        scheduledTime: "15:00",
+        scheduledDate: new Date(Date.now() + 48 * 60 * 60 * 1000), // Depois de amanhã
+        notes: "Corte de cabelo e barba",
+        status: "CONFIRMED" as const,
       };
-      const existingAppointment = {
-        id: appointmentId,
-        professionalId: "professional-123",
-        status: "PENDING",
-      };
-      const updatedAppointment = { ...existingAppointment, ...updateData };
 
-      mockRepository.findById.mockResolvedValue(existingAppointment as any);
-      mockRepository.hasConflict.mockResolvedValue(false);
-      mockRepository.update.mockResolvedValue(updatedAppointment as any);
+      const mockAppointment = {
+        id: appointmentId,
+        clientId: "client-123",
+        professionalId: "professional-123",
+        serviceId: "service-123",
+        scheduledDate: new Date("2024-01-15T10:00:00Z"),
+        duration: 60,
+        notes: "Corte de cabelo",
+        status: "SCHEDULED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const updatedAppointment = {
+        ...mockAppointment,
+        ...updateData,
+        updatedAt: new Date(),
+      };
+
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment);
+      mockAppointmentRepository.update.mockResolvedValue(updatedAppointment);
 
       // Act
       const result = await appointmentService.updateAppointment(
@@ -178,233 +293,207 @@ describe("AppointmentService", () => {
       );
 
       // Assert
-      expect(mockRepository.findById).toHaveBeenCalledWith(appointmentId);
-      expect(mockRepository.hasConflict).toHaveBeenCalledWith(
-        existingAppointment.professionalId,
-        updateData.scheduledDate,
-        updateData.scheduledTime
-      );
-      expect(mockRepository.update).toHaveBeenCalledWith(
-        appointmentId,
-        expect.objectContaining({
-          ...updateData,
-          updatedAt: expect.any(Date),
-        })
-      );
       expect(result).toEqual(updatedAppointment);
+      expect(mockAppointmentRepository.findById).toHaveBeenCalledWith(
+        appointmentId
+      );
+      expect(mockAppointmentRepository.update).toHaveBeenCalledWith(
+        appointmentId,
+        updateData
+      );
     });
 
     it("deve lançar erro quando agendamento não encontrado", async () => {
       // Arrange
-      const appointmentId = "appointment-123";
-      const updateData = { scheduledDate: new Date("2024-12-31") };
-      mockRepository.findById.mockResolvedValue(null);
+      const appointmentId = "non-existent";
+      const updateData = { status: "CANCELLED" as const };
+
+      mockAppointmentRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
       await expect(
         appointmentService.updateAppointment(appointmentId, updateData)
-      ).rejects.toThrow(new NotFoundError("Agendamento não encontrado"));
+      ).rejects.toThrow(NotFoundError);
     });
+  });
 
-    it("deve lançar erro quando há conflito de horário na atualização", async () => {
+  describe("cancelAppointment", () => {
+    it("deve cancelar agendamento com sucesso", async () => {
       // Arrange
       const appointmentId = "appointment-123";
-      const updateData = {
-        scheduledDate: new Date("2024-12-31"),
-        scheduledTime: "15:00",
-      };
-      const existingAppointment = {
+      const reason = "Cliente cancelou";
+
+      const mockAppointment = {
         id: appointmentId,
+        clientId: "client-123",
         professionalId: "professional-123",
-        status: "PENDING",
+        serviceId: "service-123",
+        scheduledDate: new Date("2024-01-15T10:00:00Z"),
+        duration: 60,
+        notes: "Corte de cabelo",
+        status: "SCHEDULED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
-      mockRepository.findById.mockResolvedValue(existingAppointment as any);
-      mockRepository.hasConflict.mockResolvedValue(true);
+      const cancelledAppointment = {
+        ...mockAppointment,
+        status: "CANCELLED",
+        cancellationReason: reason,
+        updatedAt: new Date(),
+      };
 
-      // Act & Assert
-      await expect(
-        appointmentService.updateAppointment(appointmentId, updateData)
-      ).rejects.toThrow(
-        new BadRequestError("Já existe um agendamento neste horário")
-      );
-    });
-  });
-
-  describe("deleteAppointment", () => {
-    it("deve deletar agendamento com sucesso", async () => {
-      // Arrange
-      const appointmentId = "appointment-123";
-      const appointment = { id: appointmentId, status: "PENDING" };
-      mockRepository.findById.mockResolvedValue(appointment as any);
-      mockRepository.delete.mockResolvedValue();
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment);
+      mockAppointmentRepository.update.mockResolvedValue(cancelledAppointment);
 
       // Act
-      await appointmentService.deleteAppointment(appointmentId);
+      const result = await appointmentService.cancelAppointment(
+        appointmentId,
+        reason
+      );
 
       // Assert
-      expect(mockRepository.findById).toHaveBeenCalledWith(appointmentId);
-      expect(mockRepository.delete).toHaveBeenCalledWith(appointmentId);
+      expect(result).toEqual(cancelledAppointment);
+      expect(mockAppointmentRepository.update).toHaveBeenCalledWith(
+        appointmentId,
+        {
+          status: "CANCELLED",
+          cancellationReason: reason,
+        }
+      );
     });
 
     it("deve lançar erro quando agendamento não encontrado", async () => {
       // Arrange
-      const appointmentId = "appointment-123";
-      mockRepository.findById.mockResolvedValue(null);
+      const appointmentId = "non-existent";
+      const reason = "Cliente cancelou";
+
+      mockAppointmentRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
       await expect(
-        appointmentService.deleteAppointment(appointmentId)
-      ).rejects.toThrow(new NotFoundError("Agendamento não encontrado"));
+        appointmentService.cancelAppointment(appointmentId, reason)
+      ).rejects.toThrow(NotFoundError);
     });
 
-    it("deve lançar erro quando agendamento não pode ser cancelado", async () => {
+    it("deve lançar erro quando agendamento já está cancelado", async () => {
       // Arrange
       const appointmentId = "appointment-123";
-      const appointment = { id: appointmentId, status: "COMPLETED" };
-      mockRepository.findById.mockResolvedValue(appointment as any);
+      const reason = "Cliente cancelou";
 
-      // Act & Assert
-      await expect(
-        appointmentService.deleteAppointment(appointmentId)
-      ).rejects.toThrow(
-        new BadRequestError("Não é possível cancelar este agendamento")
-      );
-    });
-  });
-
-  describe("updateAppointmentStatus", () => {
-    it("deve atualizar status com sucesso", async () => {
-      // Arrange
-      const appointmentId = "appointment-123";
-      const newStatus = "ACCEPTED";
-      const notes = "Agendamento aceito";
-      const appointment = { id: appointmentId, status: "PENDING" };
-      const updatedAppointment = { ...appointment, status: newStatus };
-
-      mockRepository.findById.mockResolvedValue(appointment as any);
-      mockRepository.updateStatus.mockResolvedValue(updatedAppointment as any);
-
-      // Act
-      const result = await appointmentService.updateAppointmentStatus(
-        appointmentId,
-        newStatus,
-        notes
-      );
-
-      // Assert
-      expect(mockRepository.findById).toHaveBeenCalledWith(appointmentId);
-      expect(mockRepository.updateStatus).toHaveBeenCalledWith(
-        appointmentId,
-        newStatus,
-        notes
-      );
-      expect(result).toEqual(updatedAppointment);
-    });
-
-    it("deve lançar erro quando transição de status é inválida", async () => {
-      // Arrange
-      const appointmentId = "appointment-123";
-      const newStatus = "COMPLETED";
-      const appointment = { id: appointmentId, status: "PENDING" };
-
-      mockRepository.findById.mockResolvedValue(appointment as any);
-
-      // Act & Assert
-      await expect(
-        appointmentService.updateAppointmentStatus(appointmentId, newStatus)
-      ).rejects.toThrow(
-        new BadRequestError(
-          "Não é possível alterar status de PENDING para COMPLETED"
-        )
-      );
-    });
-  });
-
-  describe("checkAvailability", () => {
-    it("deve retornar true quando horário está disponível", async () => {
-      // Arrange
-      const professionalId = "professional-123";
-      const scheduledDate = new Date("2024-12-31");
-      const scheduledTime = "14:00";
-      mockRepository.hasConflict.mockResolvedValue(false);
-
-      // Act
-      const result = await appointmentService.checkAvailability(
-        professionalId,
-        scheduledDate,
-        scheduledTime
-      );
-
-      // Assert
-      expect(mockRepository.hasConflict).toHaveBeenCalledWith(
-        professionalId,
-        scheduledDate,
-        scheduledTime
-      );
-      expect(result).toBe(true);
-    });
-
-    it("deve retornar false quando horário não está disponível", async () => {
-      // Arrange
-      const professionalId = "professional-123";
-      const scheduledDate = new Date("2024-12-31");
-      const scheduledTime = "14:00";
-      mockRepository.hasConflict.mockResolvedValue(true);
-
-      // Act
-      const result = await appointmentService.checkAvailability(
-        professionalId,
-        scheduledDate,
-        scheduledTime
-      );
-
-      // Assert
-      expect(result).toBe(false);
-    });
-  });
-
-  describe("getAvailableTimeSlots", () => {
-    it("deve retornar horários disponíveis", async () => {
-      // Arrange
-      const professionalId = "professional-123";
-      const date = new Date("2024-12-31");
-      mockRepository.hasConflict.mockResolvedValue(false);
-
-      // Act
-      const result = await appointmentService.getAvailableTimeSlots(
-        professionalId,
-        date
-      );
-
-      // Assert
-      expect(result).toBeInstanceOf(Array);
-      expect(result.length).toBeGreaterThan(0);
-      expect(result[0]).toMatch(/^\d{2}:\d{2}$/); // Formato HH:MM
-    });
-  });
-
-  describe("getAppointmentStats", () => {
-    it("deve retornar estatísticas", async () => {
-      // Arrange
-      const filters = { professionalId: "professional-123" };
-      const mockStats = {
-        total: 10,
-        pending: 3,
-        accepted: 5,
-        completed: 2,
-        cancelled: 0,
-        completionRate: 20,
-        cancellationRate: 0,
+      const mockAppointment = {
+        id: appointmentId,
+        status: "CANCELLED",
+        cancellationReason: "Já cancelado",
       };
-      mockRepository.getStats.mockResolvedValue(mockStats);
+
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment);
+
+      // Act & Assert
+      await expect(
+        appointmentService.cancelAppointment(appointmentId, reason)
+      ).rejects.toThrow(BadRequestError);
+    });
+  });
+
+  describe("getAppointmentsByUser", () => {
+    it("deve retornar agendamentos do cliente", async () => {
+      // Arrange
+      const userId = "client-123";
+      const mockAppointments = [
+        {
+          id: "appointment-1",
+          clientId: userId,
+          professionalId: "professional-123",
+          scheduledDate: new Date("2024-01-15T10:00:00Z"),
+          status: "SCHEDULED",
+        },
+        {
+          id: "appointment-2",
+          clientId: userId,
+          professionalId: "professional-456",
+          scheduledDate: new Date("2024-01-20T14:00:00Z"),
+          status: "CONFIRMED",
+        },
+      ];
+
+      mockAppointmentRepository.findByUserId.mockResolvedValue(
+        mockAppointments
+      );
 
       // Act
-      const result = await appointmentService.getAppointmentStats(filters);
+      const result = await appointmentService.getAppointmentsByUser(userId);
 
       // Assert
-      expect(mockRepository.getStats).toHaveBeenCalledWith(filters);
-      expect(result).toEqual(mockStats);
+      expect(result).toEqual(mockAppointments);
+      expect(mockAppointmentRepository.findByUserId).toHaveBeenCalledWith(
+        userId
+      );
+    });
+  });
+
+  describe("getAppointmentsByProfessional", () => {
+    it("deve retornar agendamentos do profissional", async () => {
+      // Arrange
+      const professionalId = "professional-123";
+      const mockAppointments = [
+        {
+          id: "appointment-1",
+          clientId: "client-123",
+          professionalId,
+          scheduledDate: new Date("2024-01-15T10:00:00Z"),
+          status: "SCHEDULED",
+        },
+      ];
+
+      mockAppointmentRepository.findByProfessionalId.mockResolvedValue(
+        mockAppointments
+      );
+
+      // Act
+      const result = await appointmentService.getAppointmentsByProfessional(
+        professionalId
+      );
+
+      // Assert
+      expect(result).toEqual(mockAppointments);
+      expect(
+        mockAppointmentRepository.findByProfessionalId
+      ).toHaveBeenCalledWith(professionalId);
+    });
+  });
+
+  describe("getAppointmentsByDateRange", () => {
+    it("deve retornar agendamentos no período especificado", async () => {
+      // Arrange
+      const startDate = new Date("2024-01-15T00:00:00Z");
+      const endDate = new Date("2024-01-15T23:59:59Z");
+      const mockAppointments = [
+        {
+          id: "appointment-1",
+          clientId: "client-123",
+          professionalId: "professional-123",
+          scheduledDate: new Date("2024-01-15T10:00:00Z"),
+          status: "SCHEDULED",
+        },
+      ];
+
+      mockAppointmentRepository.findByDateRange.mockResolvedValue(
+        mockAppointments
+      );
+
+      // Act
+      const result = await appointmentService.getAppointmentsByDateRange(
+        startDate,
+        endDate
+      );
+
+      // Assert
+      expect(result).toEqual(mockAppointments);
+      expect(mockAppointmentRepository.findByDateRange).toHaveBeenCalledWith(
+        startDate,
+        endDate
+      );
     });
   });
 });

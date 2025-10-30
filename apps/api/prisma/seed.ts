@@ -63,7 +63,7 @@ async function main() {
 
   // Criar Super Admin
   console.log("👤 Criando Super Admin...");
-  const adminPassword = "Admin@2025"; // ⚠️ TROCAR EM PRODUÇÃO!
+  const adminPassword = process.env.ADMIN_PASSWORD || "Admin@2025";
   const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
   const superAdmin = await prisma.admin.upsert({
@@ -80,8 +80,7 @@ async function main() {
 
   console.log(`✅ Super Admin criado: ${superAdmin.email}`);
   console.log(`   📧 Email: admin@quezi.com`);
-  console.log(`   🔑 Senha: Admin@2025`);
-  console.log(`   ⚠️  IMPORTANTE: Troque a senha em produção!\n`);
+  console.log(`   🔑 Senha: ${adminPassword}`);
 
   console.log("✨ Seed concluído com sucesso!");
 }

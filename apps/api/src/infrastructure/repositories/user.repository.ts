@@ -20,7 +20,6 @@ import {
   ICompanyProfile,
 } from "../../domain/interfaces/user.interface";
 import { User } from "../../domain/entities/user.entity";
-import { ClientProfile } from "../../domain/entities/client-profile.entity";
 import { NotFoundError, BadRequestError } from "../../utils/app-error";
 
 export class UserRepository {

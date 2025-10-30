@@ -407,3 +407,69 @@ import {
   BusinessHours,
   Certification,
 } from "./user.interface";
+
+// ========================================
+// APPOINTMENT REPOSITORY INTERFACE
+// ========================================
+
+export interface IAppointmentRepository {
+  // Métodos básicos
+  create(data: any): Promise<any>;
+  findById(id: string): Promise<any | null>;
+  update(id: string, data: any): Promise<any>;
+  delete(id: string): Promise<void>;
+
+  // Métodos de busca
+  findByUserId(userId: string): Promise<any[]>;
+  findByProfessionalId(professionalId: string): Promise<any[]>;
+  findByCompanyEmployeeId(companyEmployeeId: string): Promise<any[]>;
+  findByDateRange(startDate: Date, endDate: Date): Promise<any[]>;
+  findByStatus(status: string): Promise<any[]>;
+  findMany(filters: any): Promise<any[]>;
+  count(filters: any): Promise<number>;
+}
+
+// ========================================
+// OFFERED SERVICE REPOSITORY INTERFACE
+// ========================================
+
+export interface IOfferedServiceRepository {
+  // Métodos básicos
+  create(data: any): Promise<any>;
+  findById(id: string): Promise<any | null>;
+  update(id: string, data: any): Promise<any>;
+  delete(id: string): Promise<void>;
+
+  // Métodos de busca
+  findByUserId(userId: string): Promise<any[]>;
+  findByProfessionalId(professionalId: string): Promise<any[]>;
+  findByCompanyEmployeeId(companyEmployeeId: string): Promise<any[]>;
+  findByCategory(category: string): Promise<any[]>;
+  findByPriceRange(minPrice: number, maxPrice: number): Promise<any[]>;
+  search(searchTerm: string): Promise<any[]>;
+  findMany(filters: any): Promise<any[]>;
+  count(filters: any): Promise<number>;
+}
+
+// ========================================
+// COMPANY EMPLOYEE REVIEW REPOSITORY INTERFACE
+// ========================================
+
+export interface ICompanyEmployeeReviewRepository {
+  // Métodos básicos
+  create(data: any): Promise<any>;
+  findById(id: string): Promise<any | null>;
+  update(id: string, data: any): Promise<any>;
+  delete(id: string): Promise<void>;
+
+  // Métodos de busca
+  findByAppointmentId(appointmentId: string): Promise<any | null>;
+  findByEmployeeId(employeeId: string): Promise<any[]>;
+  findByReviewerId(reviewerId: string): Promise<any[]>;
+  findMany(filters?: any): Promise<any[]>;
+
+  // Métodos de estatísticas
+  getAverageRating(employeeId: string): Promise<number>;
+  getRatingDistribution(employeeId: string): Promise<any[]>;
+  count(filters?: any): Promise<number>;
+}

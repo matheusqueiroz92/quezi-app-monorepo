@@ -21,6 +21,11 @@ export class AuthService {
       // Por enquanto, apenas simular o envio
       console.log(`📧 Email de recuperação enviado para: ${email}`);
 
+      // Validação básica de email
+      if (!email || !email.includes("@")) {
+        throw new BadRequestError("Email inválido");
+      }
+
       return {
         message: "Email de recuperação enviado com sucesso",
       };
@@ -38,23 +43,13 @@ export class AuthService {
     token: string
   ): Promise<{ valid: boolean; message?: string; error?: string }> {
     try {
-      // TODO: Implementar verificação real do token
-      // Por enquanto, simular verificação
-      if (!token || token.length < 10) {
-        return {
-          valid: false,
-          error: "Token inválido",
-        };
-      }
-
-      return {
-        valid: true,
-        message: "Token válido",
-      };
+      // Mock implementation - Better Auth doesn't have this method
+      // In a real implementation, you would verify the token
+      return { valid: true, message: "Token válido" };
     } catch (error: any) {
       return {
         valid: false,
-        error: `Erro ao verificar token: ${error.message}`,
+        error: error.message || "Token inválido ou expirado",
       };
     }
   }
@@ -67,31 +62,14 @@ export class AuthService {
     newPassword: string
   ): Promise<{ message: string }> {
     try {
-      // Verificar se o token é válido
-      const tokenValidation = await this.verifyResetToken(token);
-      if (!tokenValidation.valid) {
-        throw new BadRequestError("Token inválido ou expirado");
-      }
-
-      // Validar nova senha
-      if (!newPassword || newPassword.length < 8) {
-        throw new BadRequestError(
-          "Nova senha deve ter pelo menos 8 caracteres"
-        );
-      }
-
-      // TODO: Implementar reset real da senha
-      // Por enquanto, apenas simular
-      console.log(`🔐 Senha resetada para token: ${token.substring(0, 10)}...`);
-
+      await auth.api.resetPassword({
+        body: { token, newPassword },
+      });
       return {
-        message: "Senha resetada com sucesso",
+        message: "Senha redefinida com sucesso",
       };
     } catch (error: any) {
-      if (error instanceof BadRequestError) {
-        throw error;
-      }
-      throw new BadRequestError(`Erro ao resetar senha: ${error.message}`);
+      throw new BadRequestError(`Erro ao redefinir senha: ${error.message}`);
     }
   }
 

@@ -1,342 +1,239 @@
 /**
- * Repositório CompanyEmployee - Camada de Infraestrutura
- *
- * Implementação concreta para persistência de funcionários de empresa
- * Seguindo os princípios SOLID e Clean Architecture
+ * Repositório de Funcionário da Empresa - Camada de Infraestrutura
+ * 
+ * Implementação concreta seguindo Clean Architecture
+ * Compatível com o schema Prisma atual
  */
 
-import { ICompanyEmployeeRepository } from "../../domain/interfaces/repository.interface";
-import { CompanyEmployee } from "../../domain/entities/company-employee.entity";
-import { prisma } from "../../lib/prisma";
-import { BadRequestError, NotFoundError } from "../../utils/app-error";
+import { PrismaClient } from "@prisma/client";
 
-/**
- * Repositório concreto para CompanyEmployee
- */
-export class CompanyEmployeeRepository implements ICompanyEmployeeRepository {
+export interface CreateCompanyEmployeeData {
+  companyId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  specialties?: string[];
+  isActive?: boolean;
+}
+
+export interface UpdateCompanyEmployeeData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  specialties?: string[];
+  isActive?: boolean;
+}
+
+export interface CompanyEmployeeFilters {
+  companyId?: string;
+  position?: string;
+  specialties?: string[];
+  isActive?: boolean;
+}
+
+export class CompanyEmployeeRepository {
+  constructor(private prisma: PrismaClient) {}
+
   /**
-   * Cria um novo funcionário
+   * Cria funcionário da empresa
    */
-  async create(data: any): Promise<CompanyEmployee> {
-    try {
-      const employee = await prisma.companyEmployee.create({
-        data: {
-          id: data.id,
-          companyId: data.companyId,
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          position: data.position,
-          specialties: data.specialties || [],
-          isActive: data.isActive !== undefined ? data.isActive : true,
-          workingHours: data.workingHours,
-        },
-      });
+  async create(data: CreateCompanyEmployeeData) {
+    const employee = await this.prisma.companyEmployee.create({
+      data: {
+        companyId: data.companyId,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        position: data.position,
+        specialties: data.specialties || [],
+        isActive: data.isActive ?? true,
+      },
+      include: {
+        company: true,
+        appointments: true,
+      },
+    });
 
-      return CompanyEmployee.fromPersistence(employee);
-    } catch (error: any) {
-      throw new BadRequestError(`Erro ao criar funcionário: ${error.message}`);
-    }
+    return employee;
   }
 
   /**
    * Busca funcionário por ID
    */
-  async findById(id: string): Promise<CompanyEmployee | null> {
-    try {
-      const employee = await prisma.companyEmployee.findUnique({
-        where: { id },
-      });
+  async findById(id: string) {
+    const employee = await this.prisma.companyEmployee.findUnique({
+      where: { id },
+      include: {
+        company: true,
+        appointments: {
+          include: {
+            client: true,
+            service: true,
+          },
+        },
+      },
+    });
 
-      if (!employee) {
-        return null;
-      }
-
-      return CompanyEmployee.fromPersistence(employee);
-    } catch (error: any) {
-      throw new BadRequestError(`Erro ao buscar funcionário: ${error.message}`);
-    }
+    return employee;
   }
 
   /**
-   * Lista funcionários com filtros
+   * Busca funcionários por empresa
    */
-  async findMany(filters: any): Promise<any> {
-    try {
-      const { skip = 0, take = 10, companyId, isActive, search } = filters;
+  async findByCompanyId(companyId: string) {
+    const employees = await this.prisma.companyEmployee.findMany({
+      where: { companyId },
+      include: {
+        company: true,
+        appointments: true,
+      },
+      orderBy: { name: "asc" },
+    });
 
-      const where: any = {};
-      if (companyId) where.companyId = companyId;
-      if (isActive !== undefined) where.isActive = isActive;
-      if (search) {
-        where.OR = [
-          { name: { contains: search, mode: "insensitive" } },
-          { position: { contains: search, mode: "insensitive" } },
-        ];
-      }
-
-      const [employees, total] = await Promise.all([
-        prisma.companyEmployee.findMany({
-          where,
-          skip,
-          take,
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.companyEmployee.count({ where }),
-      ]);
-
-      return {
-        data: employees.map((emp) => CompanyEmployee.fromPersistence(emp)),
-        total,
-        page: Math.floor(skip / take) + 1,
-        limit: take,
-        hasNext: skip + take < total,
-        hasPrev: skip > 0,
-      };
-    } catch (error: any) {
-      throw new BadRequestError(
-        `Erro ao listar funcionários: ${error.message}`
-      );
-    }
+    return employees;
   }
 
   /**
    * Atualiza funcionário
    */
-  async update(id: string, data: any): Promise<CompanyEmployee> {
-    try {
-      const employee = await prisma.companyEmployee.update({
-        where: { id },
-        data: {
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          position: data.position,
-          specialties: data.specialties,
-          isActive: data.isActive,
-          workingHours: data.workingHours,
-        },
-      });
+  async update(id: string, data: UpdateCompanyEmployeeData) {
+    const employee = await this.prisma.companyEmployee.update({
+      where: { id },
+      data: {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        position: data.position,
+        specialties: data.specialties,
+        isActive: data.isActive,
+      },
+      include: {
+        company: true,
+        appointments: true,
+      },
+    });
 
-      return CompanyEmployee.fromPersistence(employee);
-    } catch (error: any) {
-      if (error.code === "P2025") {
-        throw new NotFoundError("Funcionário não encontrado");
-      }
-      throw new BadRequestError(
-        `Erro ao atualizar funcionário: ${error.message}`
-      );
-    }
+    return employee;
   }
 
   /**
-   * Remove funcionário
+   * Deleta funcionário
    */
-  async delete(id: string): Promise<void> {
-    try {
-      await prisma.companyEmployee.delete({
-        where: { id },
-      });
-    } catch (error: any) {
-      if (error.code === "P2025") {
-        throw new NotFoundError("Funcionário não encontrado");
-      }
-      throw new BadRequestError(
-        `Erro ao remover funcionário: ${error.message}`
-      );
-    }
+  async delete(id: string) {
+    await this.prisma.companyEmployee.delete({
+      where: { id },
+    });
   }
 
   /**
-   * Verifica se funcionário existe
+   * Lista funcionários com filtros
    */
-  async exists(id: string): Promise<boolean> {
-    try {
-      const employee = await prisma.companyEmployee.findUnique({
-        where: { id },
-        select: { id: true },
-      });
+  async findMany(filters: CompanyEmployeeFilters & { skip?: number; take?: number }) {
+    const where: any = {};
 
-      return !!employee;
-    } catch (error: any) {
-      throw new BadRequestError(
-        `Erro ao verificar funcionário: ${error.message}`
-      );
+    if (filters.companyId) {
+      where.companyId = filters.companyId;
     }
-  }
 
-  /**
-   * Cria agendamento para funcionário
-   */
-  async createAppointment(data: any): Promise<any> {
-    try {
-      const appointment = await prisma.companyEmployeeAppointment.create({
-        data: {
-          id: data.id,
-          clientId: data.clientId,
-          companyId: data.companyId,
-          employeeId: data.employeeId,
-          serviceId: data.serviceId,
-          scheduledDate: data.scheduledDate,
-          scheduledTime: data.scheduledTime,
-          status: data.status || "PENDING",
-          location: data.location,
-          clientNotes: data.clientNotes,
-          employeeNotes: data.employeeNotes,
-        },
-      });
-
-      return appointment;
-    } catch (error: any) {
-      throw new BadRequestError(`Erro ao criar agendamento: ${error.message}`);
+    if (filters.position) {
+      where.position = { contains: filters.position, mode: "insensitive" };
     }
-  }
 
-  /**
-   * Atualiza status do agendamento
-   */
-  async updateAppointmentStatus(
-    id: string,
-    status: string,
-    notes?: string
-  ): Promise<any> {
-    try {
-      const appointment = await prisma.companyEmployeeAppointment.update({
-        where: { id },
-        data: {
-          status,
-          employeeNotes: notes,
-        },
-      });
-
-      return appointment;
-    } catch (error: any) {
-      if (error.code === "P2025") {
-        throw new NotFoundError("Agendamento não encontrado");
-      }
-      throw new BadRequestError(
-        `Erro ao atualizar agendamento: ${error.message}`
-      );
+    if (filters.specialties && filters.specialties.length > 0) {
+      where.specialties = { hasSome: filters.specialties };
     }
-  }
 
-  /**
-   * Cria avaliação para funcionário
-   */
-  async createReview(data: any): Promise<any> {
-    try {
-      const review = await prisma.companyEmployeeReview.create({
-        data: {
-          id: data.id,
-          appointmentId: data.appointmentId,
-          clientId: data.clientId,
-          companyId: data.companyId,
-          employeeId: data.employeeId,
-          rating: data.rating,
-          comment: data.comment,
-        },
-      });
-
-      return review;
-    } catch (error: any) {
-      throw new BadRequestError(`Erro ao criar avaliação: ${error.message}`);
+    if (filters.isActive !== undefined) {
+      where.isActive = filters.isActive;
     }
-  }
 
-  /**
-   * Busca estatísticas do funcionário
-   */
-  async getEmployeeStats(employeeId: string): Promise<any> {
-    try {
-      const [
-        totalAppointments,
-        completedAppointments,
-        averageRating,
-        totalReviews,
-      ] = await Promise.all([
-        prisma.companyEmployeeAppointment.count({
-          where: { employeeId },
-        }),
-        prisma.companyEmployeeAppointment.count({
-          where: { employeeId, status: "COMPLETED" },
-        }),
-        prisma.companyEmployeeReview.aggregate({
-          where: { employeeId },
-          _avg: { rating: true },
-        }),
-        prisma.companyEmployeeReview.count({
-          where: { employeeId },
-        }),
-      ]);
-
-      return {
-        totalAppointments,
-        completedAppointments,
-        averageRating: averageRating._avg.rating || 0,
-        totalReviews,
-        completionRate:
-          totalAppointments > 0
-            ? (completedAppointments / totalAppointments) * 100
-            : 0,
-      };
-    } catch (error: any) {
-      throw new BadRequestError(
-        `Erro ao buscar estatísticas: ${error.message}`
-      );
-    }
-  }
-
-  /**
-   * Busca agendamento por ID
-   */
-  async getAppointmentById(id: string): Promise<any> {
-    try {
-      const appointment = await prisma.companyEmployeeAppointment.findUnique({
-        where: { id },
+    const [employees, total] = await Promise.all([
+      this.prisma.companyEmployee.findMany({
+        where,
+        skip: filters.skip || 0,
+        take: filters.take || 10,
         include: {
-          client: true,
-          employee: true,
-          service: true,
+          company: true,
+          appointments: true,
         },
-      });
+        orderBy: { name: "asc" },
+      }),
+      this.prisma.companyEmployee.count({ where }),
+    ]);
 
-      if (!appointment) {
-        throw new NotFoundError("Agendamento não encontrado");
-      }
-
-      return appointment;
-    } catch (error: any) {
-      if (error instanceof NotFoundError) {
-        throw error;
-      }
-      throw new BadRequestError(`Erro ao buscar agendamento: ${error.message}`);
-    }
+    return {
+      data: employees,
+      total,
+      skip: filters.skip || 0,
+      take: filters.take || 10,
+    };
   }
 
   /**
-   * Busca avaliação por ID
+   * Busca funcionários por especialidade
    */
-  async getReviewById(id: string): Promise<any> {
-    try {
-      const review = await prisma.companyEmployeeReview.findUnique({
-        where: { id },
-        include: {
-          client: true,
-          employee: true,
-          appointment: true,
-        },
-      });
+  async findBySpecialty(specialty: string, companyId?: string) {
+    const where: any = {
+      specialties: { has: specialty },
+      isActive: true,
+    };
 
-      if (!review) {
-        throw new NotFoundError("Avaliação não encontrada");
-      }
-
-      return review;
-    } catch (error: any) {
-      if (error instanceof NotFoundError) {
-        throw error;
-      }
-      throw new BadRequestError(`Erro ao buscar avaliação: ${error.message}`);
+    if (companyId) {
+      where.companyId = companyId;
     }
+
+    return await this.prisma.companyEmployee.findMany({
+      where,
+      include: {
+        company: true,
+        appointments: true,
+      },
+      orderBy: { name: "asc" },
+    });
+  }
+
+  /**
+   * Ativa/desativa funcionário
+   */
+  async toggleActive(id: string) {
+    const employee = await this.prisma.companyEmployee.findUnique({
+      where: { id },
+    });
+
+    if (!employee) {
+      throw new Error("Funcionário não encontrado");
+    }
+
+    return await this.prisma.companyEmployee.update({
+      where: { id },
+      data: { isActive: !employee.isActive },
+      include: {
+        company: true,
+        appointments: true,
+      },
+    });
+  }
+
+  /**
+   * Conta funcionários por empresa
+   */
+  async countByCompany(companyId: string) {
+    return await this.prisma.companyEmployee.count({
+      where: { companyId },
+    });
+  }
+
+  /**
+   * Conta funcionários ativos por empresa
+   */
+  async countActiveByCompany(companyId: string) {
+    return await this.prisma.companyEmployee.count({
+      where: { 
+        companyId,
+        isActive: true,
+      },
+    });
   }
 }

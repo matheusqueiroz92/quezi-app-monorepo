@@ -1,6 +1,4 @@
 /**
- * CompanyEmployeeReviewService - Camada de Aplicação
- *
  * Serviço de aplicação para gerenciamento de avaliações de funcionários de empresa
  * Seguindo os princípios SOLID e Clean Architecture
  */
@@ -8,13 +6,16 @@
 import { CompanyEmployeeReview } from "../../domain/entities/company-employee-review.entity";
 import { CompanyEmployeeReviewRepository } from "../../infrastructure/repositories/company-employee-review.repository";
 import { BadRequestError, NotFoundError } from "../../utils/app-error";
+import { prisma } from "../../lib/prisma";
 
 /**
  * Serviço de aplicação para CompanyEmployeeReview
  */
 export class CompanyEmployeeReviewService {
   constructor(
-    private companyEmployeeReviewRepository: CompanyEmployeeReviewRepository
+    private companyEmployeeReviewRepository: CompanyEmployeeReviewRepository = new CompanyEmployeeReviewRepository(
+      prisma
+    )
   ) {}
 
   /**
@@ -22,20 +23,19 @@ export class CompanyEmployeeReviewService {
    */
   async createReview(data: {
     appointmentId: string;
-    clientId: string;
-    companyId: string;
+    reviewerId: string;
     employeeId: string;
     rating: number;
     comment?: string;
   }): Promise<CompanyEmployeeReview> {
-    // Validar rating (1-5)
+    // Validar rating
     if (data.rating < 1 || data.rating > 5) {
       throw new BadRequestError("Rating deve estar entre 1 e 5");
     }
 
     // Verificar se já existe avaliação para este agendamento
     const existingReview =
-      await this.companyEmployeeReviewRepository.existsForAppointment(
+      await this.companyEmployeeReviewRepository.findByAppointmentId(
         data.appointmentId
       );
     if (existingReview) {
@@ -45,27 +45,15 @@ export class CompanyEmployeeReviewService {
     }
 
     // Criar avaliação
-    const reviewData = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    return await this.companyEmployeeReviewRepository.create(reviewData);
+    const review = await this.companyEmployeeReviewRepository.create(data);
+    return review;
   }
 
   /**
    * Busca avaliação por ID
    */
-  async getReviewById(id: string): Promise<CompanyEmployeeReview> {
-    const review = await this.companyEmployeeReviewRepository.findById(id);
-
-    if (!review) {
-      throw new NotFoundError("Avaliação não encontrada");
-    }
-
-    return review;
+  async getReviewById(id: string): Promise<CompanyEmployeeReview | null> {
+    return await this.companyEmployeeReviewRepository.findById(id);
   }
 
   /**
@@ -74,25 +62,9 @@ export class CompanyEmployeeReviewService {
   async getReviewByAppointment(
     appointmentId: string
   ): Promise<CompanyEmployeeReview | null> {
-    return await this.companyEmployeeReviewRepository.findByAppointment(
+    return await this.companyEmployeeReviewRepository.findByAppointmentId(
       appointmentId
     );
-  }
-
-  /**
-   * Lista avaliações com filtros
-   */
-  async listReviews(filters: {
-    skip?: number;
-    take?: number;
-    companyId?: string;
-    employeeId?: string;
-    clientId?: string;
-    rating?: number;
-    dateFrom?: string;
-    dateTo?: string;
-  }) {
-    return await this.companyEmployeeReviewRepository.findMany(filters);
   }
 
   /**
@@ -100,28 +72,20 @@ export class CompanyEmployeeReviewService {
    */
   async updateReview(
     id: string,
-    data: {
-      rating?: number;
-      comment?: string;
-    }
+    data: { rating?: number; comment?: string }
   ): Promise<CompanyEmployeeReview> {
-    // Verificar se avaliação existe
-    const existingReview = await this.companyEmployeeReviewRepository.findById(
-      id
-    );
-    if (!existingReview) {
+    if (data.rating) {
+      if (data.rating < 1 || data.rating > 5) {
+        throw new BadRequestError("Rating deve estar entre 1 e 5");
+      }
+    }
+
+    const review = await this.companyEmployeeReviewRepository.update(id, data);
+    if (!review) {
       throw new NotFoundError("Avaliação não encontrada");
     }
 
-    // Validar rating se fornecido
-    if (data.rating !== undefined && (data.rating < 1 || data.rating > 5)) {
-      throw new BadRequestError("Rating deve estar entre 1 e 5");
-    }
-
-    return await this.companyEmployeeReviewRepository.update(id, {
-      ...data,
-      updatedAt: new Date(),
-    });
+    return review;
   }
 
   /**
@@ -137,207 +101,106 @@ export class CompanyEmployeeReviewService {
   }
 
   /**
-   * Busca avaliações por empresa
-   */
-  async getCompanyReviews(
-    companyId: string,
-    filters: {
-      skip?: number;
-      take?: number;
-      rating?: number;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {}
-  ) {
-    return await this.companyEmployeeReviewRepository.findByCompany(
-      companyId,
-      filters
-    );
-  }
-
-  /**
-   * Busca avaliações por funcionário
+   * Lista avaliações de um funcionário
    */
   async getEmployeeReviews(
-    employeeId: string,
-    filters: {
-      skip?: number;
-      take?: number;
-      rating?: number;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {}
-  ) {
-    return await this.companyEmployeeReviewRepository.findByEmployee(
-      employeeId,
-      filters
+    employeeId: string
+  ): Promise<CompanyEmployeeReview[]> {
+    return await this.companyEmployeeReviewRepository.findByEmployeeId(
+      employeeId
     );
   }
 
   /**
-   * Busca avaliações por cliente
+   * Lista avaliações de um cliente
    */
-  async getClientReviews(
-    clientId: string,
-    filters: {
-      skip?: number;
-      take?: number;
-      rating?: number;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {}
-  ) {
-    return await this.companyEmployeeReviewRepository.findByClient(
-      clientId,
-      filters
+  async getClientReviews(clientId: string): Promise<CompanyEmployeeReview[]> {
+    return await this.companyEmployeeReviewRepository.findByReviewerId(
+      clientId
     );
   }
 
   /**
    * Obtém estatísticas de avaliações
    */
-  async getReviewStats(
-    filters: {
-      companyId?: string;
-      employeeId?: string;
-      clientId?: string;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {}
-  ) {
-    return await this.companyEmployeeReviewRepository.getStats(filters);
-  }
+  async getReviewStats(companyId?: string, employeeId?: string) {
+    const filters: any = {};
+    if (companyId) filters.companyId = companyId;
+    if (employeeId) filters.employeeId = employeeId;
 
-  /**
-   * Obtém avaliação média de uma empresa
-   */
-  async getCompanyAverageRating(companyId: string): Promise<number> {
-    const stats = await this.companyEmployeeReviewRepository.getStats({
-      companyId,
-    });
-    return stats.averageRating;
+    // Implementação simplificada
+    const reviews = await this.companyEmployeeReviewRepository.findMany(
+      filters
+    );
+    const total = reviews.length;
+    const average =
+      total > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / total : 0;
+
+    return {
+      total,
+      average: Math.round(average * 100) / 100,
+      distribution: this.getRatingDistribution(reviews),
+    };
   }
 
   /**
    * Obtém avaliação média de um funcionário
    */
   async getEmployeeAverageRating(employeeId: string): Promise<number> {
-    const stats = await this.companyEmployeeReviewRepository.getStats({
-      employeeId,
-    });
-    return stats.averageRating;
-  }
-
-  /**
-   * Obtém distribuição de ratings de uma empresa
-   */
-  async getCompanyRatingDistribution(
-    companyId: string
-  ): Promise<Record<number, number>> {
-    const stats = await this.companyEmployeeReviewRepository.getStats({
-      companyId,
-    });
-    return stats.ratingDistribution;
-  }
-
-  /**
-   * Obtém distribuição de ratings de um funcionário
-   */
-  async getEmployeeRatingDistribution(
-    employeeId: string
-  ): Promise<Record<number, number>> {
-    const stats = await this.companyEmployeeReviewRepository.getStats({
-      employeeId,
-    });
-    return stats.ratingDistribution;
-  }
-
-  /**
-   * Verifica se cliente pode avaliar um agendamento
-   */
-  async canClientReviewAppointment(
-    appointmentId: string,
-    clientId: string
-  ): Promise<boolean> {
-    // Verificar se já existe avaliação
-    const existingReview =
-      await this.companyEmployeeReviewRepository.existsForAppointment(
-        appointmentId
-      );
-    if (existingReview) {
-      return false;
-    }
-
-    // Aqui poderia adicionar outras validações como:
-    // - Verificar se o agendamento foi concluído
-    // - Verificar se o cliente é o dono do agendamento
-    // - Verificar se já passou tempo suficiente desde a conclusão
-
-    return true;
-  }
-
-  /**
-   * Obtém avaliações recentes de uma empresa
-   */
-  async getRecentCompanyReviews(companyId: string, limit: number = 5) {
-    return await this.companyEmployeeReviewRepository.findByCompany(companyId, {
-      skip: 0,
-      take: limit,
-    });
-  }
-
-  /**
-   * Obtém avaliações recentes de um funcionário
-   */
-  async getRecentEmployeeReviews(employeeId: string, limit: number = 5) {
-    return await this.companyEmployeeReviewRepository.findByEmployee(
-      employeeId,
-      {
-        skip: 0,
-        take: limit,
-      }
+    return await this.companyEmployeeReviewRepository.getAverageRating(
+      employeeId
     );
   }
 
   /**
-   * Obtém avaliações por rating específico
+   * Obtém distribuição de avaliações
    */
-  async getReviewsByRating(
-    rating: number,
-    filters: {
-      skip?: number;
-      take?: number;
-      companyId?: string;
-      employeeId?: string;
-      clientId?: string;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {}
-  ) {
-    return await this.companyEmployeeReviewRepository.findMany({
-      ...filters,
-      rating,
-    });
+  async getEmployeeRatingDistribution(employeeId: string): Promise<any[]> {
+    return await this.companyEmployeeReviewRepository.getRatingDistribution(
+      employeeId
+    );
   }
 
   /**
-   * Busca avaliações por empresa e funcionário
+   * Lista avaliações com filtros
    */
-  async getCompanyEmployeeReviews(
-    companyId: string,
-    employeeId: string,
-    filters: {
-      skip?: number;
-      take?: number;
-      rating?: number;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {}
-  ) {
-    return await this.companyEmployeeReviewRepository.findMany({
-      ...filters,
-      companyId,
-      employeeId,
+  async listReviews(filters: {
+    employeeId?: string;
+    reviewerId?: string;
+    rating?: number;
+    skip?: number;
+    take?: number;
+  }): Promise<CompanyEmployeeReview[]> {
+    return await this.companyEmployeeReviewRepository.findMany(filters);
+  }
+
+  /**
+   * Conta avaliações com filtros
+   */
+  async countReviews(filters: {
+    employeeId?: string;
+    reviewerId?: string;
+    rating?: number;
+  }): Promise<number> {
+    return await this.companyEmployeeReviewRepository.count(filters);
+  }
+
+  /**
+   * Método auxiliar para calcular distribuição de ratings
+   */
+  private getRatingDistribution(reviews: any[]): any[] {
+    const distribution = [0, 0, 0, 0, 0]; // 1-5 estrelas
+
+    reviews.forEach((review) => {
+      if (review.rating && review.rating >= 1 && review.rating <= 5) {
+        distribution[review.rating - 1] =
+          (distribution[review.rating - 1] || 0) + 1;
+      }
     });
+
+    return distribution.map((count, index) => ({
+      rating: index + 1,
+      count,
+    }));
   }
 }

@@ -213,6 +213,9 @@ model Service {
   category     Category            @relation(fields: [categoryId], references: [id])
   appointments Appointment[]
 
+  @@index([professionalId, createdAt]) // Índice para serviços por profissional
+  @@index([categoryId, price]) // Índice para filtros por categoria e preço
+  @@index([price, createdAt]) // Índice para ordenação por preço
   @@map("services")
 }
 
@@ -237,6 +240,9 @@ model Appointment {
   review       Review? // 1:1 (um agendamento pode ter uma review)
 
   @@index([professionalId, scheduledDate]) // Índice para checagem rápida de agendamentos
+  @@index([clientId, scheduledDate]) // Índice para agendamentos do cliente
+  @@index([status, scheduledDate]) // Índice para filtros por status
+  @@index([scheduledDate]) // Índice para ordenação por data
   @@map("appointments")
 }
 
@@ -254,6 +260,9 @@ model Review {
   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   reviewer    User        @relation(fields: [reviewerId], references: [id])
 
+  @@index([professionalId, createdAt]) // Índice para reviews por profissional
+  @@index([reviewerId, createdAt]) // Índice para reviews por revisor
+  @@index([rating, createdAt]) // Índice para filtros por rating
   @@map("reviews")
 }
 
@@ -428,7 +437,9 @@ model CompanyService {
   category     Category                     @relation(fields: [categoryId], references: [id])
   appointments CompanyEmployeeAppointment[]
 
-  @@index([companyId])
+  @@index([companyId, isActive]) // Índice para serviços ativos da empresa
+  @@index([categoryId, price]) // Índice para filtros por categoria e preço
+  @@index([price, createdAt]) // Índice para ordenação por preço
   @@map("company_services")
 }
 
@@ -446,5 +457,8 @@ model CompanyEmployeeReview {
   appointment CompanyEmployeeAppointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   reviewer    User                       @relation(fields: [reviewerId], references: [id])
 
+  @@index([employeeId, createdAt]) // Índice para reviews por funcionário
+  @@index([reviewerId, createdAt]) // Índice para reviews por revisor
+  @@index([rating, createdAt]) // Índice para filtros por rating
   @@map("company_employee_reviews")
 }

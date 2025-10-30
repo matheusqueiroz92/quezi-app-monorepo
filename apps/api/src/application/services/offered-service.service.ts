@@ -1,214 +1,406 @@
-/**
- * OfferedServiceService - Camada de Aplicação
- *
- * Serviço de aplicação para gerenciamento de serviços oferecidos por profissionais
- * Seguindo os princípios SOLID e Clean Architecture
- */
-
-import { OfferedService } from "../../domain/entities/offered-service.entity";
 import { OfferedServiceRepository } from "../../infrastructure/repositories/offered-service.repository";
-import { BadRequestError, NotFoundError } from "../../utils/app-error";
+import { UserRepository } from "../../infrastructure/repositories/user.repository";
+import { ProfessionalProfileRepository } from "../../infrastructure/repositories/professional-profile.repository";
+import { CompanyEmployeeRepository } from "../../infrastructure/repositories/company-employee.repository";
+import {
+  NotFoundError,
+  BadRequestError,
+  ConflictError,
+} from "../../utils/app-error";
+import { prisma } from "../../lib/prisma";
+
+export interface CreateOfferedServiceData {
+  name: string;
+  description: string;
+  price: number;
+  duration: number;
+  category: string;
+  professionalId?: string;
+  companyEmployeeId?: string;
+  isActive?: boolean;
+}
+
+export interface UpdateOfferedServiceData {
+  name?: string;
+  description?: string;
+  price?: number;
+  duration?: number;
+  category?: string;
+  isActive?: boolean;
+}
+
+export interface OfferedServiceFilters {
+  category?: string;
+  professionalId?: string;
+  companyEmployeeId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  isActive?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
 
 /**
- * Serviço de aplicação para OfferedService
+ * Serviço de Serviços Oferecidos
+ *
+ * Gerencia a lógica de negócio dos serviços oferecidos por profissionais e empresas
  */
 export class OfferedServiceService {
-  constructor(private offeredServiceRepository: OfferedServiceRepository) {}
+  private offeredServiceRepository: OfferedServiceRepository;
+  private userRepository: UserRepository;
+  private professionalProfileRepository: ProfessionalProfileRepository;
+  private companyEmployeeRepository: CompanyEmployeeRepository;
+
+  constructor(
+    offeredServiceRepository: OfferedServiceRepository = new OfferedServiceRepository(
+      prisma
+    ),
+    userRepository: UserRepository = new UserRepository(prisma),
+    professionalProfileRepository: ProfessionalProfileRepository = new ProfessionalProfileRepository(
+      prisma
+    ),
+    companyEmployeeRepository: CompanyEmployeeRepository = new CompanyEmployeeRepository(
+      prisma
+    )
+  ) {
+    this.offeredServiceRepository = offeredServiceRepository;
+    this.userRepository = userRepository;
+    this.professionalProfileRepository = professionalProfileRepository;
+    this.companyEmployeeRepository = companyEmployeeRepository;
+  }
 
   /**
    * Cria um novo serviço oferecido
    */
-  async createService(data: {
-    professionalId: string;
-    categoryId: string;
-    name: string;
-    description: string;
-    price: number;
-    priceType: "FIXED" | "HOURLY" | "DAILY" | "NEGOTIABLE";
-    duration: number;
-    serviceMode: "PRESENTIAL" | "REMOTE" | "BOTH";
-    isActive?: boolean;
-  }): Promise<OfferedService> {
-    // Validar dados
-    if (!data.name || data.name.trim().length < 3) {
-      throw new BadRequestError(
-        "Nome do serviço deve ter no mínimo 3 caracteres"
-      );
-    }
-
-    if (!data.description || data.description.trim().length < 10) {
-      throw new BadRequestError(
-        "Descrição do serviço deve ter no mínimo 10 caracteres"
-      );
-    }
-
+  async createOfferedService(data: CreateOfferedServiceData): Promise<any> {
+    // Validar preço
     if (data.price < 0) {
-      throw new BadRequestError("Preço não pode ser negativo");
+      throw new BadRequestError("O preço não pode ser negativo");
     }
 
+    // Validar duração
     if (data.duration <= 0) {
-      throw new BadRequestError("Duração deve ser maior que zero");
+      throw new BadRequestError("A duração deve ser maior que zero");
     }
 
-    // Criar serviço
-    return await this.offeredServiceRepository.create(data);
+    // Validar se o profissional ou funcionário da empresa existe
+    if (data.professionalId) {
+      const professional =
+        await this.professionalProfileRepository.findByUserId(
+          data.professionalId
+        );
+      if (!professional || !professional.isActive) {
+        throw new NotFoundError("Profissional não encontrado ou inativo");
+      }
+    } else if (data.companyEmployeeId) {
+      const employee = await this.companyEmployeeRepository.findById(
+        data.companyEmployeeId
+      );
+      if (!employee || !employee.isActive) {
+        throw new NotFoundError("Funcionário não encontrado ou inativo");
+      }
+    } else {
+      throw new BadRequestError(
+        "É necessário informar um profissional ou funcionário"
+      );
+    }
+
+    // Criar o serviço
+    return await this.offeredServiceRepository.create({
+      ...data,
+      isActive: data.isActive ?? true,
+    });
   }
 
   /**
-   * Busca serviço por ID
+   * Busca um serviço oferecido por ID
    */
-  async getServiceById(id: string): Promise<OfferedService> {
+  async getOfferedServiceById(id: string): Promise<any> {
     const service = await this.offeredServiceRepository.findById(id);
-
     if (!service) {
       throw new NotFoundError("Serviço não encontrado");
     }
-
     return service;
   }
 
   /**
-   * Lista serviços com filtros
+   * Atualiza um serviço oferecido
    */
-  async listServices(filters: {
-    professionalId?: string;
-    categoryId?: string;
-    isActive?: boolean;
-    minPrice?: number;
-    maxPrice?: number;
-    serviceMode?: "PRESENTIAL" | "REMOTE" | "BOTH";
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    services: OfferedService[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const page = filters.page || 1;
-    const limit = filters.limit || 10;
-
-    const services = await this.offeredServiceRepository.findMany(filters);
-    const total = await this.offeredServiceRepository.count(filters);
-
-    return {
-      services,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
-
-  /**
-   * Atualiza serviço
-   */
-  async updateService(
+  async updateOfferedService(
     id: string,
-    data: {
-      name?: string;
-      description?: string;
-      price?: number;
-      priceType?: "FIXED" | "HOURLY" | "DAILY" | "NEGOTIABLE";
-      duration?: number;
-      serviceMode?: "PRESENTIAL" | "REMOTE" | "BOTH";
-      isActive?: boolean;
-    }
-  ): Promise<OfferedService> {
-    // Verificar se serviço existe
-    await this.getServiceById(id);
-
-    // Validar dados
-    if (data.name && data.name.trim().length < 3) {
-      throw new BadRequestError(
-        "Nome do serviço deve ter no mínimo 3 caracteres"
-      );
+    data: UpdateOfferedServiceData
+  ): Promise<any> {
+    const service = await this.offeredServiceRepository.findById(id);
+    if (!service) {
+      throw new NotFoundError("Serviço não encontrado");
     }
 
-    if (data.description && data.description.trim().length < 10) {
-      throw new BadRequestError(
-        "Descrição do serviço deve ter no mínimo 10 caracteres"
-      );
-    }
-
+    // Validar preço se fornecido
     if (data.price !== undefined && data.price < 0) {
-      throw new BadRequestError("Preço não pode ser negativo");
+      throw new BadRequestError("O preço não pode ser negativo");
     }
 
+    // Validar duração se fornecida
     if (data.duration !== undefined && data.duration <= 0) {
-      throw new BadRequestError("Duração deve ser maior que zero");
+      throw new BadRequestError("A duração deve ser maior que zero");
     }
 
-    // Atualizar serviço
     return await this.offeredServiceRepository.update(id, data);
   }
 
   /**
-   * Deleta serviço
+   * Deleta um serviço oferecido
    */
-  async deleteService(id: string): Promise<void> {
-    // Verificar se serviço existe
-    await this.getServiceById(id);
+  async deleteOfferedService(id: string): Promise<void> {
+    const service = await this.offeredServiceRepository.findById(id);
+    if (!service) {
+      throw new NotFoundError("Serviço não encontrado");
+    }
 
-    // Deletar serviço
     await this.offeredServiceRepository.delete(id);
   }
 
   /**
-   * Busca serviços por profissional
+   * Busca serviços oferecidos por profissional
    */
-  async getServicesByProfessional(
+  async getOfferedServicesByProfessional(
     professionalId: string
-  ): Promise<OfferedService[]> {
-    return await this.offeredServiceRepository.findByProfessional(
+  ): Promise<any[]> {
+    return await this.offeredServiceRepository.findByProfessionalId(
       professionalId
+    );
+  }
+
+  /**
+   * Busca serviços oferecidos por funcionário de empresa
+   */
+  async getOfferedServicesByCompanyEmployee(
+    companyEmployeeId: string
+  ): Promise<any[]> {
+    return await this.offeredServiceRepository.findByCompanyEmployeeId(
+      companyEmployeeId
     );
   }
 
   /**
    * Busca serviços por categoria
    */
-  async getServicesByCategory(categoryId: string): Promise<OfferedService[]> {
-    return await this.offeredServiceRepository.findByCategory(categoryId);
+  async getOfferedServicesByCategory(category: string): Promise<any[]> {
+    return await this.offeredServiceRepository.findByCategory(category);
   }
 
   /**
-   * Ativa/desativa serviço
+   * Busca serviços por faixa de preço
    */
-  async toggleServiceStatus(id: string): Promise<OfferedService> {
-    const service = await this.getServiceById(id);
+  async getOfferedServicesByPriceRange(
+    minPrice: number,
+    maxPrice: number
+  ): Promise<any[]> {
+    if (minPrice < 0 || maxPrice < 0) {
+      throw new BadRequestError("Os preços não podem ser negativos");
+    }
+
+    if (minPrice > maxPrice) {
+      throw new BadRequestError(
+        "O preço mínimo não pode ser maior que o preço máximo"
+      );
+    }
+
+    return await this.offeredServiceRepository.findByPriceRange(
+      minPrice,
+      maxPrice
+    );
+  }
+
+  /**
+   * Busca serviços por termo de pesquisa
+   */
+  async searchOfferedServices(searchParams: {
+    query?: string;
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    if (searchParams.query && searchParams.query.trim().length < 2) {
+      throw new BadRequestError(
+        "O termo de pesquisa deve ter pelo menos 2 caracteres"
+      );
+    }
+
+    const services = await this.offeredServiceRepository.findMany({
+      search: searchParams.query,
+      categoryId: searchParams.category,
+      minPrice: searchParams.minPrice,
+      maxPrice: searchParams.maxPrice,
+      skip: ((searchParams.page || 1) - 1) * (searchParams.limit || 10),
+      take: searchParams.limit || 10,
+    });
+
+    const total = await this.offeredServiceRepository.count({
+      search: searchParams.query,
+      categoryId: searchParams.category,
+      minPrice: searchParams.minPrice,
+      maxPrice: searchParams.maxPrice,
+    });
+
+    return {
+      data: services,
+      pagination: {
+        page: searchParams.page || 1,
+        limit: searchParams.limit || 10,
+        total,
+        totalPages: Math.ceil(total / (searchParams.limit || 10)),
+      },
+    };
+  }
+
+  /**
+   * Lista serviços com filtros
+   */
+  async getOfferedServices(filters: OfferedServiceFilters = {}): Promise<{
+    data: any[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const { page = 1, limit = 10, ...otherFilters } = filters;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.offeredServiceRepository.findMany({
+        ...otherFilters,
+        skip,
+        take: limit,
+      }),
+      this.offeredServiceRepository.count(otherFilters),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  /**
+   * Alterna o status ativo/inativo de um serviço
+   */
+  async toggleServiceStatus(id: string): Promise<any> {
+    const service = await this.offeredServiceRepository.findById(id);
+    if (!service) {
+      throw new NotFoundError("Serviço não encontrado");
+    }
+
     return await this.offeredServiceRepository.update(id, {
       isActive: !service.isActive,
     });
   }
 
   /**
-   * Busca serviços ativos
+   * Ativa um serviço
    */
-  async getActiveServices(): Promise<OfferedService[]> {
-    return await this.offeredServiceRepository.findMany({ isActive: true });
-  }
+  async activateService(id: string): Promise<any> {
+    const service = await this.offeredServiceRepository.findById(id);
+    if (!service) {
+      throw new NotFoundError("Serviço não encontrado");
+    }
 
-  /**
-   * Busca serviços por faixa de preço
-   */
-  async getServicesByPriceRange(
-    minPrice: number,
-    maxPrice: number
-  ): Promise<OfferedService[]> {
-    return await this.offeredServiceRepository.findMany({
-      minPrice,
-      maxPrice,
+    if (service.isActive) {
+      throw new BadRequestError("Serviço já está ativo");
+    }
+
+    return await this.offeredServiceRepository.update(id, {
+      isActive: true,
     });
   }
 
   /**
-   * Busca serviços por modo de atendimento
+   * Desativa um serviço
    */
-  async getServicesByMode(
-    serviceMode: "PRESENTIAL" | "REMOTE" | "BOTH"
-  ): Promise<OfferedService[]> {
-    return await this.offeredServiceRepository.findMany({ serviceMode });
+  async deactivateService(id: string): Promise<any> {
+    const service = await this.offeredServiceRepository.findById(id);
+    if (!service) {
+      throw new NotFoundError("Serviço não encontrado");
+    }
+
+    if (!service.isActive) {
+      throw new BadRequestError("Serviço já está inativo");
+    }
+
+    return await this.offeredServiceRepository.update(id, {
+      isActive: false,
+    });
+  }
+
+  /**
+   * Busca serviços por usuário (profissional ou funcionário)
+   */
+  async getOfferedServicesByUser(userId: string): Promise<any[]> {
+    return await this.offeredServiceRepository.findByUserId(userId);
+  }
+
+  /**
+   * Obtém estatísticas dos serviços
+   */
+  async getServiceStats(filters: OfferedServiceFilters = {}): Promise<{
+    total: number;
+    active: number;
+    inactive: number;
+    averagePrice: number;
+    categories: { [key: string]: number };
+  }> {
+    const [total, active, inactive, averagePrice, categories] =
+      await Promise.all([
+        this.offeredServiceRepository.count(filters),
+        this.offeredServiceRepository.count({ ...filters, isActive: true }),
+        this.offeredServiceRepository.count({ ...filters, isActive: false }),
+        this.calculateAveragePrice(filters),
+        this.getCategoryDistribution(filters),
+      ]);
+
+    return {
+      total,
+      active,
+      inactive,
+      averagePrice,
+      categories,
+    };
+  }
+
+  /**
+   * Calcula o preço médio dos serviços
+   */
+  private async calculateAveragePrice(
+    filters: OfferedServiceFilters
+  ): Promise<number> {
+    const services = await this.offeredServiceRepository.findMany(filters);
+    if (services.length === 0) return 0;
+
+    const totalPrice = services.reduce(
+      (sum, service) => sum + service.price,
+      0
+    );
+    return totalPrice / services.length;
+  }
+
+  /**
+   * Obtém distribuição por categoria
+   */
+  private async getCategoryDistribution(
+    filters: OfferedServiceFilters
+  ): Promise<{ [key: string]: number }> {
+    const services = await this.offeredServiceRepository.findMany(filters);
+    const distribution: { [key: string]: number } = {};
+
+    services.forEach((service) => {
+      const category = service.category || "Sem categoria";
+      distribution[category] = (distribution[category] || 0) + 1;
+    });
+
+    return distribution;
   }
 }

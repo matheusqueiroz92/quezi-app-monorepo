@@ -1,258 +1,376 @@
-/**
- * Repositório OfferedService - Camada de Infraestrutura
- *
- * Implementação concreta para persistência de serviços oferecidos
- * Seguindo os princípios SOLID e Clean Architecture
- */
+import { PrismaClient } from "@prisma/client";
+import { IOfferedServiceRepository } from "../../domain/interfaces/repository.interface";
 
-import { OfferedService } from "../../domain/entities/offered-service.entity";
-import { prisma } from "../../lib/prisma";
-import { BadRequestError, NotFoundError } from "../../utils/app-error";
+export class OfferedServiceRepository implements IOfferedServiceRepository {
+  constructor(private prisma: PrismaClient) {}
 
-/**
- * Repositório concreto para OfferedService
- */
-export class OfferedServiceRepository {
-  /**
-   * Cria um novo serviço oferecido
-   */
-  async create(data: any): Promise<OfferedService> {
-    try {
-      const service = await prisma.service.create({
-        data: {
-          id: data.id,
-          professionalId: data.professionalId,
-          categoryId: data.categoryId,
-          name: data.name,
-          description: data.description,
-          price: data.price,
-          priceType: data.priceType,
-          duration: data.duration,
-          serviceMode: data.serviceMode,
-          isActive: data.isActive !== undefined ? data.isActive : true,
-        },
-      });
-
-      return OfferedService.fromPersistence(service);
-    } catch (error: any) {
-      throw new BadRequestError(`Erro ao criar serviço: ${error.message}`);
-    }
-  }
-
-  /**
-   * Busca serviço por ID
-   */
-  async findById(id: string): Promise<OfferedService | null> {
-    try {
-      const service = await prisma.service.findUnique({
-        where: { id },
-        include: {
-          professional: true,
-          category: true,
-        },
-      });
-
-      if (!service) {
-        return null;
-      }
-
-      return OfferedService.fromPersistence(service);
-    } catch (error: any) {
-      throw new BadRequestError(`Erro ao buscar serviço: ${error.message}`);
-    }
-  }
-
-  /**
-   * Lista serviços com filtros
-   */
-  async findMany(filters: any): Promise<any> {
-    try {
-      const {
-        skip = 0,
-        take = 10,
-        professionalId,
-        categoryId,
-        isActive,
-        search,
-      } = filters;
-
-      const where: any = {};
-      if (professionalId) where.professionalId = professionalId;
-      if (categoryId) where.categoryId = categoryId;
-      if (isActive !== undefined) where.isActive = isActive;
-      if (search) {
-        where.OR = [
-          { name: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-        ];
-      }
-
-      const [services, total] = await Promise.all([
-        prisma.service.findMany({
-          where,
-          skip,
-          take,
-          orderBy: { createdAt: "desc" },
-          include: {
-            professional: true,
-            category: true,
+  async create(data: any): Promise<any> {
+    const service = await this.prisma.service.create({
+      data: {
+        professionalId: data.professionalId,
+        categoryId: data.categoryId,
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        priceType: data.priceType || "FIXED",
+        durationMinutes: data.durationMinutes || 60,
+      },
+      include: {
+        professional: {
+          select: {
+            userId: true,
+            bio: true,
+            city: true,
+            serviceMode: true,
+            averageRating: true,
+            specialties: true,
+            isActive: true,
           },
-        }),
-        prisma.service.count({ where }),
-      ]);
-
-      return {
-        data: services.map((service) =>
-          OfferedService.fromPersistence(service)
-        ),
-        total,
-        page: Math.floor(skip / take) + 1,
-        limit: take,
-        hasNext: skip + take < total,
-        hasPrev: skip > 0,
-      };
-    } catch (error: any) {
-      throw new BadRequestError(`Erro ao listar serviços: ${error.message}`);
-    }
-  }
-
-  /**
-   * Atualiza serviço
-   */
-  async update(id: string, data: any): Promise<OfferedService> {
-    try {
-      const service = await prisma.service.update({
-        where: { id },
-        data: {
-          name: data.name,
-          description: data.description,
-          price: data.price,
-          priceType: data.priceType,
-          duration: data.duration,
-          serviceMode: data.serviceMode,
-          isActive: data.isActive,
         },
-      });
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
 
-      return OfferedService.fromPersistence(service);
-    } catch (error: any) {
-      if (error.code === "P2025") {
-        throw new NotFoundError("Serviço não encontrado");
-      }
-      throw new BadRequestError(`Erro ao atualizar serviço: ${error.message}`);
-    }
+    return service;
   }
 
-  /**
-   * Remove serviço
-   */
+  async findById(id: string): Promise<any | null> {
+    const service = await this.prisma.service.findUnique({
+      where: { id },
+      include: {
+        professional: {
+          select: {
+            userId: true,
+            bio: true,
+            city: true,
+            serviceMode: true,
+            averageRating: true,
+            specialties: true,
+            isActive: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    return service;
+  }
+
+  async findByUserId(userId: string): Promise<any[]> {
+    const services = await this.prisma.service.findMany({
+      where: { professionalId: userId },
+      include: {
+        professional: {
+          select: {
+            userId: true,
+            bio: true,
+            city: true,
+            serviceMode: true,
+            averageRating: true,
+            specialties: true,
+            isActive: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return services;
+  }
+
+  async findByProfessionalId(professionalId: string): Promise<any[]> {
+    const services = await this.prisma.service.findMany({
+      where: { professionalId },
+      include: {
+        professional: {
+          select: {
+            userId: true,
+            bio: true,
+            city: true,
+            serviceMode: true,
+            averageRating: true,
+            specialties: true,
+            isActive: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return services;
+  }
+
+  async findByCompanyEmployeeId(companyEmployeeId: string): Promise<any[]> {
+    // Para funcionários da empresa, usamos CompanyService
+    const services = await this.prisma.companyService.findMany({
+      where: { companyId: companyEmployeeId },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return services;
+  }
+
+  async update(id: string, data: any): Promise<any> {
+    const service = await this.prisma.service.update({
+      where: { id },
+      data: {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        priceType: data.priceType,
+        durationMinutes: data.durationMinutes,
+      },
+      include: {
+        professional: {
+          select: {
+            userId: true,
+            bio: true,
+            city: true,
+            serviceMode: true,
+            averageRating: true,
+            specialties: true,
+            isActive: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    return service;
+  }
+
   async delete(id: string): Promise<void> {
-    try {
-      await prisma.service.delete({
-        where: { id },
-      });
-    } catch (error: any) {
-      if (error.code === "P2025") {
-        throw new NotFoundError("Serviço não encontrado");
-      }
-      throw new BadRequestError(`Erro ao remover serviço: ${error.message}`);
-    }
+    await this.prisma.service.delete({
+      where: { id },
+    });
   }
 
-  /**
-   * Verifica se serviço existe
-   */
-  async exists(id: string): Promise<boolean> {
-    try {
-      const service = await prisma.service.findUnique({
-        where: { id },
-        select: { id: true },
-      });
-
-      return !!service;
-    } catch (error: any) {
-      throw new BadRequestError(`Erro ao verificar serviço: ${error.message}`);
-    }
-  }
-
-  /**
-   * Busca serviços por profissional
-   */
-  async findByProfessional(professionalId: string): Promise<OfferedService[]> {
-    try {
-      const services = await prisma.service.findMany({
-        where: { professionalId },
-        include: {
-          category: true,
+  async findByCategory(categoryId: string): Promise<any[]> {
+    const services = await this.prisma.service.findMany({
+      where: { categoryId },
+      include: {
+        professional: {
+          select: {
+            userId: true,
+            bio: true,
+            city: true,
+            serviceMode: true,
+            averageRating: true,
+            specialties: true,
+            isActive: true,
+          },
         },
-        orderBy: { createdAt: "desc" },
-      });
-
-      return services.map((service) => OfferedService.fromPersistence(service));
-    } catch (error: any) {
-      throw new BadRequestError(
-        `Erro ao buscar serviços do profissional: ${error.message}`
-      );
-    }
-  }
-
-  /**
-   * Busca serviços por categoria
-   */
-  async findByCategory(categoryId: string): Promise<OfferedService[]> {
-    try {
-      const services = await prisma.service.findMany({
-        where: { categoryId, isActive: true },
-        include: {
-          professional: true,
-          category: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
         },
-        orderBy: { createdAt: "desc" },
-      });
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-      return services.map((service) => OfferedService.fromPersistence(service));
-    } catch (error: any) {
-      throw new BadRequestError(
-        `Erro ao buscar serviços da categoria: ${error.message}`
-      );
-    }
+    return services;
   }
 
-  /**
-   * Ativa serviço
-   */
-  async activate(id: string): Promise<OfferedService> {
-    try {
-      const service = await prisma.service.update({
-        where: { id },
-        data: { isActive: true },
-      });
+  async findByPriceRange(minPrice: number, maxPrice: number): Promise<any[]> {
+    const services = await this.prisma.service.findMany({
+      where: {
+        price: {
+          gte: minPrice,
+          lte: maxPrice,
+        },
+      },
+      include: {
+        professional: {
+          select: {
+            userId: true,
+            bio: true,
+            city: true,
+            serviceMode: true,
+            averageRating: true,
+            specialties: true,
+            isActive: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { price: "asc" },
+    });
 
-      return OfferedService.fromPersistence(service);
-    } catch (error: any) {
-      if (error.code === "P2025") {
-        throw new NotFoundError("Serviço não encontrado");
-      }
-      throw new BadRequestError(`Erro ao ativar serviço: ${error.message}`);
-    }
+    return services;
   }
 
-  /**
-   * Desativa serviço
-   */
-  async deactivate(id: string): Promise<OfferedService> {
-    try {
-      const service = await prisma.service.update({
-        where: { id },
-        data: { isActive: false },
-      });
+  async search(query: string): Promise<any[]> {
+    const services = await this.prisma.service.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      include: {
+        professional: {
+          select: {
+            userId: true,
+            bio: true,
+            city: true,
+            serviceMode: true,
+            averageRating: true,
+            specialties: true,
+            isActive: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-      return OfferedService.fromPersistence(service);
-    } catch (error: any) {
-      if (error.code === "P2025") {
-        throw new NotFoundError("Serviço não encontrado");
-      }
-      throw new BadRequestError(`Erro ao desativar serviço: ${error.message}`);
+    return services;
+  }
+
+  async findMany(filters: any = {}): Promise<any[]> {
+    const where: any = {};
+
+    if (filters.professionalId) {
+      where.professionalId = filters.professionalId;
     }
+
+    if (filters.categoryId) {
+      where.categoryId = filters.categoryId;
+    }
+
+    if (filters.minPrice && filters.maxPrice) {
+      where.price = {
+        gte: filters.minPrice,
+        lte: filters.maxPrice,
+      };
+    }
+
+    if (filters.search) {
+      where.OR = [
+        { name: { contains: filters.search, mode: "insensitive" } },
+        { description: { contains: filters.search, mode: "insensitive" } },
+      ];
+    }
+
+    const services = await this.prisma.service.findMany({
+      where,
+      include: {
+        professional: {
+          select: {
+            userId: true,
+            bio: true,
+            city: true,
+            serviceMode: true,
+            averageRating: true,
+            specialties: true,
+            isActive: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: filters.skip || 0,
+      take: filters.take || 10,
+    });
+
+    return services;
+  }
+
+  async count(filters: any = {}): Promise<number> {
+    const where: any = {};
+
+    if (filters.professionalId) {
+      where.professionalId = filters.professionalId;
+    }
+
+    if (filters.categoryId) {
+      where.categoryId = filters.categoryId;
+    }
+
+    if (filters.minPrice && filters.maxPrice) {
+      where.price = {
+        gte: filters.minPrice,
+        lte: filters.maxPrice,
+      };
+    }
+
+    if (filters.search) {
+      where.OR = [
+        { name: { contains: filters.search, mode: "insensitive" } },
+        { description: { contains: filters.search, mode: "insensitive" } },
+      ];
+    }
+
+    return await this.prisma.service.count({ where });
   }
 }

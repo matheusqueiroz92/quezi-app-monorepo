@@ -31,7 +31,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   const authHandler = auth.handler;
 
   // Registra o handler do Better Auth para todas as rotas de autenticação
-  app.all("/auth/*", async (request, reply) => {
+  app.all("/*", async (request, reply) => {
     try {
       console.log("🔐 Better Auth Request:", {
         method: request.method,
@@ -110,7 +110,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
   // Endpoint customizado para obter perfil do usuário autenticado
   app.get(
-    "/auth/me",
+    "/me",
     {
       schema: {
         tags: ["auth"],

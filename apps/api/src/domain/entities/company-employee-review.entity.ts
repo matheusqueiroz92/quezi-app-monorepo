@@ -97,7 +97,7 @@ export class CompanyEmployeeReview {
    * Atualiza a avaliação
    */
   update(rating: number, comment?: string): CompanyEmployeeReview {
-    this.validateRating(rating);
+    CompanyEmployeeReview.validateRating(rating);
 
     return new CompanyEmployeeReview(
       this._id,

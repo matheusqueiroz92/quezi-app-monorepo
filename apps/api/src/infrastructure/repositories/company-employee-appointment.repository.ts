@@ -13,32 +13,35 @@ import { BadRequestError, NotFoundError } from "../../utils/app-error";
  * Repositório concreto para CompanyEmployeeAppointment
  */
 export class CompanyEmployeeAppointmentRepository {
+  constructor(private prismaClient = prisma) {}
+
   /**
    * Cria um novo agendamento com funcionário
    */
   async create(data: any): Promise<CompanyEmployeeAppointment> {
     try {
-      const appointment = await prisma.companyEmployeeAppointment.create({
-        data: {
-          id: data.id,
-          clientId: data.clientId,
-          companyId: data.companyId,
-          employeeId: data.employeeId,
-          serviceId: data.serviceId,
-          scheduledDate: data.scheduledDate,
-          scheduledTime: data.scheduledTime,
-          status: data.status || "PENDING",
-          location: data.location,
-          clientNotes: data.clientNotes,
-          employeeNotes: data.employeeNotes,
-        },
-        include: {
-          client: true,
-          company: true,
-          employee: true,
-          service: true,
-        },
-      });
+      const appointment =
+        await this.prismaClient.companyEmployeeAppointment.create({
+          data: {
+            id: data.id,
+            clientId: data.clientId,
+            companyId: data.companyId,
+            employeeId: data.employeeId,
+            serviceId: data.serviceId,
+            scheduledDate: data.scheduledDate,
+            scheduledTime: data.scheduledTime,
+            status: data.status || "PENDING",
+            location: data.location,
+            clientNotes: data.clientNotes,
+            employeeNotes: data.employeeNotes,
+          },
+          include: {
+            client: true,
+            company: true,
+            employee: true,
+            service: true,
+          },
+        });
 
       return CompanyEmployeeAppointment.fromPersistence(appointment);
     } catch (error: any) {
@@ -53,16 +56,17 @@ export class CompanyEmployeeAppointmentRepository {
    */
   async findById(id: string): Promise<CompanyEmployeeAppointment | null> {
     try {
-      const appointment = await prisma.companyEmployeeAppointment.findUnique({
-        where: { id },
-        include: {
-          client: true,
-          company: true,
-          employee: true,
-          service: true,
-          review: true,
-        },
-      });
+      const appointment =
+        await this.prismaClient.companyEmployeeAppointment.findUnique({
+          where: { id },
+          include: {
+            client: true,
+            company: true,
+            employee: true,
+            service: true,
+            review: true,
+          },
+        });
 
       if (!appointment) {
         return null;
@@ -102,7 +106,7 @@ export class CompanyEmployeeAppointmentRepository {
       }
 
       const [appointments, total] = await Promise.all([
-        prisma.companyEmployeeAppointment.findMany({
+        this.prismaClient.companyEmployeeAppointment.findMany({
           where,
           skip,
           take,
@@ -115,7 +119,7 @@ export class CompanyEmployeeAppointmentRepository {
             review: true,
           },
         }),
-        prisma.companyEmployeeAppointment.count({ where }),
+        this.prismaClient.companyEmployeeAppointment.count({ where }),
       ]);
 
       return {
@@ -140,24 +144,25 @@ export class CompanyEmployeeAppointmentRepository {
    */
   async update(id: string, data: any): Promise<CompanyEmployeeAppointment> {
     try {
-      const appointment = await prisma.companyEmployeeAppointment.update({
-        where: { id },
-        data: {
-          scheduledDate: data.scheduledDate,
-          scheduledTime: data.scheduledTime,
-          status: data.status,
-          location: data.location,
-          clientNotes: data.clientNotes,
-          employeeNotes: data.employeeNotes,
-        },
-        include: {
-          client: true,
-          company: true,
-          employee: true,
-          service: true,
-          review: true,
-        },
-      });
+      const appointment =
+        await this.prismaClient.companyEmployeeAppointment.update({
+          where: { id },
+          data: {
+            scheduledDate: data.scheduledDate,
+            scheduledTime: data.scheduledTime,
+            status: data.status,
+            location: data.location,
+            clientNotes: data.clientNotes,
+            employeeNotes: data.employeeNotes,
+          },
+          include: {
+            client: true,
+            company: true,
+            employee: true,
+            service: true,
+            review: true,
+          },
+        });
 
       return CompanyEmployeeAppointment.fromPersistence(appointment);
     } catch (error: any) {
@@ -175,7 +180,7 @@ export class CompanyEmployeeAppointmentRepository {
    */
   async delete(id: string): Promise<void> {
     try {
-      await prisma.companyEmployeeAppointment.delete({
+      await this.prismaClient.companyEmployeeAppointment.delete({
         where: { id },
       });
     } catch (error: any) {
@@ -193,10 +198,11 @@ export class CompanyEmployeeAppointmentRepository {
    */
   async exists(id: string): Promise<boolean> {
     try {
-      const appointment = await prisma.companyEmployeeAppointment.findUnique({
-        where: { id },
-        select: { id: true },
-      });
+      const appointment =
+        await this.prismaClient.companyEmployeeAppointment.findUnique({
+          where: { id },
+          select: { id: true },
+        });
 
       return !!appointment;
     } catch (error: any) {
@@ -215,21 +221,22 @@ export class CompanyEmployeeAppointmentRepository {
     notes?: string
   ): Promise<CompanyEmployeeAppointment> {
     try {
-      const appointment = await prisma.companyEmployeeAppointment.update({
-        where: { id },
-        data: {
-          status: status as any, // Prisma enum type
-          employeeNotes: notes,
-          updatedAt: new Date(),
-        },
-        include: {
-          client: true,
-          company: true,
-          employee: true,
-          service: true,
-          review: true,
-        },
-      });
+      const appointment =
+        await this.prismaClient.companyEmployeeAppointment.update({
+          where: { id },
+          data: {
+            status: status as any, // Prisma enum type
+            employeeNotes: notes,
+            updatedAt: new Date(),
+          },
+          include: {
+            client: true,
+            company: true,
+            employee: true,
+            service: true,
+            review: true,
+          },
+        });
 
       return CompanyEmployeeAppointment.fromPersistence(appointment);
     } catch (error: any) {
@@ -256,7 +263,7 @@ export class CompanyEmployeeAppointmentRepository {
       }
 
       const [appointments, total] = await Promise.all([
-        prisma.companyEmployeeAppointment.findMany({
+        this.prismaClient.companyEmployeeAppointment.findMany({
           where,
           skip,
           take,
@@ -269,7 +276,7 @@ export class CompanyEmployeeAppointmentRepository {
             review: true,
           },
         }),
-        prisma.companyEmployeeAppointment.count({ where }),
+        this.prismaClient.companyEmployeeAppointment.count({ where }),
       ]);
 
       return {
@@ -305,7 +312,7 @@ export class CompanyEmployeeAppointmentRepository {
       }
 
       const [appointments, total] = await Promise.all([
-        prisma.companyEmployeeAppointment.findMany({
+        this.prismaClient.companyEmployeeAppointment.findMany({
           where,
           skip,
           take,
@@ -318,7 +325,7 @@ export class CompanyEmployeeAppointmentRepository {
             review: true,
           },
         }),
-        prisma.companyEmployeeAppointment.count({ where }),
+        this.prismaClient.companyEmployeeAppointment.count({ where }),
       ]);
 
       return {
@@ -354,7 +361,7 @@ export class CompanyEmployeeAppointmentRepository {
       }
 
       const [appointments, total] = await Promise.all([
-        prisma.companyEmployeeAppointment.findMany({
+        this.prismaClient.companyEmployeeAppointment.findMany({
           where,
           skip,
           take,
@@ -367,7 +374,7 @@ export class CompanyEmployeeAppointmentRepository {
             review: true,
           },
         }),
-        prisma.companyEmployeeAppointment.count({ where }),
+        this.prismaClient.companyEmployeeAppointment.count({ where }),
       ]);
 
       return {
@@ -396,27 +403,28 @@ export class CompanyEmployeeAppointmentRepository {
     scheduledTime: string
   ): Promise<boolean> {
     try {
-      const appointment = await prisma.companyEmployeeAppointment.findFirst({
-        where: {
-          employeeId,
-          scheduledDate: {
-            gte: new Date(
-              scheduledDate.getFullYear(),
-              scheduledDate.getMonth(),
-              scheduledDate.getDate()
-            ),
-            lt: new Date(
-              scheduledDate.getFullYear(),
-              scheduledDate.getMonth(),
-              scheduledDate.getDate() + 1
-            ),
+      const appointment =
+        await this.prismaClient.companyEmployeeAppointment.findFirst({
+          where: {
+            employeeId,
+            scheduledDate: {
+              gte: new Date(
+                scheduledDate.getFullYear(),
+                scheduledDate.getMonth(),
+                scheduledDate.getDate()
+              ),
+              lt: new Date(
+                scheduledDate.getFullYear(),
+                scheduledDate.getMonth(),
+                scheduledDate.getDate() + 1
+              ),
+            },
+            scheduledTime,
+            status: {
+              in: ["PENDING", "ACCEPTED"],
+            },
           },
-          scheduledTime,
-          status: {
-            in: ["PENDING", "ACCEPTED"],
-          },
-        },
-      });
+        });
 
       return !!appointment;
     } catch (error: any) {
@@ -443,17 +451,17 @@ export class CompanyEmployeeAppointmentRepository {
 
       const [total, pending, accepted, completed, cancelled] =
         await Promise.all([
-          prisma.companyEmployeeAppointment.count({ where }),
-          prisma.companyEmployeeAppointment.count({
+          this.prismaClient.companyEmployeeAppointment.count({ where }),
+          this.prismaClient.companyEmployeeAppointment.count({
             where: { ...where, status: "PENDING" },
           }),
-          prisma.companyEmployeeAppointment.count({
+          this.prismaClient.companyEmployeeAppointment.count({
             where: { ...where, status: "ACCEPTED" },
           }),
-          prisma.companyEmployeeAppointment.count({
+          this.prismaClient.companyEmployeeAppointment.count({
             where: { ...where, status: "COMPLETED" },
           }),
-          prisma.companyEmployeeAppointment.count({
+          this.prismaClient.companyEmployeeAppointment.count({
             where: { ...where, status: "CANCELLED" },
           }),
         ]);
